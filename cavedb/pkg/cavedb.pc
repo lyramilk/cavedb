@@ -1,0 +1,10 @@
+prefix=/usr
+libdir=/usr/lib64
+includedir=/usr/include
+
+Name: cavedb
+Description: lyramilk data base.
+URL: http://www.lyramilk.com/
+Version: 1.0.0
+Libs: -L${libdir} -lcavedb
+Cflags: -I${includedir}

@@ -1,0 +1,9 @@
+﻿#ifndef _cavedb_config_h_
+#define _cavedb_config_h_
+
+#define CAVEDB_VERSION "${version}"
+#define LIBMILK_VERSION "${LIBMILK_VERSION}"
+
+${CMAKE_CONFIG_MACROS}
+
+#endif

@@ -1,0 +1,88 @@
+Name:		cavedb
+%global	CMakeListPath	%{?_sourcedir}/%{?name}
+Version:	%(awk 'match($0,"set\\s*\\(version\\s*(.*)\\)",mr) {print mr[1]}' %{CMakeListPath}/CMakeLists.txt)
+Release:	1%{?dist}
+Summary:	db server by lyramilk
+Vendor:		lyramilk
+URL:		http://www.lyramilk.com/
+Group:		Development/Libraries
+License:	ASL 2.0
+
+BuildRequires:	gcc-c++ >= 4.4.6 ${CMAKE_BUILD_DEPENDS}
+Requires:	${CMAKE_RUN_DEPENDS}
+Prefix:		%{_prefix}
+Prefix:		%{_sysconfdir}
+
+%description
+
+
+%build
+	mkdir -p %{?_builddir}/%{?name}
+	cd %{?_builddir}/%{?name}
+	cmake -D install_dir=%{?_builddir}/%{?name}/output -D release=1 share_type=SHARED %{CMakeListPath}
+	make
+	make install
+	tree %{?_builddir}/%{?name}/output
+	sed -ri "s,(Version:)\s*([0-9\.]*)(.*),\1%{?version}\3," %{?_builddir}/%{?name}/output/%{?name}.pc
+	cat  %{?_builddir}/%{?name}/output/%{?name}.pc
+%install
+	mkdir -p %{?buildroot}%{?_includedir}/%{?name}
+	mkdir -p %{?buildroot}%{?_bindir}
+	mkdir -p %{?buildroot}%{?_libdir}
+	mkdir -p %{?buildroot}%{?_libdir}/pkgconfig
+	mkdir -p %{?buildroot}%{?_sysconfdir}/%{?name}
+	mkdir -p %{?buildroot}%{?_mandir}
+
+	mv %{?_builddir}/%{?name}/output/*.h %{?buildroot}%{?_includedir}/%{?name}
+#	mv %{?_builddir}/%{?name}/output/*.a %{?buildroot}%{?_libdir}
+	mv %{?_builddir}/%{?name}/output/*.so %{?buildroot}%{?_libdir}
+	mv %{?_builddir}/%{?name}/output/*.so.* %{?buildroot}%{?_libdir}
+#	mv %{?_builddir}/%{?name}/output/%{?name}d %{?buildroot}%{?_bindir}
+	mv %{?_builddir}/%{?name}/output/*.pc %{?buildroot}%{?_libdir}/pkgconfig
+
+#清理
+%clean
+	rm -f %{?_builddir}/%{?name}/%{?name}.so.%{?version}
+
+#安装之前执行脚本
+%pre
+
+#安装之后执行脚本
+%post
+
+#卸载之前执行脚本
+%preun
+
+#卸载之前执行脚本
+%postun
+
+#需要文件
+%files
+	%defattr(-,root,root,-)
+	%{?_libdir}/lib%{?name}.so.*
+#	%{?_bindir}/%{?name}d
+#	%{?_libdir}/%{?name}.so.%{?version}
+#	%config(noreplace) %{?_sysconfdir}/%{?name}/*
+
+#更新日志
+%changelog
+	*Thu Sep 17 2015 打包格式更新
+	-修改了rpmbuild打包方法以支持多版本并存
+	*Tue Aug 25 2015 打包格式更新
+	-修改了rpmbuild打包方法
+
+#cavedb-devel包
+%package devel 
+Summary:	Development files for %{?name} 
+Group:		Development/Libraries
+Requires:       %{name} = %{?version}
+Prefix:		%{_prefix}
+Prefix:		%{_sysconfdir}
+%description devel
+
+%files devel
+	%defattr(-,root,root,-)
+	%exclude %{?_libdir}/lib%{?name}.so.%{?version}
+	%{?_includedir}/%{?name}/*.h
+	%{?_libdir}/*.so
+	%{_libdir}/pkgconfig/*.pc
