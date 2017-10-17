@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 1.0.5)
+set(version 1.0.6)
 set(soversion 1.0)
 
 
@@ -31,12 +31,12 @@ set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -g -Wall")
 
 if(release)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4 -DNDEBUG -Wall ")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -O4 -DNDEBUG -Wall ")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -std=c99 -O4 -DNDEBUG -Wall ")
 	set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -O4 -Wall ")
 	message("Build as release")
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DEBUG -g -Wall -fstack-protector ")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_DEBUG -std=c99 -g -Wall -fstack-protector ")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -D_DEBUG -std=c99 -g -Wall -fstack-protector ")
 	set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -g -Wall -fstack-protector ")
 	message("Build as debug")
 endif()
