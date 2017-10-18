@@ -251,6 +251,7 @@ if(ret){
 				}
 			}
 		}
+		log(lyramilk::log::error,"psync") << D("同步线程退出") << std::endl;
 		return 0;
 	}
 

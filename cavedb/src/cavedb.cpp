@@ -133,10 +133,12 @@ namespace lyramilk{ namespace cave
 
 				if(mseccost > 20){
 					log(lyramilk::log::error,__FUNCTION__) << D("完成:") << args << D("%.3f (msec)",mseccost) << std::endl;
-				}else if(mseccost > 0.3){
+				}else if(mseccost > 2){
 					log(lyramilk::log::warning,__FUNCTION__) << D("完成:") << args << D("%.3f (msec)",mseccost) << std::endl;
 				}else{
+#ifdef _DEBUG
 					log(lyramilk::log::debug,__FUNCTION__) << D("完成:") << args << D("%.3f (msec) seq=%lld",mseccost,offset) << std::endl;
+#endif
 				}
 			}else{
 				log(lyramilk::log::error,__FUNCTION__) << replid << "," << offset << ":" << D("失败:") << args << D("原因：%s",ldbs.ToString().c_str()) << std::endl;

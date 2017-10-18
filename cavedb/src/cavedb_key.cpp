@@ -75,11 +75,9 @@ namespace lyramilk{ namespace cave
 			const char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 			for(unsigned int i=0;i<sizeof(types);++i){
 				redis_leveldb_key k(rh.dbprefix(-1));
-				k.append_type(types[i]);
+				k.append_char(types[i]);
 				k.append_string(key.c_str(),key.size());
 				std::string prefix = k;
-				prefix.push_back(redis_leveldb_key::KEY_STR);
-
 				leveldb_iterator it(rh.ldb->NewIterator(ropt));
 				if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 					if(!it->key().starts_with(prefix)) break;
@@ -99,10 +97,9 @@ namespace lyramilk{ namespace cave
 		const char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 		for(unsigned int i=0;i<sizeof(types);++i){
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(types[i]);
+			k.append_char(types[i]);
 			k.append_string(key.c_str(),key.size());
 			std::string prefix = k;
-			prefix.push_back(redis_leveldb_key::KEY_STR);
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
@@ -177,16 +174,14 @@ namespace lyramilk{ namespace cave
 		const char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 		for(unsigned int i=0;i<sizeof(types);++i){
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(types[i]);
+			k.append_char(types[i]);
 			k.append_string(key.c_str(),key.size());
 			std::string prefix = k;
-			prefix.push_back(redis_leveldb_key::KEY_STR);
 
 			redis_leveldb_key k2(rh.dbprefix(-1));
-			k.append_type(types[i]);
+			k.append_char(types[i]);
 			k.append_string(key2.c_str(),key2.size());
 			std::string finkey = k2;
-			finkey.push_back(redis_leveldb_key::KEY_STR);
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){

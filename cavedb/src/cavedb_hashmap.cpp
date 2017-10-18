@@ -97,16 +97,16 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_HASH);
+		k.append_char(redis_leveldb_key::KT_HASH);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("f",1);
+		k.append_char('f');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_STR);
 
 		if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 			leveldb::Slice datakey = it->key();
 			if(!datakey.starts_with(prefix)) break;
-			datakey.remove_prefix(prefix.size());
+			datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 			leveldb::Slice valuekey = it->value();
 
 			if(!cbk(key,datakey,valuekey,userdata)) return false;

@@ -52,7 +52,7 @@ namespace lyramilk{ namespace cave
 		std::string encode_size_key(const lyramilk::data::string& key,lyramilk::data::uint64 dbid = -1);
 
 		//	STRING
-		//	d:[dbid]:s:[key]:v => value
+		//	d:[dbid]:t:[key]:v => value
 		std::string encode_string_key(const lyramilk::data::string& key,lyramilk::data::uint64 dbid = -1);
 
 		//	ZSET
@@ -62,7 +62,7 @@ namespace lyramilk{ namespace cave
 		std::string encode_zset_data_key(const lyramilk::data::string& key,const lyramilk::data::string& value,lyramilk::data::uint64 dbid = -1);
 
 		//	SET
-		//	d:[dbid]:e:[key]:v:[value]	=> empty
+		//	d:[dbid]:s:[key]:v:[value]	=> empty
 		std::string encode_set_data_key(const lyramilk::data::string& key,const lyramilk::data::string& value,lyramilk::data::uint64 dbid = -1);
 
 		//	HASHMAP
@@ -98,11 +98,12 @@ namespace lyramilk{ namespace cave
 	{
 		std::string str;
 	  public:
-		static const unsigned char KEY_STR = 0x01;
-		static const unsigned char KEY_RINT = 0x02;	//反整数，数值越大，键越小
-		static const unsigned char KEY_INT = 0x03;
-		static const unsigned char KEY_DOUBLE = 0x04;
-		static const unsigned char KEY_NOOP = 0x05;
+		static const unsigned char KEY_NOOP = 0x01;
+		static const unsigned char KEY_CHAR = 0x02;
+		static const unsigned char KEY_STR = 0x03;
+		static const unsigned char KEY_RINT = 0x04;	//反整数，数值越大，键越小
+		static const unsigned char KEY_INT = 0x05;
+		static const unsigned char KEY_DOUBLE = 0x06;
 		static const unsigned char KEY_EOF = 0xff;
 
 		static const unsigned char KT_BASE = 'b';
@@ -116,11 +117,11 @@ namespace lyramilk{ namespace cave
 		redis_leveldb_key();
 		redis_leveldb_key(const std::string& prefix);
 		~redis_leveldb_key();
-		void append_string(const char* str,std::size_t sz);
+		void append_string(const char* str,lyramilk::data::uint32 sz);
 		void append_int(lyramilk::data::uint64 d);
 		void append_rint(lyramilk::data::uint64 d);
 		void append_double(double d);
-		void append_type(unsigned char kt);
+		void append_char(unsigned char kt);
 		void append_noop();
 		void append_max();
 

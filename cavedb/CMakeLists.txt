@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 1.0.7)
+set(version 1.0.8)
 set(soversion 1.0)
 
 
@@ -68,8 +68,12 @@ if(UNIX)
 	pkg_check_modules(LEVELDB leveldb)
 endif()
 
-if(NOT PCRE_FOUND)
-	message(FATAL_ERROR "require rpm package pcre-devel")
+if(NOT LIBMILK_FOUND)
+	message(FATAL_ERROR "require rpm package libmilk-devel")
+endif()
+
+if(NOT LEVELDB_FOUND)
+	message(FATAL_ERROR "require rpm package leveldb-devel")
 endif()
 
 if(LIBMILK_FOUND)

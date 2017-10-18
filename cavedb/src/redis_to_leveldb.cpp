@@ -21,9 +21,11 @@ namespace lyramilk{ namespace cave
 	redis_leveldb_key::~redis_leveldb_key()
 	{}
 
-	void redis_leveldb_key::append_string(const char* pkey,std::size_t sz)
+	void redis_leveldb_key::append_string(const char* pkey,lyramilk::data::uint32 sz)
 	{
 		str.push_back(KEY_STR);
+		lyramilk::data::uint32 bd = htobe32(sz);
+		str.append((char*)&bd,sizeof(bd));
 		str.append(pkey,sz);
 	}
 
@@ -47,9 +49,9 @@ namespace lyramilk{ namespace cave
 		str.append((char*)&d,sizeof(d));
 	}
 
-	void redis_leveldb_key::append_type(unsigned char kt)
+	void redis_leveldb_key::append_char(unsigned char kt)
 	{
-		str.push_back(KEY_STR);
+		str.push_back(KEY_CHAR);
 		str.push_back(kt);
 	}
 
@@ -81,6 +83,7 @@ namespace lyramilk{ namespace cave
 	{
 	}
 
+/*
 	int redis_leveldb_comparator::Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
 	{
 		std::size_t sz = std::min(a.size(),b.size());
@@ -128,7 +131,59 @@ label_prefix_eq:
 		if(a.size() == b.size()) return 0;
 		return a.size() < b.size() ? -1 : 1;
 	}
+	*/
+	int redis_leveldb_comparator::Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
+	{
+		std::size_t sz = std::min(a.size(),b.size());
+		for(std::size_t i =0;i<sz;++i){
+			unsigned char c = a[i];
+			unsigned char d = b[i];
+			if(c != d){
+				if(c < d) return -1;
+				if(c > d) return 1;
+			}else if(c == redis_leveldb_key::KEY_INT){
+				for(unsigned int n=0;n<sizeof(lyramilk::data::uint64);++n){
+					unsigned char c = a[i + n + 1];
+					unsigned char d = b[i + n + 1];
+					if(c < d) return -1;
+					if(c > d) return 1;
+				}
+				i += sizeof(lyramilk::data::uint64);
+			}else if(c == redis_leveldb_key::KEY_RINT){
+				for(unsigned int n=0;n<sizeof(lyramilk::data::uint64);++n){
+					unsigned char c = a[i + n + 1];
+					unsigned char d = b[i + n + 1];
+					if(c < d) return 1;
+					if(c > d) return -1;
+				}
+				i += sizeof(lyramilk::data::uint64);
+			}else if(c == redis_leveldb_key::KEY_DOUBLE){
+				double c = *(double*)(a.data() + i + 1);
+				double d = *(double*)(b.data() + i + 1);
+				if(c < d) return -1;
+				if(c > d) return 1;
+				i += sizeof(double);
+			}else if(c == redis_leveldb_key::KEY_STR){
+				lyramilk::data::uint32 lc = be32toh(*(lyramilk::data::uint32*)(a.data() + i + 1));
+				lyramilk::data::uint32 ld = be32toh(*(lyramilk::data::uint32*)(b.data() + i + 1));
+				lyramilk::data::uint32 lm = std::min(lc,ld);
+				int r = memcmp(a.data()+i,b.data()+i,lm);
+				if(r < 0) return -1;
+				if(r > 0) return 1;
+				if(lc < ld) return -1;
+				if(lc > ld) return 1;
+				i += sizeof(lyramilk::data::uint32) + lc;
+			}else if(c == redis_leveldb_key::KEY_CHAR){
+				unsigned char c = a[i+1];
+				unsigned char d = b[i+1];
+				if(c < d) return -1;
+				if(c > d) return 1;
+			}
+		}
 
+		return a.size() < b.size() ? -1 : 1;
+		return 0;
+	}
 	const char* redis_leveldb_comparator::Name() const
 	{
 		return "cavedb.KeyComparator";
@@ -242,7 +297,7 @@ label_prefix_eq:
 		}
 
 		redis_leveldb_key k;
-		k.append_string("d",1);
+		k.append_char('d');
 		k.append_int(dbid);
 		return k;
 	}
@@ -250,7 +305,7 @@ label_prefix_eq:
 	std::string redis_leveldb_handler::encode_ttl_key(const lyramilk::data::string& key,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_BASE);
+		k.append_char(redis_leveldb_key::KT_BASE);
 		k.append_string(key.c_str(),key.size());
 		k.append_string("ttl",3);
 		return k;
@@ -259,7 +314,7 @@ label_prefix_eq:
 	std::string redis_leveldb_handler::encode_size_key(const lyramilk::data::string& key,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_BASE);
+		k.append_char(redis_leveldb_key::KT_BASE);
 		k.append_string(key.c_str(),key.size());
 		k.append_string("size",4);
 		return k;
@@ -268,18 +323,18 @@ label_prefix_eq:
 	std::string redis_leveldb_handler::encode_string_key(const lyramilk::data::string& key,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_STRING);
+		k.append_char(redis_leveldb_key::KT_STRING);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("v",1);
+		k.append_char('v');
 		return k;
 	}
 
 	std::string redis_leveldb_handler::encode_zset_score_key(const lyramilk::data::string& key,double score,const lyramilk::data::string& value,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		k.append_double(score);
 		k.append_string(value.c_str(),value.size());
 		return k;
@@ -288,9 +343,9 @@ label_prefix_eq:
 	std::string redis_leveldb_handler::encode_zset_data_key(const lyramilk::data::string& key,const lyramilk::data::string& value,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("v",1);
+		k.append_char('v');
 		k.append_string(value.c_str(),value.size());
 		return k;
 	}
@@ -298,9 +353,9 @@ label_prefix_eq:
 	std::string redis_leveldb_handler::encode_set_data_key(const lyramilk::data::string& key,const lyramilk::data::string& value,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_SET);
+		k.append_char(redis_leveldb_key::KT_SET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("v",1);
+		k.append_char('v');
 		k.append_string(value.c_str(),value.size());
 		return k;
 	}
@@ -308,9 +363,9 @@ label_prefix_eq:
 	std::string redis_leveldb_handler::encode_hashmap_data_key(const lyramilk::data::string& key,const lyramilk::data::string& field,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_HASH);
+		k.append_char(redis_leveldb_key::KT_HASH);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("f",1);
+		k.append_char('f');
 		k.append_string(field.c_str(),field.size());
 		return k;
 	}
@@ -318,9 +373,9 @@ label_prefix_eq:
 	std::string redis_leveldb_handler::encode_list_data_key(const lyramilk::data::string& key,lyramilk::data::uint64 seq,lyramilk::data::uint64 dbid)
 	{
 		redis_leveldb_key k(dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_LIST);
+		k.append_char(redis_leveldb_key::KT_LIST);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("q",1);
+		k.append_char('q');
 		k.append_int(seq);
 		return k;
 	}

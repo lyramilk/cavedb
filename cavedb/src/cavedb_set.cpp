@@ -39,15 +39,15 @@ namespace lyramilk{ namespace cave
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_SET);
+			k.append_char(redis_leveldb_key::KT_SET);
 			k.append_string(srckey.c_str(),srckey.size());
-			k.append_string("v",1);
+			k.append_char('v');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_STR);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 				leveldb::Slice datakey = it->key();
 				if(!datakey.starts_with(prefix)) break;
-				datakey.remove_prefix(prefix.size());
+				datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 				if(i == 2){
 					++storemap[lyramilk::data::str(datakey.ToString())];
 				}else{
@@ -56,17 +56,15 @@ namespace lyramilk{ namespace cave
 			}
 		}
 
-		{
+		/*删除destkey*/{
 			leveldb::ReadOptions ropt;
 
 			const unsigned char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 			for(unsigned int i=0;i<sizeof(types);++i){
 				redis_leveldb_key k(rh.dbprefix(-1));
-				k.append_type(types[i]);
+				k.append_char(types[i]);
 				k.append_string(destkey.c_str(),destkey.size());
 				std::string prefix = k;
-				prefix.push_back(redis_leveldb_key::KEY_STR);
-
 				leveldb_iterator it(rh.ldb->NewIterator(ropt));
 				if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 					if(!it->key().starts_with(prefix)) break;
@@ -96,30 +94,28 @@ namespace lyramilk{ namespace cave
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_SET);
+			k.append_char(redis_leveldb_key::KT_SET);
 			k.append_string(srckey.c_str(),srckey.size());
-			k.append_string("v",1);
+			k.append_char('v');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_STR);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 				leveldb::Slice datakey = it->key();
 				if(!datakey.starts_with(prefix)) break;
-				datakey.remove_prefix(prefix.size());
+				datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 				++storemap[datakey.ToString()];
 			}
 		}
 
-		{
+		/*删除destkey*/{
 			leveldb::ReadOptions ropt;
 
 			const unsigned char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 			for(unsigned int i=0;i<sizeof(types);++i){
 				redis_leveldb_key k(rh.dbprefix(-1));
-				k.append_type(types[i]);
+				k.append_char(types[i]);
 				k.append_string(destkey.c_str(),destkey.size());
 				std::string prefix = k;
-				prefix.push_back(redis_leveldb_key::KEY_STR);
-
 				leveldb_iterator it(rh.ldb->NewIterator(ropt));
 				if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 					if(!it->key().starts_with(prefix)) break;
@@ -127,6 +123,7 @@ namespace lyramilk{ namespace cave
 				}
 			}
 		}
+
 
 		unsigned int setcount = args.size() - 2;
 
@@ -197,30 +194,28 @@ namespace lyramilk{ namespace cave
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_SET);
+			k.append_char(redis_leveldb_key::KT_SET);
 			k.append_string(srckey.c_str(),srckey.size());
-			k.append_string("v",1);
+			k.append_char('v');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_STR);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 				leveldb::Slice datakey = it->key();
 				if(!datakey.starts_with(prefix)) break;
-				datakey.remove_prefix(prefix.size());
+				datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 				++storemap[datakey.ToString()];
 			}
 		}
 
-		{
+		/*删除destkey*/{
 			leveldb::ReadOptions ropt;
 
 			const unsigned char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 			for(unsigned int i=0;i<sizeof(types);++i){
 				redis_leveldb_key k(rh.dbprefix(-1));
-				k.append_type(types[i]);
+				k.append_char(types[i]);
 				k.append_string(destkey.c_str(),destkey.size());
 				std::string prefix = k;
-				prefix.push_back(redis_leveldb_key::KEY_STR);
-
 				leveldb_iterator it(rh.ldb->NewIterator(ropt));
 				if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 					if(!it->key().starts_with(prefix)) break;
@@ -257,15 +252,15 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_SET);
+		k.append_char(redis_leveldb_key::KT_SET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("v",1);
+		k.append_char('v');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_STR);
 		if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 			leveldb::Slice datakey = it->key();
 			if(!datakey.starts_with(prefix)) break;
-			datakey.remove_prefix(prefix.size());
+			datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 			if(!cbk(key,datakey,userdata)) return false;
 		}
 		return true;
@@ -279,15 +274,15 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_SET);
+		k.append_char(redis_leveldb_key::KT_SET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("v",1);
+		k.append_char('v');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_STR);
 		if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 			leveldb::Slice datakey = it->key();
 			if(!datakey.starts_with(prefix)) break;
-			datakey.remove_prefix(prefix.size());
+			datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 			if(!cbk(key,datakey,userdata)) return false;
 		}
 		return true;
@@ -317,15 +312,15 @@ namespace lyramilk{ namespace cave
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_SET);
+			k.append_char(redis_leveldb_key::KT_SET);
 			k.append_string(srckey.c_str(),srckey.size());
-			k.append_string("v",1);
+			k.append_char('v');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_STR);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 				leveldb::Slice datakey = it->key();
 				if(!datakey.starts_with(prefix)) break;
-				datakey.remove_prefix(prefix.size());
+				datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 
 				if(i == 0){
 					storemap[lyramilk::data::str(datakey.ToString())] = 0;
@@ -357,15 +352,15 @@ namespace lyramilk{ namespace cave
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_SET);
+			k.append_char(redis_leveldb_key::KT_SET);
 			k.append_string(srckey.c_str(),srckey.size());
-			k.append_string("v",1);
+			k.append_char('v');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_STR);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 				leveldb::Slice datakey = it->key();
 				if(!datakey.starts_with(prefix)) break;
-				datakey.remove_prefix(prefix.size());
+				datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 				++storemap[datakey.ToString()];
 			}
 		}
@@ -394,15 +389,15 @@ namespace lyramilk{ namespace cave
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_SET);
+			k.append_char(redis_leveldb_key::KT_SET);
 			k.append_string(srckey.c_str(),srckey.size());
-			k.append_string("v",1);
+			k.append_char('v');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_STR);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
 				leveldb::Slice datakey = it->key();
 				if(!datakey.starts_with(prefix)) break;
-				datakey.remove_prefix(prefix.size());
+				datakey.remove_prefix(prefix.size() + sizeof(lyramilk::data::uint32));
 				++storemap[datakey.ToString()];
 			}
 		}

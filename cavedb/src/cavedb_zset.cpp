@@ -122,9 +122,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(-1));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 
@@ -139,7 +139,7 @@ namespace lyramilk{ namespace cave
 
 			datakey.remove_prefix(prefix.size());
 			//double s = rh.bytes2double(datakey);
-			datakey.remove_prefix(sizeof(double) + 1);
+			datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
 
 			std::string data_key = rh.encode_zset_data_key(key,lyramilk::data::str(datakey.ToString()));
 			batch.Delete(data_key);
@@ -190,9 +190,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(-1));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 		std::string key_begin;
@@ -214,7 +214,7 @@ namespace lyramilk{ namespace cave
 			if(!score_min_inf && s == score_min && score_min_nobound) continue;
 
 			batch.Delete(it->key());
-			datakey.remove_prefix(sizeof(double) + 1);
+			datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
 
 			std::string data_key = rh.encode_zset_data_key(key,lyramilk::data::str(datakey.ToString()));
 			batch.Delete(data_key);
@@ -324,9 +324,9 @@ namespace lyramilk{ namespace cave
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_ZSET);
+			k.append_char(redis_leveldb_key::KT_ZSET);
 			k.append_string(key.c_str(),key.size());
-			k.append_string("s",1);
+			k.append_char('s');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
@@ -334,7 +334,7 @@ namespace lyramilk{ namespace cave
 				if(!datakey.starts_with(prefix)) break;
 				datakey.remove_prefix(prefix.size());
 				double score = rh.bytes2double(datakey);
-				datakey.remove_prefix(sizeof(double) + 1);
+				datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
 
 				leveldb::Slice tabkey(key.c_str(),key.size());
 				{
@@ -355,10 +355,9 @@ namespace lyramilk{ namespace cave
 		const unsigned char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 		for(unsigned int i=0;i<sizeof(types);++i){
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(types[i]);
+			k.append_char(types[i]);
 			k.append_string(destkey.c_str(),destkey.size());
 			std::string prefix = k;
-			prefix.push_back(redis_leveldb_key::KEY_STR);
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
@@ -470,9 +469,9 @@ namespace lyramilk{ namespace cave
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(redis_leveldb_key::KT_ZSET);
+			k.append_char(redis_leveldb_key::KT_ZSET);
 			k.append_string(key.c_str(),key.size());
-			k.append_string("s",1);
+			k.append_char('s');
 			std::string prefix = k;
 			prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
@@ -480,7 +479,7 @@ namespace lyramilk{ namespace cave
 				if(!datakey.starts_with(prefix)) break;
 				datakey.remove_prefix(prefix.size());
 				double score = rh.bytes2double(datakey);
-				datakey.remove_prefix(sizeof(double) + 1);
+				datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
 
 				leveldb::Slice tabkey(key.c_str(),key.size());
 				{
@@ -502,10 +501,9 @@ namespace lyramilk{ namespace cave
 		const unsigned char types[] = {redis_leveldb_key::KT_BASE,redis_leveldb_key::KT_STRING,redis_leveldb_key::KT_ZSET,redis_leveldb_key::KT_SET,redis_leveldb_key::KT_LIST,redis_leveldb_key::KT_HASH};
 		for(unsigned int i=0;i<sizeof(types);++i){
 			redis_leveldb_key k(rh.dbprefix(-1));
-			k.append_type(types[i]);
+			k.append_char(types[i]);
 			k.append_string(destkey.c_str(),destkey.size());
 			std::string prefix = k;
-			prefix.push_back(redis_leveldb_key::KEY_STR);
 
 			leveldb_iterator it(rh.ldb->NewIterator(ropt));
 			if(it) for(it->Seek(prefix);it->Valid();it->Next()){
@@ -548,9 +546,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 		if(it) for(it->Seek(prefix);it->Valid();it->Next()){
@@ -558,7 +556,7 @@ namespace lyramilk{ namespace cave
 			if(!datakey.starts_with(prefix)) break;
 			datakey.remove_prefix(prefix.size());
 			double score = rh.bytes2double(datakey);
-			datakey.remove_prefix(sizeof(double) + 1);
+			datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
 
 			if(!cbk(key,score,datakey,userdata)) return false;
 		}
@@ -579,9 +577,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 		k.append_double(min);
@@ -607,9 +605,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 		k.append_double(min);
@@ -633,9 +631,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 		k.append_double(max);
@@ -650,6 +648,8 @@ namespace lyramilk{ namespace cave
 				if(!datakey.starts_with(prefix)) break;
 				datakey.remove_prefix(prefix.size());
 				double score = rh.bytes2double(datakey);
+				datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
+
 				if(score < min) break;
 				if(!cbk(key,score,datakey,userdata)) return false;
 			}
@@ -664,9 +664,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 
@@ -676,6 +676,8 @@ namespace lyramilk{ namespace cave
 			leveldb::Slice datakey = it->key();
 			if(!datakey.starts_with(prefix)) break;
 			datakey.remove_prefix(prefix.size());
+			datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
+
 			if(value.size() == datakey.size() && value.compare(0,value.size(),datakey.data(),datakey.size()) == 0) return ret;
 			++ret;
 		}
@@ -689,9 +691,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 
@@ -701,6 +703,8 @@ namespace lyramilk{ namespace cave
 			leveldb::Slice datakey = it->key();
 			if(!datakey.starts_with(prefix)) break;
 			datakey.remove_prefix(prefix.size());
+			datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
+
 			if(value.size() == datakey.size() && value.compare(0,value.size(),datakey.data(),datakey.size()) == 0) return ret;
 			++ret;
 		}
@@ -728,9 +732,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		prefix.push_back(redis_leveldb_key::KEY_DOUBLE);
 		lyramilk::data::int64 index =0;
@@ -740,8 +744,11 @@ namespace lyramilk{ namespace cave
 			if(index <= start) continue;
 			if(index >= stop) break;
 			++index;
+
 			datakey.remove_prefix(prefix.size());
 			double score = rh.bytes2double(datakey);
+			datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
+
 			if(!cbk(key,score,datakey,userdata)) return false;
 		}
 		return true;
@@ -754,9 +761,9 @@ namespace lyramilk{ namespace cave
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 
 		redis_leveldb_key k(rh.dbprefix(dbid));
-		k.append_type(redis_leveldb_key::KT_ZSET);
+		k.append_char(redis_leveldb_key::KT_ZSET);
 		k.append_string(key.c_str(),key.size());
-		k.append_string("s",1);
+		k.append_char('s');
 		std::string prefix = k;
 		std::string key_eof = prefix;
 		key_eof.push_back(redis_leveldb_key::KEY_DOUBLE + 1);
@@ -773,6 +780,8 @@ namespace lyramilk{ namespace cave
 				++index;
 				datakey.remove_prefix(prefix.size());
 				double score = rh.bytes2double(datakey);
+				datakey.remove_prefix(sizeof(double) + 1 + sizeof(lyramilk::data::uint32));
+
 				if(!cbk(key,score,datakey,userdata)) return false;
 			}
 		}
