@@ -15,8 +15,8 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string str;
 		str.reserve(512);
 		char c = 0;
-		while(true){
-			while(true){
+		while(is.good()){
+			while(is.good()){
 				c = is.get();
 label_bodys:
 				if(c >= '0' && c <= '9'){
