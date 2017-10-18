@@ -181,8 +181,8 @@ label_prefix_eq:
 			}
 		}
 
+		if(a.size() == b.size()) return 0;
 		return a.size() < b.size() ? -1 : 1;
-		return 0;
 	}
 	const char* redis_leveldb_comparator::Name() const
 	{
