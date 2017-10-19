@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 1.0.10)
+set(version 1.0.11)
 set(soversion 1.0)
 
 

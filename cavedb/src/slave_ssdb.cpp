@@ -229,6 +229,11 @@ label_bodys:
 							  case BinlogType::CTRL:
 								if(strcmp("OUT_OF_SYNC",reply[0].c_str() + cmdoffset) == 0){
 									log(lyramilk::log::error,"psync") << D("同步错误:%s","OUT_OF_SYNC") << std::endl;
+									lyramilk::data::var::array ar;
+									ar.push_back("flushall");
+									peventhandler->notify_command(psync_replid,0,ar);
+									c.close();
+									continue;
 								}
 								break;
 							  case BinlogType::COPY:

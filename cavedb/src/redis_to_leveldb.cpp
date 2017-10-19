@@ -83,107 +83,80 @@ namespace lyramilk{ namespace cave
 	{
 	}
 
-/*
-	int redis_leveldb_comparator::Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
-	{
-		std::size_t sz = std::min(a.size(),b.size());
-		for(std::size_t i =0;i<sz;++i){
-			unsigned char c = a[i];
-			unsigned char d = b[i];
-			if(c == redis_leveldb_key::KEY_INT && d == redis_leveldb_key::KEY_INT){
-				if(i + sizeof(lyramilk::data::uint64) >= sz){
-					goto label_prefix_eq;
-				}
-				for(unsigned int n=0;n<sizeof(lyramilk::data::uint64);++n){
-					unsigned char c = a[i + n + 1];
-					unsigned char d = b[i + n + 1];
-					if(c < d) return -1;
-					if(c > d) return 1;
-				}
-				i += sizeof(lyramilk::data::uint64);
-			}else if(c == redis_leveldb_key::KEY_RINT && d == redis_leveldb_key::KEY_RINT){
-				if(i + sizeof(lyramilk::data::uint64) >= sz){
-					goto label_prefix_eq;
-				}
-				for(unsigned int n=0;n<sizeof(lyramilk::data::uint64);++n){
-					unsigned char c = a[i + n + 1];
-					unsigned char d = b[i + n + 1];
-					if(c < d) return 1;
-					if(c > d) return -1;
-				}
-				i += sizeof(lyramilk::data::uint64);
-			}else if(c == redis_leveldb_key::KEY_DOUBLE && d == redis_leveldb_key::KEY_DOUBLE){
-				if(i + sizeof(double) >= sz){
-					goto label_prefix_eq;
-				}
-				double c = *(double*)(a.data() + i + 1);
-				double d = *(double*)(b.data() + i + 1);
-				if(c < d) return -1;
-				if(c > d) return 1;
-				i += sizeof(double);
-			}else{
-				if(c < d) return -1;
-				if(c > d) return 1;
-			}
-		}
 
-label_prefix_eq:
-		if(a.size() == b.size()) return 0;
-		return a.size() < b.size() ? -1 : 1;
-	}
-	*/
-	int redis_leveldb_comparator::Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
+	int inline static redis_leveldb_comparator_Compare(leveldb::Slice& a, leveldb::Slice& b)
 	{
-		std::size_t sz = std::min(a.size(),b.size());
-		for(std::size_t i =0;i<sz;++i){
-			unsigned char c = a[i];
-			unsigned char d = b[i];
+		if (a == b) return 0;
+
+		while(a.size() > 0 && b.size() > 0){
+			unsigned char c = a[0];
+			unsigned char d = b[0];
 			if(c != d){
-				if(c < d) return -1;
-				if(c > d) return 1;
+				return c < d ? -1 : 1;
 			}else if(c == redis_leveldb_key::KEY_INT){
-				for(unsigned int n=0;n<sizeof(lyramilk::data::uint64);++n){
-					unsigned char c = a[i + n + 1];
-					unsigned char d = b[i + n + 1];
-					if(c < d) return -1;
-					if(c > d) return 1;
+				if(a.size() < sizeof(lyramilk::data::uint64) || b.size() < sizeof(lyramilk::data::uint64)){
+					return a.compare(b);
 				}
-				i += sizeof(lyramilk::data::uint64);
+				int r = memcmp(a.data()+1,b.data()+1,sizeof(lyramilk::data::uint64));
+				if(r < 0) return -1;
+				if(r > 0) return 1;
+				a.remove_prefix(1 + sizeof(lyramilk::data::uint64));
+				b.remove_prefix(1 + sizeof(lyramilk::data::uint64));
 			}else if(c == redis_leveldb_key::KEY_RINT){
-				for(unsigned int n=0;n<sizeof(lyramilk::data::uint64);++n){
-					unsigned char c = a[i + n + 1];
-					unsigned char d = b[i + n + 1];
-					if(c < d) return 1;
-					if(c > d) return -1;
+				if(a.size() < sizeof(lyramilk::data::uint64) || b.size() < sizeof(lyramilk::data::uint64)){
+					return a.compare(b);
 				}
-				i += sizeof(lyramilk::data::uint64);
+				int r = memcmp(a.data()+1,b.data()+1,sizeof(lyramilk::data::uint64));
+				if(r > 0) return 1;
+				if(r < 0) return -1;
+				a.remove_prefix(1 + sizeof(lyramilk::data::uint64));
+				b.remove_prefix(1 + sizeof(lyramilk::data::uint64));
 			}else if(c == redis_leveldb_key::KEY_DOUBLE){
-				double c = *(double*)(a.data() + i + 1);
-				double d = *(double*)(b.data() + i + 1);
+				if(a.size() < sizeof(double) || b.size() < sizeof(double)){
+					return a.compare(b);
+				}
+				double c = *(double*)(a.data() + 1);
+				double d = *(double*)(b.data() + 1);
 				if(c < d) return -1;
 				if(c > d) return 1;
-				i += sizeof(double);
+				a.remove_prefix(1 + sizeof(double));
+				b.remove_prefix(1 + sizeof(double));
 			}else if(c == redis_leveldb_key::KEY_STR){
-				lyramilk::data::uint32 lc = be32toh(*(lyramilk::data::uint32*)(a.data() + i + 1));
-				lyramilk::data::uint32 ld = be32toh(*(lyramilk::data::uint32*)(b.data() + i + 1));
+				if(a.size() < sizeof(lyramilk::data::uint32) || b.size() < sizeof(lyramilk::data::uint32)){
+					return a.compare(b);
+				}
+				lyramilk::data::uint32 lc = be32toh(*(lyramilk::data::uint32*)(a.data() + 1));
+				lyramilk::data::uint32 ld = be32toh(*(lyramilk::data::uint32*)(b.data() + 1));
 				lyramilk::data::uint32 lm = std::min(lc,ld);
-				int r = memcmp(a.data()+i,b.data()+i,lm);
+				int r = memcmp(a.data()+1+sizeof(lyramilk::data::uint32),b.data()+1+sizeof(lyramilk::data::uint32),lm);
 				if(r < 0) return -1;
 				if(r > 0) return 1;
 				if(lc < ld) return -1;
 				if(lc > ld) return 1;
-				i += sizeof(lyramilk::data::uint32) + lc;
+				a.remove_prefix(1 + sizeof(lyramilk::data::uint32) + lm);
+				b.remove_prefix(1 + sizeof(lyramilk::data::uint32) + lm);
 			}else if(c == redis_leveldb_key::KEY_CHAR){
-				unsigned char c = a[i+1];
-				unsigned char d = b[i+1];
+				unsigned char c = a[1];
+				unsigned char d = b[1];
 				if(c < d) return -1;
 				if(c > d) return 1;
+				a.remove_prefix(1 + 1);
+				b.remove_prefix(1 + 1);
+			}else{
+				return a.compare(b);
 			}
 		}
-
-		if(a.size() == b.size()) return 0;
-		return a.size() < b.size() ? -1 : 1;
+		return a.compare(b);
 	}
+
+	int redis_leveldb_comparator::Compare(const leveldb::Slice& a, const leveldb::Slice& b) const
+	{
+		leveldb::Slice aa = a;
+		leveldb::Slice bb = b;
+		return redis_leveldb_comparator_Compare(aa,bb);
+	}
+
+
 	const char* redis_leveldb_comparator::Name() const
 	{
 		return "cavedb.KeyComparator";
