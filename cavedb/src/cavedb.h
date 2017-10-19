@@ -28,6 +28,12 @@ namespace lyramilk{ namespace cave
 	  public:
 		database();
 		virtual ~database();
+
+		bool init_leveldb(const lyramilk::data::string& leveldbpath,const leveldb::Options& opts);
+
+		bool slaveof_redis(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
+		bool slaveof_ssdb(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
+
 		bool slaveof_redis(const lyramilk::data::string& leveldbpath,const leveldb::Options& opts,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
 		bool slaveof_ssdb(const lyramilk::data::string& leveldbpath,const leveldb::Options& opts,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
 

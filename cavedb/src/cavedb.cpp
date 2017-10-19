@@ -25,6 +25,87 @@ namespace lyramilk{ namespace cave
 
 	static redis_leveldb_comparator cmr;
 
+	bool database::init_leveldb(const lyramilk::data::string& leveldbpath,const leveldb::Options& argopt)
+	{
+		leveldb::Options opt = argopt;
+		opt.comparator = &cmr;
+
+		leveldb::Status ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s\n",ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		if(ldb == nullptr){
+			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败") << std::endl;
+			return false;
+		}
+		redis_cmd_args->init(ldb);
+		redis_cmd_args->userdata = this;
+		return true;
+	}
+
+	bool database::slaveof_redis(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
+	{
+		if(ldb == nullptr){
+			log(lyramilk::log::error,__FUNCTION__) << D("leveldb未初始化") << std::endl;
+			return false;
+		}
+		lyramilk::data::string psync_replid = "?";
+		lyramilk::data::uint64 psync_offset = 0;
+
+		leveldb::ReadOptions ropt;
+
+		std::string replid;
+		leveldb::Status ldbs = ldb->Get(ropt,key_replid,&replid);
+		if(ldbs.ok()){
+			psync_replid = lyramilk::data::str(replid);
+		}
+
+		std::string reploffset;
+		ldbs = ldb->Get(ropt,key_reploffset,&reploffset);
+		if(ldbs.ok()){
+			lyramilk::data::uint64 offset = redis_leveldb_handler::bytes2integer(reploffset);
+			psync_offset = offset;
+		}
+
+		log(lyramilk::log::trace,__FUNCTION__) << D("载入:masterid=%s,offset=%llu",psync_replid.c_str(),psync_offset) << std::endl;
+		slave_redis* r = new slave_redis;
+		r->slaveof(host,port,pwd,psync_replid,psync_offset,this);
+		h = r;
+		return true;
+	}
+
+	bool database::slaveof_ssdb(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
+	{
+		if(ldb == nullptr){
+			log(lyramilk::log::error,__FUNCTION__) << D("leveldb未初始化") << std::endl;
+			return false;
+		}
+		lyramilk::data::string psync_replid = "";
+		lyramilk::data::uint64 psync_offset = 0;
+
+		leveldb::ReadOptions ropt;
+
+		std::string replid;
+		leveldb::Status ldbs = ldb->Get(ropt,key_replid,&replid);
+		if(ldbs.ok()){
+			psync_replid = lyramilk::data::str(replid);
+		}
+
+		std::string reploffset;
+		ldbs = ldb->Get(ropt,key_reploffset,&reploffset);
+		if(ldbs.ok()){
+			lyramilk::data::uint64 offset = redis_leveldb_handler::bytes2integer(reploffset);
+			psync_offset = offset;
+		}
+
+		log(lyramilk::log::trace,__FUNCTION__) << D("载入:last_key=%s,last_seq=%llu",slave_ssdb::hexmem(psync_replid.c_str(),psync_replid.size()).c_str(),psync_offset) << std::endl;
+		slave_ssdb* r = new slave_ssdb;
+		r->slaveof(host,port,pwd,psync_replid,psync_offset,this);
+		h = r;
+		return true;
+	}
+
 	bool database::slaveof_ssdb(const lyramilk::data::string& leveldbpath,const leveldb::Options& argopt,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
 	{
 		lyramilk::data::string psync_replid = "";
