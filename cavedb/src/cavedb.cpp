@@ -120,35 +120,26 @@ namespace lyramilk{ namespace cave
 			log(lyramilk::log::error,__FUNCTION__) << D("leveldb未初始化") << std::endl;
 			return false;
 		}
-COUT << std::endl;
 		lyramilk::data::string psync_replid = "";
 		lyramilk::data::uint64 psync_offset = 0;
 
 		leveldb::ReadOptions ropt;
-COUT << std::endl;
 
 		std::string replid;
 		leveldb::Status ldbs = ldb->Get(ropt,key_replid,&replid);
 		if(ldbs.ok()){
 			psync_replid = lyramilk::data::str(replid);
 		}
-COUT << std::endl;
 
 		std::string reploffset;
-COUT << key_reploffset.ToString() << std::endl;
 		ldbs = ldb->Get(ropt,key_reploffset,&reploffset);
-COUT << std::endl;
 		if(ldbs.ok()){
 			lyramilk::data::uint64 offset = redis_leveldb_handler::bytes2integer(reploffset);
 			psync_offset = offset;
 		}
-COUT << std::endl;
 		log(lyramilk::log::trace,__FUNCTION__) << D("载入:last_key=%s,last_seq=%llu",slave_ssdb::hexmem(psync_replid.c_str(),psync_replid.size()).c_str(),psync_offset) << std::endl;
-COUT << std::endl;
 		slave_ssdb* r = new slave_ssdb;
-COUT << std::endl;
 		r->slaveof(host,port,pwd,psync_replid,psync_offset,this);
-COUT << std::endl;
 		h = r;
 		return true;
 	}
