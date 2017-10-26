@@ -29,6 +29,7 @@ namespace lyramilk{ namespace cave
 		leveldb::DB* ldb;
 		leveldb::ReadOptions ropt;
 	  public:
+		static std::string cfver;
 		static lyramilk::data::int64 mstime();
 		static std::string double2bytes(double s);
 		static double bytes2double(const lyramilk::data::string& str);

@@ -213,6 +213,13 @@ namespace lyramilk{ namespace cave
 		}*/
 	}
 
+
+
+
+
+	std::string redis_leveldb_handler::cfver = "0";
+
+
 	redis_leveldb_handler::redis_leveldb_handler()
 	{
 		userdata = nullptr;

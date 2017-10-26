@@ -28,15 +28,12 @@ namespace lyramilk{ namespace cave
 		leveldb::ReadOptions ropt;
 		leveldb::WriteOptions wopt;
 
-		std::string formatseq;
-		rh.ldb->Get(ropt,".cfver",&formatseq);
-
 		leveldb_iterator it(rh.ldb->NewIterator(ropt));
 		if(it) for(it->SeekToFirst();it->Valid();it->Next()){
 			rh.ldb->Delete(wopt,it->key());
 		}
 		rh.ldb->CompactRange(nullptr,nullptr);
-		rh.ldb->Put(wopt,".cfver",formatseq);
+		rh.ldb->Put(wopt,".cfver",redis_leveldb_handler::cfver);
 		batch.Clear();
 	}
 

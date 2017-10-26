@@ -70,6 +70,7 @@ label_bodys:
 
 	slave_ssdb::~slave_ssdb()
 	{
+		status = st_stop;
 	}
 
 	lyramilk::data::uint64 slave_ssdb::tell_offset()
@@ -232,6 +233,8 @@ label_bodys:
 									lyramilk::data::var::array ar;
 									ar.push_back("flushall");
 									peventhandler->notify_command(psync_replid,0,ar);
+									psync_offset = 0;
+									psync_replid = "";
 									c.close();
 									continue;
 								}

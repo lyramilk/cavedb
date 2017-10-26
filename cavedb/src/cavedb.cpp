@@ -40,13 +40,11 @@ namespace lyramilk{ namespace cave
 			return false;
 		}
 
-		std::string myformatseq = "0";
-
 		leveldb::ReadOptions ropt;
 		std::string formatseq;
 		ldbs = ldb->Get(ropt,".cfver",&formatseq);
 		if(ldbs.ok() || ldbs.IsNotFound()){
-			if(formatseq != myformatseq){
+			if(formatseq != redis_leveldb_handler::cfver){
 				delete ldb;
 				ldb = nullptr;
 				log(lyramilk::log::warning,__FUNCTION__) << D("leveldb需要重新初始化") << std::endl;
@@ -65,7 +63,7 @@ namespace lyramilk{ namespace cave
 					return false;
 				}
 
-				ldbs = ldb->Put(wopt,".cfver",myformatseq);
+				ldbs = ldb->Put(wopt,".cfver",redis_leveldb_handler::cfver);
 				if(!ldbs.ok()){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 					return false;
@@ -184,7 +182,7 @@ namespace lyramilk{ namespace cave
 					log(lyramilk::log::warning,__FUNCTION__) << D("完成:") << args << D("%.3f (msec)",mseccost) << std::endl;
 				}else{
 #ifdef _DEBUG
-					log(lyramilk::log::debug,__FUNCTION__) << D("完成:") << args << D("%.3f (msec) seq=%lld",mseccost,offset) << std::endl;
+					//log(lyramilk::log::debug,__FUNCTION__) << D("完成:") << args << D("%.3f (msec) seq=%lld",mseccost,offset) << std::endl;
 #endif
 				}
 			}else{
