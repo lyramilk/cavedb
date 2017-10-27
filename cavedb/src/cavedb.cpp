@@ -2,9 +2,12 @@
 #include "slave_redis.h"
 #include "slave_ssdb.h"
 #include "redis_to_leveldb.h"
+#include "leveldb_util.h"
 #include <libmilk/multilanguage.h>
 #include <libmilk/testing.h>
-
+#include <leveldb/db.h>
+#include <leveldb/filter_policy.h>
+#include <leveldb/cache.h>
 namespace lyramilk{ namespace cave
 {
 	const static leveldb::Slice key_replid("repl:id");
@@ -25,10 +28,36 @@ namespace lyramilk{ namespace cave
 
 	static redis_leveldb_comparator cmr;
 
-	bool database::init_leveldb(const lyramilk::data::string& leveldbpath,const leveldb::Options& argopt)
+	bool database::init_leveldb(const lyramilk::data::string& leveldbpath)
 	{
-		leveldb::Options opt = argopt;
+		leveldb::Options opt;
+
+		int cache_size = 500;		//MB	16
+		int block_size = 32;		//KB	16
+		int write_buffer_size = 64;	//MB	16
+		int max_open_files = cache_size / 1024 * 300;
+		if(max_open_files < 500){
+			max_open_files = 500;
+		}
+		if(max_open_files > 1000){
+			max_open_files = 1000;
+		}
+
+		opt.create_if_missing = true;
+		opt.max_open_files = max_open_files;
+		opt.filter_policy = leveldb::NewBloomFilterPolicy(10);
+		opt.block_cache = leveldb::NewLRUCache(cache_size * 1024 * 1024);
+		opt.block_size = block_size * 1024;
+		opt.write_buffer_size = write_buffer_size * 1024 * 1024;
+		opt.compression = leveldb::kSnappyCompression;
+
+
 		opt.comparator = &cmr;
+
+		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
+		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
+		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
+		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.compression=" << opt.compression << std::endl;
 
 		leveldb::Status ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
 		if(!ldbs.ok()){
@@ -43,12 +72,13 @@ namespace lyramilk{ namespace cave
 		leveldb::ReadOptions ropt;
 		std::string formatseq;
 		ldbs = ldb->Get(ropt,".cfver",&formatseq);
+		log(lyramilk::log::debug,__FUNCTION__) << D("cfver=%.*s",redis_leveldb_handler::cfver.size(),redis_leveldb_handler::cfver.c_str()) << std::endl;
 		if(ldbs.ok() || ldbs.IsNotFound()){
 			if(formatseq != redis_leveldb_handler::cfver){
 				delete ldb;
 				ldb = nullptr;
-				log(lyramilk::log::warning,__FUNCTION__) << D("leveldb需要重新初始化") << std::endl;
-				leveldb::Status ldbs = DestroyDB(leveldbpath.c_str(),argopt);
+				log(lyramilk::log::warning,__FUNCTION__) << D("leveldb需要重新初始化[%.*s]与[%.*s]不匹配",formatseq.size(),formatseq.c_str(),redis_leveldb_handler::cfver.size(),redis_leveldb_handler::cfver.c_str()) << std::endl;
+				leveldb::Status ldbs = DestroyDB(leveldbpath.c_str(),opt);
 				if(!ldbs.ok()){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 					return false;
@@ -63,6 +93,7 @@ namespace lyramilk{ namespace cave
 					return false;
 				}
 
+				leveldb::WriteOptions wopt;
 				ldbs = ldb->Put(wopt,".cfver",redis_leveldb_handler::cfver);
 				if(!ldbs.ok()){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
@@ -142,18 +173,17 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool database::slaveof_ssdb(const lyramilk::data::string& leveldbpath,const leveldb::Options& argopt,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
+	bool database::slaveof_ssdb(const lyramilk::data::string& leveldbpath,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
 	{
-		//return init_leveldb(leveldbpath,argopt) && slaveof_ssdb(host,port,pwd);
-		if(init_leveldb(leveldbpath,argopt)){
+		if(init_leveldb(leveldbpath)){
 			return slaveof_ssdb(host,port,pwd);
 		}
 		return false;
 	}
 
-	bool database::slaveof_redis(const lyramilk::data::string& leveldbpath,const leveldb::Options& argopt,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
+	bool database::slaveof_redis(const lyramilk::data::string& leveldbpath,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
 	{
-		return init_leveldb(leveldbpath,argopt) && slaveof_redis(host,port,pwd);
+		return init_leveldb(leveldbpath) && slaveof_redis(host,port,pwd);
 	}
 
 	void database::notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
@@ -172,6 +202,7 @@ namespace lyramilk{ namespace cave
 
 			h(*redis_cmd_args,batch,args);
 
+			leveldb::WriteOptions wopt;
 			leveldb::Status ldbs = ldb->Write(wopt,&batch);
 			if(ldbs.ok()){
 				double mseccost = double(td.diff()) / 1000000;
@@ -195,6 +226,7 @@ namespace lyramilk{ namespace cave
 
 	bool database::notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
 	{
+		leveldb::WriteOptions wopt;
 		leveldb::Status ldbs = ldb->Put(wopt,key_replid,leveldb::Slice(replid.c_str(),replid.size()));
 		if(!ldbs.ok()) return false;
 		ldbs = ldb->Put(wopt,key_reploffset,redis_leveldb_handler::integer2bytes(offset));

@@ -1,5 +1,6 @@
 #include "cavedb.h"
 #include "redis_to_leveldb.h"
+#include "leveldb_util.h"
 #include <stdlib.h>
 #include <algorithm>
 

@@ -1,6 +1,7 @@
 #include "cavedb.h"
 #include "rdb.h"
 #include "redis_to_leveldb.h"
+#include "leveldb_util.h"
 #include <libmilk/multilanguage.h>
 #include <libmilk/log.h>
 #include <libmilk/testing.h>

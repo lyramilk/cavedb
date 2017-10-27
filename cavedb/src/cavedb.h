@@ -1,12 +1,14 @@
 #ifndef _casedb_casedb_h_
 #define _casedb_casedb_h_
 
-#include <leveldb/db.h>
+#include "slice.h"
 #include <libmilk/var.h>
 #include <libmilk/log.h>
 #include <libmilk/iterator.h>
 #include "slave.h"
-#include "leveldb_util.h"
+namespace leveldb{
+	class DB;
+}
 
 namespace lyramilk{ namespace cave
 {
@@ -20,7 +22,7 @@ namespace lyramilk{ namespace cave
 	class database:public lyramilk::cave::slave
 	{
 		leveldb::DB* ldb;
-		leveldb::WriteOptions wopt;
+		//leveldb::WriteOptions wopt;
 		redis_leveldb_handler* redis_cmd_args;
 		time_t lastcompat;
 		lyramilk::log::logss log;
@@ -29,13 +31,13 @@ namespace lyramilk{ namespace cave
 		database();
 		virtual ~database();
 
-		bool init_leveldb(const lyramilk::data::string& leveldbpath,const leveldb::Options& opts);
+		bool init_leveldb(const lyramilk::data::string& leveldbpath);
 
 		bool slaveof_redis(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
 		bool slaveof_ssdb(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
 
-		bool slaveof_redis(const lyramilk::data::string& leveldbpath,const leveldb::Options& opts,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
-		bool slaveof_ssdb(const lyramilk::data::string& leveldbpath,const leveldb::Options& opts,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
+		bool slaveof_redis(const lyramilk::data::string& leveldbpath,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
+		bool slaveof_ssdb(const lyramilk::data::string& leveldbpath,const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
 
 		void dump(std::ostream& os);
 		//key
