@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 1.0.14)
+set(version 1.0.15)
 set(soversion 1.0)
 
 
@@ -138,6 +138,7 @@ endif()
 #对leveldb的依赖
 execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
 execute_process(COMMAND  make -C ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/include/)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libleveldb.a ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libmemenv.a)
 
 

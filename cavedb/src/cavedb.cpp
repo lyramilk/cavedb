@@ -49,6 +49,7 @@ namespace lyramilk{ namespace cave
 		opt.block_cache = leveldb::NewLRUCache(cache_size * 1024 * 1024);
 		opt.block_size = block_size * 1024;
 		opt.write_buffer_size = write_buffer_size * 1024 * 1024;
+		opt.max_file_size = 32 * 1024 * 1024;
 		opt.compression = leveldb::kSnappyCompression;
 
 
