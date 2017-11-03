@@ -8,6 +8,8 @@
 #include <leveldb/db.h>
 #include <leveldb/filter_policy.h>
 #include <leveldb/cache.h>
+#include <unistd.h>
+
 namespace lyramilk{ namespace cave
 {
 	const static leveldb::Slice key_replid("repl:id");
@@ -22,8 +24,9 @@ namespace lyramilk{ namespace cave
 
 	database::~database()
 	{
-		delete redis_cmd_args;
-		delete h;
+		if(redis_cmd_args) delete redis_cmd_args;
+		if(h) delete h;
+		if(ldb) delete ldb;
 	}
 
 	static redis_leveldb_comparator cmr;
@@ -110,11 +113,25 @@ namespace lyramilk{ namespace cave
 
 		redis_cmd_args->init(ldb);
 		redis_cmd_args->userdata = this;
+		initpid = getpid();
+		this->leveldbpath = leveldbpath;
 		return true;
 	}
 
 	bool database::slaveof_redis(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
 	{
+		if(initpid != getpid()){
+			if(redis_cmd_args) delete redis_cmd_args;
+			redis_cmd_args = new redis_leveldb_handler;
+			if(ldb) delete ldb;
+			ldb = nullptr;
+			if(!init_leveldb(leveldbpath)){
+				log(lyramilk::log::error,__FUNCTION__) << D("禁止在fork/daemon之前初始化leveldb") << std::endl;
+				return false;
+			}
+			log(lyramilk::log::warning,__FUNCTION__) << D("leveldb需要重新初始化，因为leveldb不是当前进程初始化的。") << std::endl;
+		}
+
 		if(ldb == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("leveldb未初始化") << std::endl;
 			return false;
@@ -146,6 +163,18 @@ namespace lyramilk{ namespace cave
 
 	bool database::slaveof_ssdb(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
 	{
+		if(initpid != getpid()){
+			if(redis_cmd_args) delete redis_cmd_args;
+			redis_cmd_args = new redis_leveldb_handler;
+			if(ldb) delete ldb;
+			ldb = nullptr;
+			if(!init_leveldb(leveldbpath)){
+				log(lyramilk::log::error,__FUNCTION__) << D("禁止在fork/daemon之前初始化leveldb") << std::endl;
+				return false;
+			}
+			log(lyramilk::log::warning,__FUNCTION__) << D("leveldb需要重新初始化，因为leveldb不是当前进程初始化的。") << std::endl;
+		}
+
 		if(ldb == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("leveldb未初始化") << std::endl;
 			return false;

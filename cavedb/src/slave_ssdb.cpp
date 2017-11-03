@@ -86,7 +86,7 @@ label_bodys:
 		this->peventhandler = peventhandler;
 		this->psync_replid = psync_replid;
 		this->psync_offset = psync_offset;
-		active(2);
+		active(1);
 	}
 
 	lyramilk::data::string slave_ssdb::hexmem(const void *p, int size)
@@ -190,77 +190,69 @@ label_bodys:
 
 	int slave_ssdb::svc()
 	{
-		unsigned int tid = __sync_add_and_fetch(&loadsum,1);
-		
-		if(tid==1){
-			while(status != st_stop){
-				sleep(1);
-			}
-		}else{
-			unsigned int k = 5;
-			while(status != st_stop){
-				try{
-					if(!(is.good() && c.isalive())){
-						reconnect();
-						lyramilk::data::var::array ar;
-						ar.push_back("sync140");
-						ar.push_back(psync_offset);
-						ar.push_back(psync_replid);
-						ar.push_back("sync");
-						if(!push(ar)){
-							c.close();
-							continue;
-						}
+		unsigned int k = 5;
+		while(status != st_stop){
+			try{
+				if(!(is.good() && c.isalive())){
+					reconnect();
+					lyramilk::data::var::array ar;
+					ar.push_back("sync140");
+					ar.push_back(psync_offset);
+					ar.push_back(psync_replid);
+					ar.push_back("sync");
+					if(!push(ar)){
+						c.close();
+						continue;
 					}
-					if(c.check_read(800)){
-						lyramilk::data::strings reply;
-						//parse_ssdb2(is,reply);
-						pop(&reply);
-						if(reply.size() > 0){
-							lyramilk::data::uint64 seq = *(lyramilk::data::uint64*)reply[0].c_str();
-							char type = reply[0].c_str()[sizeof(lyramilk::data::uint64)];
-							char cmd = reply[0].c_str()[sizeof(lyramilk::data::uint64) + 1];
-							const static int cmdoffset = sizeof(lyramilk::data::uint64) + 1 + 1;
-							switch(type){
-							  case BinlogType::NOOP:
-								if(++k % 5 == 0){
-									proc_noop(seq);
-								}
-								break;
-							  case BinlogType::CTRL:
-								if(strcmp("OUT_OF_SYNC",reply[0].c_str() + cmdoffset) == 0){
-									log(lyramilk::log::error,"psync") << D("同步错误:%s","OUT_OF_SYNC") << std::endl;
-									lyramilk::data::var::array ar;
-									ar.push_back("flushall");
-									peventhandler->notify_command(psync_replid,0,ar);
-									psync_offset = 0;
-									psync_replid = "";
-									c.close();
-									continue;
-								}
-								break;
-							  case BinlogType::COPY:
-								proc_copy(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply);
-								break;
-							  case BinlogType::SYNC:
-							  case BinlogType::MIRROR:
-								psync_offset = seq;
-								proc_sync(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply);
-								break;
-							}
-						}
-					}else{
-						//log(lyramilk::log::warning,"psync") << D("负载%f",loadcoff) << std::endl;
-						/*
-						if(loadcoff * loadcoff * 10 < loadalive){
-							psync_offset = is.rseq() + psync_rseq_diff;
-							peventhandler->notify_idle(psync_replid,psync_offset);
-							loadalive = 1;
-						}*/
-					}
-				}catch(lyramilk::exception& e){
-					log(lyramilk::log::error,"psync.catch") << e.what() << std::endl;
 				}
+				if(c.check_read(800)){
+					lyramilk::data::strings reply;
+					//parse_ssdb2(is,reply);
+					pop(&reply);
+					if(reply.size() > 0){
+						lyramilk::data::uint64 seq = *(lyramilk::data::uint64*)reply[0].c_str();
+						char type = reply[0].c_str()[sizeof(lyramilk::data::uint64)];
+						char cmd = reply[0].c_str()[sizeof(lyramilk::data::uint64) + 1];
+						const static int cmdoffset = sizeof(lyramilk::data::uint64) + 1 + 1;
+						switch(type){
+						  case BinlogType::NOOP:
+							if(++k % 5 == 0){
+								proc_noop(seq);
+							}
+							break;
+						  case BinlogType::CTRL:
+							if(strcmp("OUT_OF_SYNC",reply[0].c_str() + cmdoffset) == 0){
+								log(lyramilk::log::error,"psync") << D("同步错误:%s","OUT_OF_SYNC") << std::endl;
+								lyramilk::data::var::array ar;
+								ar.push_back("flushall");
+								peventhandler->notify_command(psync_replid,0,ar);
+								psync_offset = 0;
+								psync_replid = "";
+								c.close();
+								continue;
+							}
+							break;
+						  case BinlogType::COPY:
+							proc_copy(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply);
+							break;
+						  case BinlogType::SYNC:
+						  case BinlogType::MIRROR:
+							psync_offset = seq;
+							proc_sync(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply);
+							break;
+						}
+					}
+				}else{
+					//log(lyramilk::log::warning,"psync") << D("负载%f",loadcoff) << std::endl;
+					/*
+					if(loadcoff * loadcoff * 10 < loadalive){
+						psync_offset = is.rseq() + psync_rseq_diff;
+						peventhandler->notify_idle(psync_replid,psync_offset);
+						loadalive = 1;
+					}*/
+				}
+			}catch(lyramilk::exception& e){
+				log(lyramilk::log::error,"psync.catch") << e.what() << std::endl;
 			}
 		}
 		log(lyramilk::log::error,"psync") << D("同步线程退出") << std::endl;

@@ -27,6 +27,8 @@ namespace lyramilk{ namespace cave
 		time_t lastcompat;
 		lyramilk::log::logss log;
 		lyramilk::threading::threads *h;
+		int initpid;
+		lyramilk::data::string leveldbpath;
 	  public:
 		database();
 		virtual ~database();
