@@ -19,6 +19,7 @@ namespace lyramilk{ namespace cave
 	{
 		ldb = nullptr;
 		redis_cmd_args = new redis_leveldb_handler;
+		redis_cmd_args->userdata = this;
 		h = nullptr;
 	}
 
@@ -61,6 +62,7 @@ namespace lyramilk{ namespace cave
 		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
 		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
 		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
+		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_file_size=" << opt.max_file_size << std::endl;
 		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.compression=" << opt.compression << std::endl;
 
 		leveldb::Status ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
@@ -112,7 +114,6 @@ namespace lyramilk{ namespace cave
 		}
 
 		redis_cmd_args->init(ldb);
-		redis_cmd_args->userdata = this;
 		initpid = getpid();
 		this->leveldbpath = leveldbpath;
 		return true;
@@ -121,15 +122,8 @@ namespace lyramilk{ namespace cave
 	bool database::slaveof_redis(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
 	{
 		if(initpid != getpid()){
-			if(redis_cmd_args) delete redis_cmd_args;
-			redis_cmd_args = new redis_leveldb_handler;
-			if(ldb) delete ldb;
-			ldb = nullptr;
-			if(!init_leveldb(leveldbpath)){
-				log(lyramilk::log::error,__FUNCTION__) << D("禁止在fork/daemon之前初始化leveldb") << std::endl;
-				return false;
-			}
-			log(lyramilk::log::warning,__FUNCTION__) << D("leveldb需要重新初始化，因为leveldb不是当前进程初始化的。") << std::endl;
+			log(lyramilk::log::error,__FUNCTION__) << D("禁止使用在fork/daemon之前初始化的leveldb") << std::endl;
+			return false;
 		}
 
 		if(ldb == nullptr){
@@ -164,15 +158,8 @@ namespace lyramilk{ namespace cave
 	bool database::slaveof_ssdb(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd)
 	{
 		if(initpid != getpid()){
-			if(redis_cmd_args) delete redis_cmd_args;
-			redis_cmd_args = new redis_leveldb_handler;
-			if(ldb) delete ldb;
-			ldb = nullptr;
-			if(!init_leveldb(leveldbpath)){
-				log(lyramilk::log::error,__FUNCTION__) << D("禁止在fork/daemon之前初始化leveldb") << std::endl;
-				return false;
-			}
-			log(lyramilk::log::warning,__FUNCTION__) << D("leveldb需要重新初始化，因为leveldb不是当前进程初始化的。") << std::endl;
+			log(lyramilk::log::error,__FUNCTION__) << D("禁止使用在fork/daemon之前初始化的leveldb") << std::endl;
+			return false;
 		}
 
 		if(ldb == nullptr){
