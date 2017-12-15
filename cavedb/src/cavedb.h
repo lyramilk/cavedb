@@ -31,6 +31,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string leveldbpath;
 	  protected:
 		bool init_leveldb(const lyramilk::data::string& leveldbpath);
+		bool init_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 
 		bool slaveof_redis(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);
 		bool slaveof_ssdb(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd);

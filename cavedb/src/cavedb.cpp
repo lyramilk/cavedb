@@ -32,14 +32,17 @@ namespace lyramilk{ namespace cave
 
 	static redis_leveldb_comparator cmr;
 
-	bool database::init_leveldb(const lyramilk::data::string& leveldbpath)
+	bool database::init_leveldb(const lyramilk::data::string& leveldbpath){
+		return init_leveldb(leveldbpath,1000);
+	}
+
+	bool database::init_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB)
 	{
 		leveldb::Options opt;
 
-		int cache_size = 5000;		//MB	16
 		int block_size = 32;		//KB	16
 		int write_buffer_size = 64;	//MB	16
-		int max_open_files = cache_size / 1024 * 300;
+		int max_open_files = cache_size_MB / 1024 * 300;
 		if(max_open_files < 500){
 			max_open_files = 500;
 		}
@@ -50,7 +53,7 @@ namespace lyramilk{ namespace cave
 		opt.create_if_missing = true;
 		opt.max_open_files = max_open_files;
 		opt.filter_policy = leveldb::NewBloomFilterPolicy(10);
-		opt.block_cache = leveldb::NewLRUCache(cache_size * 1024 * 1024);
+		opt.block_cache = leveldb::NewLRUCache(cache_size_MB * 1024 * 1024);
 		opt.block_size = block_size * 1024;
 		opt.write_buffer_size = write_buffer_size * 1024 * 1024;
 		opt.max_file_size = 32 * 1024 * 1024;
