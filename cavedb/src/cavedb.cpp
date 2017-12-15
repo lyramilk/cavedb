@@ -36,7 +36,7 @@ namespace lyramilk{ namespace cave
 	{
 		leveldb::Options opt;
 
-		int cache_size = 500;		//MB	16
+		int cache_size = 5000;		//MB	16
 		int block_size = 32;		//KB	16
 		int write_buffer_size = 64;	//MB	16
 		int max_open_files = cache_size / 1024 * 300;
