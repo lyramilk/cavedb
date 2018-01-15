@@ -3,8 +3,9 @@
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>
-#include "store.h"
-#include <leveldb/db.h>
+#include "../store.h"
+
+namespace leveldb{class DB;};
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
@@ -12,8 +13,6 @@ namespace lyramilk{ namespace cave
 	class leveldb_minimal:public lyramilk::cave::store
 	{
 		leveldb::DB* ldb;
-		leveldb::ReadOptions ropt;
-		leveldb::WriteOptions wopt;
 	  protected:
 		virtual bool notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 		// db

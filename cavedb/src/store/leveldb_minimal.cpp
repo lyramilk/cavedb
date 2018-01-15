@@ -13,6 +13,8 @@ namespace lyramilk{ namespace cave
 {
 	lyramilk::log::logss static log(lyramilk::klog,"lyramilk.cave.store.leveldb_minimal");
 	const std::string leveldb_minimal::cfver = "1_mininal";
+	leveldb::ReadOptions ropt;
+	leveldb::WriteOptions wopt;
 
 	static const char* key_sync = ".sync.key";
 
@@ -272,5 +274,4 @@ namespace lyramilk{ namespace cave
 
 		return result;
 	}
-
 }}

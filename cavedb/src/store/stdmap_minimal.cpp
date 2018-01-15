@@ -34,16 +34,10 @@ namespace lyramilk{ namespace cave
 
 	void stdmap_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		lyramilk::threading::mutex_sync _(lock.r());
-		std::map<std::string,mapeddata>::iterator it = data.find(args[1]);
-		it->second.expire = args[1];
 	}
 
 	void stdmap_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		lyramilk::threading::mutex_sync _(lock.r());
-		std::map<std::string,mapeddata>::iterator it = data.find(args[1]);
-		it->second.expire = 0;
 	}
 
 	void stdmap_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
@@ -55,31 +49,14 @@ namespace lyramilk{ namespace cave
 
 	void stdmap_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		std::map<std::string,mapeddata>::iterator it;
-		{
-			lyramilk::threading::mutex_sync _(lock.r());
-			it = data.find(args[1]);
-		}
-		if(it == data.end()){
-			lyramilk::threading::mutex_sync _(lock.w());
-			data[args[1] ].data[args[2] ] = args[3].str();
-		}else{
-			lyramilk::threading::mutex_sync _(it->second.lock.w());
-			it->second.data[args[2]] = args[3].str();
-		}
+		lyramilk::threading::mutex_sync _(lock.w());
+		data[args[1]][args[2]] = args[3].str();
 	}
 
 	void stdmap_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		std::map<std::string,mapeddata>::iterator it;
-		{
-			lyramilk::threading::mutex_sync _(lock.r());
-			it = data.find(args[1]);
-		}
-		if(it != data.end()){
-			lyramilk::threading::mutex_sync _(it->second.lock.w());
-			it->second.data.erase(args[2]);
-		}
+		lyramilk::threading::mutex_sync _(lock.w());
+		data[args[1]].erase(args[2]);
 	}
 
 	stdmap_minimal::stdmap_minimal()
@@ -92,35 +69,25 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::string stdmap_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field)
 	{
-		std::map<std::string,mapeddata>::iterator it;
-		{
-			lyramilk::threading::mutex_sync _(lock.r());
-			it = data.find(key);
-		}
+		lyramilk::threading::mutex_sync _(lock.r());
+		std::map<std::string,std::tr1::unordered_map<std::string,std::string> >::iterator it = data.find(key);
 		if(it == data.end()) return "";
-		lyramilk::threading::mutex_sync _(it->second.lock.r());
-		std::map<std::string,std::string>::const_iterator subit = it->second.data.find(field);
+		std::tr1::unordered_map<std::string,std::string>::const_iterator subit = it->second.find(field);
+		if(subit==it->second.end()) return "";
 		return subit->second;
 	}
 
 	lyramilk::data::var::map stdmap_minimal::hgetall(const lyramilk::data::string& key)
 	{
-		std::map<std::string,mapeddata>::iterator it;
-		{
-			lyramilk::threading::mutex_sync _(lock.r());
-			it = data.find(key);
-		}
-		if(it == data.end()) return lyramilk::data::var::map();
-
-		lyramilk::threading::mutex_sync _(it->second.lock.r());
-		std::map<std::string,std::string>::const_iterator subit = it->second.data.begin();
-
 		lyramilk::data::var::map m;
-		for(;subit!=it->second.data.end();++subit){
+		lyramilk::threading::mutex_sync _(lock.r());
+		std::map<std::string,std::tr1::unordered_map<std::string,std::string> >::iterator it = data.find(key);
+		if(it == data.end()) return m;
+		std::tr1::unordered_map<std::string,std::string>::const_iterator subit = it->second.begin();
+		for(;subit!=it->second.end();++subit){
 			m[subit->first] = subit->second;
 		
 		}
-
 		return m;
 	}
 

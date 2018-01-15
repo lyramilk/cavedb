@@ -3,20 +3,15 @@
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>
-#include "store.h"
+#include <tr1/unordered_map>
+#include "../store.h"
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
 	class stdmap_minimal:public lyramilk::cave::store
 	{
-		struct mapeddata
-		{
-			lyramilk::data::int64 expire;
-			std::map<std::string,std::string> data;
-			mutable lyramilk::threading::mutex_rw lock;
-		};
-		std::map<std::string,mapeddata> data;
+		std::map<std::string,std::tr1::unordered_map<std::string,std::string> > data;
 		mutable lyramilk::threading::mutex_rw lock;
 	  protected:
 		virtual bool notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
