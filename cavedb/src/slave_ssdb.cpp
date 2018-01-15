@@ -6,6 +6,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <endian.h>
+
+
+const uint64_t QFRONT_SEQ = 2;
+const uint64_t QBACK_SEQ  = 3;
+const uint64_t QITEM_MIN_SEQ = 10000;
+const uint64_t QITEM_MAX_SEQ = 9223372036854775807ULL;
+const uint64_t QITEM_SEQ_INIT = QITEM_MAX_SEQ/2;
+
 
 namespace lyramilk{ namespace cave
 {
@@ -190,7 +199,6 @@ label_bodys:
 
 	int slave_ssdb::svc()
 	{
-		unsigned int k = 5;
 		while(status != st_stop){
 			try{
 				if(!(is.good() && c.isalive())){
@@ -205,7 +213,7 @@ label_bodys:
 						continue;
 					}
 				}
-				if(c.check_read(800)){
+				if(c.check_read(5000)){
 					lyramilk::data::strings reply;
 					//parse_ssdb2(is,reply);
 					pop(&reply);
@@ -216,9 +224,7 @@ label_bodys:
 						const static int cmdoffset = sizeof(lyramilk::data::uint64) + 1 + 1;
 						switch(type){
 						  case BinlogType::NOOP:
-							if(++k % 5 == 0){
 								proc_noop(seq);
-							}
 							break;
 						  case BinlogType::CTRL:
 							if(strcmp("OUT_OF_SYNC",reply[0].c_str() + cmdoffset) == 0){
@@ -243,13 +249,7 @@ label_bodys:
 						}
 					}
 				}else{
-					//log(lyramilk::log::warning,"psync") << D("负载%f",loadcoff) << std::endl;
-					/*
-					if(loadcoff * loadcoff * 10 < loadalive){
-						psync_offset = is.rseq() + psync_rseq_diff;
-						peventhandler->notify_idle(psync_replid,psync_offset);
-						loadalive = 1;
-					}*/
+					peventhandler->notify_idle(psync_replid,psync_offset);
 				}
 			}catch(lyramilk::exception& e){
 				log(lyramilk::log::error,"psync.catch") << e.what() << std::endl;
@@ -261,8 +261,8 @@ label_bodys:
 
 	void slave_ssdb::proc_noop(lyramilk::data::uint64 seq)
 	{
-		//log(lyramilk::log::debug,"proc_noop") << D("空闲") << std::endl;
-		//peventhandler->notify_idle(psync_replid,psync_offset);
+		log(lyramilk::log::debug,"proc_noop") << D("空闲") << std::endl;
+		peventhandler->notify_idle(psync_replid,psync_offset);
 	}
 
 	void slave_ssdb::proc_copy(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args)
@@ -299,6 +299,7 @@ label_bodys:
 				lyramilk::data::string tab(p+1,l-1);
 
 				lyramilk::data::var::array ar;
+				ar.reserve(3);
 				ar.push_back("set");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
@@ -310,6 +311,7 @@ label_bodys:
 				lyramilk::data::string tab(p+1,l-1);
 
 				lyramilk::data::var::array ar;
+				ar.reserve(3);
 				ar.push_back("del");
 				ar.push_back(tab);
 				peventhandler->notify_command(psync_replid,psync_offset,ar);
@@ -326,6 +328,7 @@ label_bodys:
 				lyramilk::data::string key(1+p+1+len+1,l-2-len-1);
 
 				lyramilk::data::var::array ar;
+				ar.reserve(4);
 				ar.push_back("hset");
 				ar.push_back(tab);
 				ar.push_back(key);
@@ -340,6 +343,7 @@ label_bodys:
 				lyramilk::data::string key(1+p+1+len+1,l-2-len-1);
 
 				lyramilk::data::var::array ar;
+				ar.reserve(3);
 				ar.push_back("hdel");
 				ar.push_back(tab);
 				ar.push_back(key);
@@ -359,6 +363,7 @@ label_bodys:
 				lyramilk::data::string key(1+p+1+len+1,len2);
 
 				lyramilk::data::var::array ar;
+				ar.reserve(4);
 				ar.push_back("zadd");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
@@ -374,6 +379,7 @@ label_bodys:
 				lyramilk::data::string key(1+p+1+len+1,len2);
 
 				lyramilk::data::var::array ar;
+				ar.reserve(3);
 				ar.push_back("zrem");
 				ar.push_back(tab);
 				ar.push_back(key);
@@ -383,12 +389,18 @@ label_bodys:
 		  case BinlogCommand::QPUSH_BACK:
 			{
 				if(args.size() != 2){
-					log(lyramilk::log::error,"psync") << D("同步错误:lpush 参数过少") << std::endl;
+					log(lyramilk::log::error,"psync") << D("同步错误:rpush 参数过少") << std::endl;
 					break;
 				}
 				unsigned int len = (unsigned int)p[1];
 				lyramilk::data::string tab(1+p+1,len);
+				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
+				unsigned long long qseq = be64toh(qseq_net);
+				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
+					break;
+				}
 				lyramilk::data::var::array ar;
+				ar.reserve(3);
 				ar.push_back("rpush");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
@@ -399,11 +411,17 @@ label_bodys:
 			{
 				if(args.size() != 2){
 					log(lyramilk::log::error,"psync") << D("同步错误:lpush 参数过少") << std::endl;
-					break;
+					break; 
 				}
 				unsigned int len = (unsigned int)p[1];
 				lyramilk::data::string tab(1+p+1,len);
+				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
+				unsigned long long qseq = be64toh(qseq_net);
+				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
+					break;
+				}
 				lyramilk::data::var::array ar;
+				ar.reserve(3);
 				ar.push_back("lpush");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
@@ -412,17 +430,56 @@ label_bodys:
 			break;
 		  case BinlogCommand::QPOP_BACK:
 			{
-				//TODO();
+				unsigned int len = (unsigned int)p[1];
+				lyramilk::data::string tab(1+p+1,len);
+				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
+				unsigned long long qseq = be64toh(qseq_net);
+				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
+					break;
+				}
+				lyramilk::data::var::array ar;
+				ar.reserve(2);
+				ar.push_back("rpop");
+				ar.push_back(tab);
+				peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QPOP_FRONT:
 			{
-				//TODO();
+				unsigned int len = (unsigned int)p[1];
+				lyramilk::data::string tab(1+p+1,len);
+				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
+				unsigned long long qseq = be64toh(qseq_net);
+				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
+					break;
+				}
+				lyramilk::data::var::array ar;
+				ar.reserve(2);
+				ar.push_back("lpop");
+				ar.push_back(tab);
+				peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QSET:
 			{
-				//TODO();
+				if(args.size() != 2){
+					log(lyramilk::log::error,"psync") << D("同步错误:lset 参数过少") << std::endl;
+					break;
+				}
+				unsigned int len = (unsigned int)p[1];
+				lyramilk::data::string tab(1+p+1,len);
+				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
+				unsigned long long qseq = be64toh(qseq_net);
+				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
+					break;
+				}
+				lyramilk::data::var::array ar;
+				ar.reserve(4);
+				ar.push_back("ssdb.qset");
+				ar.push_back(tab);
+				ar.push_back(qseq);
+				ar.push_back(args[1]);
+				peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  default:

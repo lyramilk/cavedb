@@ -1,7 +1,7 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 1.0.19)
-set(soversion 1.0)
+set(version 2.0.1)
+set(soversion 2.0)
 
 
 cmake_minimum_required (VERSION 2.8.11) 
@@ -53,12 +53,15 @@ aux_source_directory(src src_cpps)
 file(GLOB src_hs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.h)
 include_directories(src)
 
-if(UNIX)
-	aux_source_directory(src/redis src_cpps)
-	include_directories(src/redis)
-	aux_source_directory(src/ssdb src_cpps)
-	include_directories(src/ssdb)
-endif()
+aux_source_directory(src/redis src_cpps)
+include_directories(src/redis)
+
+aux_source_directory(src/ssdb src_cpps)
+include_directories(src/ssdb)
+
+aux_source_directory(src/store src_cpps)
+include_directories(src/store)
+file(GLOB src_hs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/store/*.h)
 
 list(APPEND LIBS_DEPENDS -ldl)
 
