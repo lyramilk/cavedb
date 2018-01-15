@@ -26,7 +26,7 @@ Prefix:		%{_sysconfdir}
 	sed -ri "s,(Version:)\s*([0-9\.]*)(.*),\1%{?version}\3," %{?_builddir}/%{?name}/output/%{?name}.pc
 	cat  %{?_builddir}/%{?name}/output/%{?name}.pc
 %install
-	mkdir -p %{?buildroot}%{?_includedir}/%{?name}
+	mkdir -p %{?buildroot}%{?_includedir}/%{?name}/store/
 	mkdir -p %{?buildroot}%{?_bindir}
 	mkdir -p %{?buildroot}%{?_libdir}
 	mkdir -p %{?buildroot}%{?_libdir}/pkgconfig
@@ -34,6 +34,7 @@ Prefix:		%{_sysconfdir}
 	mkdir -p %{?buildroot}%{?_mandir}
 
 	mv %{?_builddir}/%{?name}/output/*.h %{?buildroot}%{?_includedir}/%{?name}
+	mv %{?_builddir}/%{?name}/output/store/*.h %{?buildroot}%{?_includedir}/%{?name}/store/
 #	mv %{?_builddir}/%{?name}/output/*.a %{?buildroot}%{?_libdir}
 	mv %{?_builddir}/%{?name}/output/*.so %{?buildroot}%{?_libdir}
 	mv %{?_builddir}/%{?name}/output/*.so.* %{?buildroot}%{?_libdir}
@@ -84,5 +85,6 @@ Prefix:		%{_sysconfdir}
 	%defattr(-,root,root,-)
 	%exclude %{?_libdir}/lib%{?name}.so.%{?version}
 	%{?_includedir}/%{?name}/*.h
+	%{?_includedir}/%{?name}/store/*.h
 	%{?_libdir}/*.so
 	%{_libdir}/pkgconfig/*.pc

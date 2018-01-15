@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.1)
+set(version 2.0.2)
 set(soversion 2.0)
 
 
@@ -61,7 +61,7 @@ include_directories(src/ssdb)
 
 aux_source_directory(src/store src_cpps)
 include_directories(src/store)
-file(GLOB src_hs RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/store/*.h)
+file(GLOB src_hs_store RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/store/*.h)
 
 list(APPEND LIBS_DEPENDS -ldl)
 
@@ -128,7 +128,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pkg/cavedb.spec.in ${CMAKE_CURRENT_SO
 
 
 #目标动态库
-add_library(${PROJECT_NAME} SHARED ${src_cpps} ${src_hs})
+add_library(${PROJECT_NAME} SHARED ${src_cpps} ${src_hs} ${src_hs_store})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${version} SOVERSION ${soversion})
 
@@ -165,6 +165,7 @@ endforeach()
 #定义安装目标
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pkg/${PROJECT_NAME}.pc DESTINATION ${install_dir})
 install(FILES ${src_hs} DESTINATION ${install_dir})
+install(FILES ${src_hs_store} DESTINATION ${install_dir}/store/)
 install(TARGETS ${PROJECT_NAME} DESTINATION ${install_dir})
 install(TARGETS caved DESTINATION ${install_dir})
 
