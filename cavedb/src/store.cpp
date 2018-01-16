@@ -71,6 +71,7 @@ namespace lyramilk{ namespace cave
 	store::store()
 	{
 		dbid = 0;
+		tm_mark = time(0);
 	}
 
 	store::~store()
@@ -479,13 +480,14 @@ namespace lyramilk{ namespace cave
 
 	void store::notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		static long long t = 0;
-		__sync_fetch_and_add(&t,1);
-		time_t tnow = time(0);
-		static time_t tlast = tnow + 1;
-		if(__sync_bool_compare_and_swap(&tlast,tnow,tnow + 1)){
-			log(lyramilk::log::debug) << "速度" << t << "键值 每秒" << std::endl;
-			t = 0;
+		++speed;
+		time_t tm_now = time(0);
+		if(tm_now != tm_mark){
+			tm_mark = tm_now + 1;
+			if(speed > 1000){
+				log(lyramilk::log::debug) << D("正在同步：%6llu键值/每秒",speed) << std::endl;
+			}
+			speed = 0;
 		}
 
 		lyramilk::data::string cmd = args[0];
@@ -493,7 +495,7 @@ namespace lyramilk{ namespace cave
 		if(it!=dispatch_map.end()){
 			it->second(this,replid,offset,args);
 		}else{
-			log(lyramilk::log::error) << D("未实现命令",cmd.c_str()) << std::endl;
+			//log(lyramilk::log::error) << D("未实现命令",cmd.c_str()) << std::endl;
 		}
 	}
 

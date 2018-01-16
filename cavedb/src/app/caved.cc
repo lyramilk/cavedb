@@ -7,6 +7,7 @@
 #include <libmilk/multilanguage.h>
 #include <libmilk/log.h>
 #include <stdio.h>
+#include <getopt.h>
 
 #include <sys/wait.h>
 
@@ -14,10 +15,10 @@ void useage(lyramilk::data::string selfname)
 {
 	std::cout << "useage:" << selfname << " [optional]" << std::endl;
 	std::cout << "\t-d --daemon                                  \t" << "以服务方式启动" << std::endl;
-	std::cout << "\t-h --ssdb-host         <ssdb Host>           \t" << "ssdb主库的host：默认" << redis_host << std::endl;
-	std::cout << "\t-p --ssdb-port         <ssdb 端口>           \t" << "ssdb主库的port：默认" << redis_port << std::endl;
-	std::cout << "\t-a --ssdb-password     <ssdb 密码>           \t" << "ssdb主库的密码：默认无密码" << std::endl;
-	std::cout << "\t-e --leveldb-path      <ssdb 密码>           \t" << "ssdb主库的密码：默认无密码" << std::endl;
+	std::cout << "\t-h --ssdb-host         <ssdb Host>           \t" << "ssdb主库的host" << std::endl;
+	std::cout << "\t-p --ssdb-port         <ssdb 端口>           \t" << "ssdb主库的port" << std::endl;
+	std::cout << "\t-a --ssdb-password     <ssdb 密码>           \t" << "ssdb主库的密码" << std::endl;
+	std::cout << "\t-e --leveldb-path      <ssdb 密码>           \t" << "ssdb主库的密码" << std::endl;
 	std::cout << "\t-? --help                                    \t显示这个帮助" << std::endl;
 }
 
@@ -31,11 +32,11 @@ struct option long_options[] = {
 	{ 0, 0, 0, 0},
 };
 
-int main(int argc,const char** argv)
+int main(int argc,char* argv[])
 {
 	bool isdaemon = false;
 	lyramilk::data::string ssdb_host;
-	lyramilk::data::string ssdb_port;
+	lyramilk::data::uint16 ssdb_port = 0;
 	lyramilk::data::string ssdb_password;
 	lyramilk::data::string leveldb_path;
 
@@ -58,7 +59,7 @@ int main(int argc,const char** argv)
 				ssdb_password = optarg;
 				break;
 			  case 'e':
-				apns_host = optarg;
+				leveldb_path = optarg;
 				break;
 			  case '?':
 			  default:

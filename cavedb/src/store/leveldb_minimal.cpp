@@ -25,6 +25,14 @@ namespace lyramilk{ namespace cave
 		batch.Put(key_sync,leveldb::Slice(str.c_str(),str.size()));
 	}
 
+	bool leveldb_minimal::notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	{
+		leveldb::WriteBatch batch;
+		save_process(batch,replid,offset);
+		ldb->Write(wopt,&batch);
+		return true;
+	}
+
 	bool leveldb_minimal::notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
 	{
 		leveldb::WriteBatch batch;

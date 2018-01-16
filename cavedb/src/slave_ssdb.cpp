@@ -261,7 +261,6 @@ label_bodys:
 
 	void slave_ssdb::proc_noop(lyramilk::data::uint64 seq)
 	{
-		log(lyramilk::log::debug,"proc_noop") << D("空闲") << std::endl;
 		peventhandler->notify_idle(psync_replid,psync_offset);
 	}
 

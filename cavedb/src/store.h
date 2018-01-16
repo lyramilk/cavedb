@@ -15,6 +15,8 @@ namespace lyramilk{ namespace cave
 	{
 		friend class store_dispatcher;
 		lyramilk::data::uint64 dbid;
+		lyramilk::data::uint64 speed;
+		time_t tm_mark;
 		virtual void notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
 		virtual bool notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 	  protected:

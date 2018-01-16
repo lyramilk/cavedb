@@ -14,6 +14,7 @@ namespace lyramilk{ namespace cave
 	{
 		leveldb::DB* ldb;
 	  protected:
+		virtual bool notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 		virtual bool notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 		// db
 		virtual void notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
