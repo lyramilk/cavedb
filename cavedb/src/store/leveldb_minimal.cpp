@@ -52,6 +52,7 @@ namespace lyramilk{ namespace cave
 		for(it->SeekToFirst();it->Valid();it->Next()){
 			ldb->Delete(wopt,it->key());
 		}
+		if (it) delete it;
 
 		ldb->CompactRange(nullptr,nullptr);
 		ldb->Put(wopt,".cfver",cfver);
@@ -68,6 +69,7 @@ namespace lyramilk{ namespace cave
 		for(it->SeekToFirst();it->Valid();it->Next()){
 			ldb->Delete(wopt,it->key());
 		}
+		if (it) delete it;
 
 		ldb->CompactRange(nullptr,nullptr);
 		ldb->Put(wopt,".cfver",cfver);
@@ -91,6 +93,7 @@ namespace lyramilk{ namespace cave
 			if(!it->key().starts_with(prefix)) break;
 			batch.Delete(it->key());
 		}
+		if (it) delete it;
 
 		ldb->Write(wopt,&batch);
 	}
@@ -279,6 +282,8 @@ namespace lyramilk{ namespace cave
 			lyramilk::data::string svalue(it->value().data(),it->value().size());
 			result[skey] = svalue;
 		}
+
+		if (it) delete it;
 
 		return result;
 	}

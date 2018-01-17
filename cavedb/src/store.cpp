@@ -71,6 +71,7 @@ namespace lyramilk{ namespace cave
 	store::store()
 	{
 		dbid = 0;
+		speed = 0;
 		tm_mark = time(0);
 	}
 

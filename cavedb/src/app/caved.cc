@@ -71,6 +71,9 @@ int main(int argc,char* argv[])
 		useage(selfname);
 		return 0;
 	}
+	if(isdaemon){
+		daemon(0,0);
+	}
 
 
 	signal(SIGPIPE, SIG_IGN);
