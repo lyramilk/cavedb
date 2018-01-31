@@ -150,207 +150,207 @@ namespace lyramilk{ namespace cave
 	// string
 	void store::notify_append(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","append") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","append") << args << std::endl;
 	}
 
 	void store::notify_bitor(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","bitor") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","bitor") << args << std::endl;
 	}
 
 	void store::notify_getset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","getset") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","getset") << args << std::endl;
 	}
 
 	void store::notify_decr(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","decr") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","decr") << args << std::endl;
 	}
 
 	void store::notify_decrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","decrby") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","decrby") << args << std::endl;
 	}
 
 	void store::notify_incr(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","incr") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","incr") << args << std::endl;
 	}
 
 	void store::notify_incrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","incrby") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","incrby") << args << std::endl;
 	}
 
 	void store::notify_mset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","mset") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","mset") << args << std::endl;
 	}
 
 	void store::notify_msetnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","msetnx") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","msetnx") << args << std::endl;
 	}
 
 	void store::notify_psetex(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","psetex") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","psetex") << args << std::endl;
 	}
 
 	void store::notify_setex(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","setex") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","setex") << args << std::endl;
 	}
 
 	void store::notify_set(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","set") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","set") << args << std::endl;
 	}
 
 	void store::notify_setnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","setnx") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","setnx") << args << std::endl;
 	}
 
 	void store::notify_setbit(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","setbit") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","setbit") << args << std::endl;
 	}
 
 	void store::notify_setrange(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","setrange") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","setrange") << args << std::endl;
 	}
 
 	// hashmap
 	void store::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","hset") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","hset") << args << std::endl;
 	}
 
 	void store::notify_hsetnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","hsetnx") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","hsetnx") << args << std::endl;
 	}
 
 	void store::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","hdel") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","hdel") << args << std::endl;
 	}
 
 	void store::notify_hincrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","hincrby") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","hincrby") << args << std::endl;
 	}
 
 	void store::notify_hmset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","hmset") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","hmset") << args << std::endl;
 	}
 
 
 	// set
 	void store::notify_sadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","sadd") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","sadd") << args << std::endl;
 	}
 
 	void store::notify_sdiffstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","sdiffstore") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","sdiffstore") << args << std::endl;
 	}
 
 	void store::notify_sinterstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","sinterstore") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","sinterstore") << args << std::endl;
 	}
 
 	void store::notify_smove(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","smove") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","smove") << args << std::endl;
 	}
 
 	void store::notify_srem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","srem") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","srem") << args << std::endl;
 	}
 
 	void store::notify_sunionstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","sunionstore") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","sunionstore") << args << std::endl;
 	}
 
 
 	// list
 	void store::notify_blpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","blpop") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","blpop") << args << std::endl;
 	}
 
 	void store::notify_brpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","brpop") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","brpop") << args << std::endl;
 	}
 
 	void store::notify_brpoplpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","brpoplpush") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","brpoplpush") << args << std::endl;
 	}
 
 	void store::notify_linsert(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","linsert") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","linsert") << args << std::endl;
 	}
 
 	void store::notify_lpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","lpop") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","lpop") << args << std::endl;
 	}
 
 	void store::notify_lpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","lpush") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","lpush") << args << std::endl;
 	}
 
 	void store::notify_lpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","lpushx") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","lpushx") << args << std::endl;
 	}
 
 	void store::notify_lrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","lrem") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","lrem") << args << std::endl;
 	}
 
 	void store::notify_lset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","lset") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","lset") << args << std::endl;
 	}
 
 	void store::notify_ltrim(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","ltrim") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","ltrim") << args << std::endl;
 	}
 
 	void store::notify_rpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","rpop") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","rpop") << args << std::endl;
 	}
 
 	void store::notify_rpoplpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","rpoplpush") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","rpoplpush") << args << std::endl;
 	}
 
 	void store::notify_rpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","rpush") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","rpush") << args << std::endl;
 	}
 
 	void store::notify_rpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		log(lyramilk::log::warning) << D("%s未实现","rpushx") << std::endl;
+		log(lyramilk::log::warning) << D("%s未实现","rpushx") << args << std::endl;
 	}
 
 	typedef void (*store_event_callback)(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
@@ -496,7 +496,7 @@ namespace lyramilk{ namespace cave
 		if(it!=dispatch_map.end()){
 			it->second(this,replid,offset,args);
 		}else{
-			//log(lyramilk::log::error) << D("未实现命令",cmd.c_str()) << std::endl;
+			log(lyramilk::log::error) << D("未实现命令",cmd.c_str()) << args << std::endl;
 		}
 	}
 

@@ -38,7 +38,7 @@ Prefix:		%{_sysconfdir}
 #	mv %{?_builddir}/%{?name}/output/*.a %{?buildroot}%{?_libdir}
 	mv %{?_builddir}/%{?name}/output/*.so %{?buildroot}%{?_libdir}
 	mv %{?_builddir}/%{?name}/output/*.so.* %{?buildroot}%{?_libdir}
-#	mv %{?_builddir}/%{?name}/output/%{?name}d %{?buildroot}%{?_bindir}
+	mv %{?_builddir}/%{?name}/output/caved %{?buildroot}%{?_bindir}
 	mv %{?_builddir}/%{?name}/output/*.pc %{?buildroot}%{?_libdir}/pkgconfig
 
 #清理
@@ -61,7 +61,7 @@ Prefix:		%{_sysconfdir}
 %files
 	%defattr(-,root,root,-)
 	%{?_libdir}/lib%{?name}.so.*
-#	%{?_bindir}/%{?name}d
+	%{?_bindir}/caved
 #	%{?_libdir}/%{?name}.so.%{?version}
 #	%config(noreplace) %{?_sysconfdir}/%{?name}/*
 
