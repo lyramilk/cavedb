@@ -242,6 +242,12 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
+	bool leveldb_minimal::compact()
+	{
+		ldb->CompactRange(nullptr,nullptr);
+		return true;
+	}
+
 	lyramilk::data::string leveldb_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
 		std::string prefix;

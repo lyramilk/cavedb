@@ -18,7 +18,8 @@ void useage(lyramilk::data::string selfname)
 	std::cout << "\t-h --ssdb-host         <ssdb Host>           \t" << "ssdb主库的host" << std::endl;
 	std::cout << "\t-p --ssdb-port         <ssdb 端口>           \t" << "ssdb主库的port" << std::endl;
 	std::cout << "\t-a --ssdb-password     <ssdb 密码>           \t" << "ssdb主库的密码" << std::endl;
-	std::cout << "\t-e --leveldb-path      <ssdb 密码>           \t" << "ssdb主库的密码" << std::endl;
+	std::cout << "\t-e --leveldb-path      <ssdb 密码>           \t" << "leveldb路径" << std::endl;
+	std::cout << "\t-c --compact                                 \t" << "同步前先整理" << std::endl;
 	std::cout << "\t-? --help                                    \t显示这个帮助" << std::endl;
 }
 
@@ -28,6 +29,7 @@ struct option long_options[] = {
 	{ "ssdb-port", required_argument, NULL, 'p' },
 	{ "ssdb-password", required_argument, NULL, 'a' },
 	{ "leveldb-path", required_argument, NULL, 'e' },
+	{ "compact", required_argument, NULL, 'c' },
 	{ "help", required_argument, NULL, '?' },
 	{ 0, 0, 0, 0},
 };
@@ -35,6 +37,7 @@ struct option long_options[] = {
 int main(int argc,char* argv[])
 {
 	bool isdaemon = false;
+	bool isneedcompact = false;
 	lyramilk::data::string ssdb_host;
 	lyramilk::data::uint16 ssdb_port = 0;
 	lyramilk::data::string ssdb_password;
@@ -43,11 +46,14 @@ int main(int argc,char* argv[])
 	lyramilk::data::string selfname = argv[0];
 	if(argc > 1){
 		int oc;
-		while((oc = getopt_long(argc, argv, "dh:p:a:e:?",long_options,nullptr)) != -1){
+		while((oc = getopt_long(argc, argv, "dch:p:a:e:?",long_options,nullptr)) != -1){
 			switch(oc)
 			{
 			  case 'd':
 				isdaemon = true;
+				break;
+			  case 'c':
+				isneedcompact = true;
 				break;
 			  case 'h':
 				ssdb_host = optarg;
@@ -81,12 +87,16 @@ int main(int argc,char* argv[])
 
 	lyramilk::cave::leveldb_minimal mstore;
 	mstore.open(leveldb_path,1000);
+	if(isneedcompact){
+		mstore.compact();
+	}
 	
 	lyramilk::cave::slave_ssdb datasource;
 
 	lyramilk::data::string replid = "";
 	lyramilk::data::uint64 offset = 0;
 	mstore.get_sync_info(&replid,&offset);
+
 	datasource.slaveof(ssdb_host,ssdb_port,ssdb_password,replid,offset,&mstore);
 
 	while(true){

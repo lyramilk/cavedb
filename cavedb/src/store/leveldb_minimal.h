@@ -35,6 +35,7 @@ namespace lyramilk{ namespace cave
 		virtual ~leveldb_minimal();
 		bool open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 		bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
+		bool compact();
 
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::var::map hgetall(const lyramilk::data::string& key) const;
