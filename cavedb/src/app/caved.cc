@@ -18,7 +18,7 @@ void useage(lyramilk::data::string selfname)
 	std::cout << "\t-h --ssdb-host         <ssdb Host>           \t" << "ssdb主库的host" << std::endl;
 	std::cout << "\t-p --ssdb-port         <ssdb 端口>           \t" << "ssdb主库的port" << std::endl;
 	std::cout << "\t-a --ssdb-password     <ssdb 密码>           \t" << "ssdb主库的密码" << std::endl;
-	std::cout << "\t-e --leveldb-path      <ssdb 密码>           \t" << "leveldb路径" << std::endl;
+	std::cout << "\t-e --leveldb-path      <leveldb 路径>        \t" << "leveldb路径" << std::endl;
 	std::cout << "\t-c --compact                                 \t" << "同步前先整理" << std::endl;
 	std::cout << "\t-? --help                                    \t显示这个帮助" << std::endl;
 }
