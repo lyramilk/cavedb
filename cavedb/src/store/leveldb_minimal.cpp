@@ -248,6 +248,20 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
+	bool leveldb_minimal::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
+	{
+		std::string prefix;
+		prefix.reserve(512);
+		prefix.append(key.c_str(),key.size());
+		prefix.push_back(0xff);
+		prefix.push_back(0xfe);
+		prefix.append(field.c_str(),field.size());
+
+		std::string result;
+		leveldb::Status ldbs = ldb->Get(ropt,prefix,&result);
+		return ldbs.ok();
+	}
+
 	lyramilk::data::string leveldb_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
 		std::string prefix;

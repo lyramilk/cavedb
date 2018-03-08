@@ -37,6 +37,7 @@ namespace lyramilk{ namespace cave
 		bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
 		bool compact();
 
+		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::var::map hgetall(const lyramilk::data::string& key) const;
 	};
