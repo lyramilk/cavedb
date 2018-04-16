@@ -67,26 +67,40 @@ namespace lyramilk{ namespace cave
 	{
 	}
 
-	lyramilk::data::string stdmap_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field)
+	bool stdmap_minimal::get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const
+	{
+		return false;
+	}
+
+	bool stdmap_minimal::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
 		lyramilk::threading::mutex_sync _(lock.r());
-		std::map<std::string,std::tr1::unordered_map<std::string,std::string> >::iterator it = data.find(key);
+		table_type::const_iterator it = data.find(key);
+		if(it == data.end()) return false;
+		datamap_type::const_iterator subit = it->second.find(field);
+		if(subit==it->second.end()) return false;
+		return true;
+	}
+
+	lyramilk::data::string stdmap_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
+	{
+		lyramilk::threading::mutex_sync _(lock.r());
+		table_type::const_iterator it = data.find(key);
 		if(it == data.end()) return "";
-		std::tr1::unordered_map<std::string,std::string>::const_iterator subit = it->second.find(field);
+		datamap_type::const_iterator subit = it->second.find(field);
 		if(subit==it->second.end()) return "";
 		return subit->second;
 	}
 
-	lyramilk::data::var::map stdmap_minimal::hgetall(const lyramilk::data::string& key)
+	lyramilk::data::var::map stdmap_minimal::hgetall(const lyramilk::data::string& key) const
 	{
 		lyramilk::data::var::map m;
 		lyramilk::threading::mutex_sync _(lock.r());
-		std::map<std::string,std::tr1::unordered_map<std::string,std::string> >::iterator it = data.find(key);
+		table_type::const_iterator it = data.find(key);
 		if(it == data.end()) return m;
-		std::tr1::unordered_map<std::string,std::string>::const_iterator subit = it->second.begin();
+		datamap_type::const_iterator subit = it->second.begin();
 		for(;subit!=it->second.end();++subit){
 			m[subit->first] = subit->second;
-		
 		}
 		return m;
 	}

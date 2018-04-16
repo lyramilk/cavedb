@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "store/stdmap_minimal.h"
 #include "store/leveldb_minimal.h"
+#include "store/sparse_hash_map_minimal.h"
+#include "store/dense_hash_map_minimal.h"
 #include "slave_ssdb.h"
 #include <signal.h>
 #include <libmilk/multilanguage.h>
@@ -84,13 +86,17 @@ int main(int argc,char* argv[])
 
 	signal(SIGPIPE, SIG_IGN);
 
-
+#if 0
 	lyramilk::cave::leveldb_minimal mstore;
 	mstore.open(leveldb_path,1000);
 	if(isneedcompact){
 		mstore.compact();
 	}
-	
+#else
+	//lyramilk::cave::dense_hash_map_minimal mstore;
+	//lyramilk::cave::sparse_hash_map_minimal mstore;
+	lyramilk::cave::stdmap_minimal mstore;
+#endif
 	lyramilk::cave::slave_ssdb datasource;
 
 	lyramilk::data::string replid = "";

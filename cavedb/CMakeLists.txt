@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.9)
+set(version 2.0.10)
 set(soversion 2.0)
 
 
@@ -68,7 +68,7 @@ list(APPEND LIBS_DEPENDS -ldl)
 ## 搜索可选的外部依赖
 if(UNIX)
 	pkg_check_modules(LIBMILK libmilk)
-	#pkg_check_modules(SNAPPY snappy)
+	pkg_check_modules(SPARSEHASH sparsehash)
 	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
 endif()
 
@@ -86,6 +86,17 @@ if(LIBMILK_FOUND)
 	list(APPEND LIBS_DEPENDS ${LIBMILK_LDFLAGS})
 	list(APPEND INCS_DEPENDS ${LIBMILK_CFLAGS})
 	list(APPEND CONFIG_MACROS LIBMILK_FOUND)
+endif()
+
+if(SPARSEHASH_FOUND)
+	list(APPEND LIBS_DEPENDS ${SPARSEHASH_LDFLAGS})
+	list(APPEND INCS_DEPENDS ${SPARSEHASH_CFLAGS})
+	list(APPEND CONFIG_MACROS SPARSEHASH_FOUND)
+else()
+	list(REMOVE_ITEM src_hs src/store/dense_hash_map_minimal.h)
+	list(REMOVE_ITEM src_hs src/store/sparse_hash_map_minimal.h)
+	list(REMOVE_ITEM src_cpps src/store/dense_hash_map_minimal.cpp)
+	list(REMOVE_ITEM src_cpps src/store/sparse_hash_map_minimal.cpp)
 endif()
 
 if(Z_HAVE_SNAPPY)

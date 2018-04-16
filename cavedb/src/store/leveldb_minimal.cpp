@@ -251,7 +251,7 @@ namespace lyramilk{ namespace cave
 	bool leveldb_minimal::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
 		std::string prefix;
-		prefix.reserve(512);
+		prefix.reserve(key.size() + field.size() + 2 + 2);
 		prefix.append(key.c_str(),key.size());
 		prefix.push_back(0xff);
 		prefix.push_back(0xfe);
@@ -265,7 +265,7 @@ namespace lyramilk{ namespace cave
 	lyramilk::data::string leveldb_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
 		std::string prefix;
-		prefix.reserve(512);
+		prefix.reserve(key.size() + field.size() + 2 + 2);
 		prefix.append(key.c_str(),key.size());
 		prefix.push_back(0xff);
 		prefix.push_back(0xfe);
@@ -283,7 +283,9 @@ namespace lyramilk{ namespace cave
 	{
 		lyramilk::data::var::map result;
 
-		std::string prefix = key;
+		std::string prefix;
+		prefix.reserve(key.size() + 2 + 2);
+		prefix = key;
 		prefix.push_back(0xff);
 		prefix.push_back(0xfe);
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
