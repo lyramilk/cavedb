@@ -251,6 +251,8 @@ namespace lyramilk{ namespace cave
 
 	bool leveldb_minimal::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		rspeed_on_read();
+
 		std::string prefix;
 		prefix.reserve(key.size() + field.size() + 2 + 2);
 		prefix.append(key.c_str(),key.size());
@@ -265,6 +267,8 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::string leveldb_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		rspeed_on_read();
+
 		std::string prefix;
 		prefix.reserve(key.size() + field.size() + 2 + 2);
 		prefix.append(key.c_str(),key.size());
@@ -285,6 +289,8 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::stringdict leveldb_minimal::hgetall(const lyramilk::data::string& key) const
 	{
+		rspeed_on_read();
+
 		std::string prefix;
 		prefix.reserve(key.size() + 2 + 2);
 		prefix = key;

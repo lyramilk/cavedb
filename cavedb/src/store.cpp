@@ -1,4 +1,5 @@
 #include "store.h"
+#include "store_reader.h"
 #include "rdb.h"
 #include <libmilk/log.h>
 #include <libmilk/multilanguage.h>
@@ -68,11 +69,46 @@ namespace lyramilk{ namespace cave
 		}
 	};
 
+	/// store_reader
+	store_reader::store_reader()
+	{
+		rspeed_speed = 0;
+		rspeed_counter = 0;
+	}
+
+	store_reader::~store_reader()
+	{}
+
+
+	void store_reader::rspeed_on_read() const
+	{
+		++rspeed_counter;
+		time_t tm_now = time(0);
+		if(tm_now != rspeed_tm){
+			rspeed_tm = tm_now;
+			rspeed_speed = rspeed_counter;
+			rspeed_counter = 0;
+		}
+	}
+
+	lyramilk::data::uint64 store_reader::rspeed() const
+	{
+		time_t tm_now = time(0);
+		if(tm_now != rspeed_tm){
+			rspeed_tm = tm_now;
+			rspeed_speed = rspeed_counter;
+			rspeed_counter = 0;
+		}
+		return rspeed_speed;
+	}
+
+	/// store
 	store::store()
 	{
 		dbid = 0;
-		speed = 0;
-		tm_mark = time(0);
+		wspeed_speed = 0;
+		wspeed_counter = 0;
+		wspeed_tm = time(0);
 	}
 
 	store::~store()
@@ -85,6 +121,17 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::int64 t = tv.tv_sec;
 		t *= 1000;
 		return t + tv.tv_usec/1000;
+	}
+
+	lyramilk::data::uint64 store::wspeed()
+	{
+		time_t tm_now = time(0);
+		if(tm_now != wspeed_tm){
+			wspeed_tm = tm_now;
+			wspeed_speed = wspeed_counter;
+			wspeed_counter = 0;
+		}
+		return wspeed_speed;
 	}
 
 	// db
@@ -481,14 +528,12 @@ namespace lyramilk{ namespace cave
 
 	void store::notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
 	{
-		++speed;
+		++wspeed_counter;
 		time_t tm_now = time(0);
-		if(tm_now != tm_mark){
-			tm_mark = tm_now + 1;
-			if(speed > 1000){
-				log(lyramilk::log::debug) << D("正在同步：%6llu键值/每秒",speed) << std::endl;
-			}
-			speed = 0;
+		if(tm_now != wspeed_tm){
+			wspeed_tm = tm_now;
+			wspeed_speed = wspeed_counter;
+			wspeed_counter = 0;
 		}
 
 		lyramilk::data::string cmd = args[0];

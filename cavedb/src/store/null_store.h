@@ -1,7 +1,6 @@
-#ifndef _casedb_sparse_hash_map_minimal_h_
-#define _casedb_sparse_hash_map_minimal_h_
+#ifndef _casedb_null_store_h_
+#define _casedb_null_store_h_
 
-#include "config.h"
 #include <libmilk/var.h>
 #include <libmilk/thread.h>
 #include "../store.h"
@@ -10,10 +9,11 @@
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
-	class sparse_hash_map_minimal:public lyramilk::cave::store,public lyramilk::cave::store_reader
+	class null_store:public lyramilk::cave::store,public lyramilk::cave::store_reader
 	{
-		void* data;
-		mutable lyramilk::threading::mutex_rw lock;
+		mutable lyramilk::data::uint64 rspeed_counter;
+		mutable lyramilk::data::uint64 rspeed_speed;
+		mutable time_t rspeed_tm;
 	  protected:
 		virtual bool notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 		// db
@@ -28,10 +28,9 @@ namespace lyramilk{ namespace cave
 		// hashmap
 		virtual void notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
 		virtual void notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
-
 	  public:
-		sparse_hash_map_minimal();
-		virtual ~sparse_hash_map_minimal();
+		null_store();
+		virtual ~null_store();
 
 	  public:
 		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;

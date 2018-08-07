@@ -74,6 +74,8 @@ namespace lyramilk{ namespace cave
 
 	bool stdmap_minimal::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		rspeed_on_read();
+
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);
 		if(it == data.end()) return false;
@@ -84,6 +86,8 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::string stdmap_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		rspeed_on_read();
+
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);
 		if(it == data.end()) return "";
@@ -94,6 +98,8 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::stringdict stdmap_minimal::hgetall(const lyramilk::data::string& key) const
 	{
+		rspeed_on_read();
+
 		lyramilk::data::stringdict m;
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);

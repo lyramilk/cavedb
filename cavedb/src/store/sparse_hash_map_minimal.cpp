@@ -1,7 +1,12 @@
 #include "sparse_hash_map_minimal.h"
 
-#include <sparsehash/sparse_hash_map> 
-#include <sparsehash/dense_hash_map> 
+#ifdef Z_HAVE_SPARSEHASH
+	#include <google/sparse_hash_map> 
+	#include <google/dense_hash_map> 
+#else
+	#include <sparsehash/sparse_hash_map> 
+	#include <sparsehash/dense_hash_map> 
+#endif
 
 typedef std::tr1::unordered_map<std::string,std::string> datamap_type;
 typedef google::sparse_hash_map<std::string,datamap_type > table_type;
@@ -85,6 +90,7 @@ namespace lyramilk{ namespace cave
 
 	bool sparse_hash_map_minimal::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		rspeed_on_read();
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);
@@ -96,6 +102,7 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::string sparse_hash_map_minimal::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		rspeed_on_read();
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);
@@ -107,8 +114,9 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::stringdict sparse_hash_map_minimal::hgetall(const lyramilk::data::string& key) const
 	{
+		rspeed_on_read();
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
-		lyramilk::data::var::map m;
+		lyramilk::data::stringdict m;
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);
 		if(it == data.end()) return m;

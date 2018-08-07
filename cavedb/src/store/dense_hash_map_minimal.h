@@ -1,6 +1,7 @@
 #ifndef _casedb_dense_hash_map_minimal_h_
 #define _casedb_dense_hash_map_minimal_h_
 
+#include "config.h"
 #include <libmilk/var.h>
 #include <libmilk/thread.h>
 #include "../store.h"

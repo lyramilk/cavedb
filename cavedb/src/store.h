@@ -15,8 +15,9 @@ namespace lyramilk{ namespace cave
 	{
 		friend class store_dispatcher;
 		lyramilk::data::uint64 dbid;
-		lyramilk::data::uint64 speed;
-		time_t tm_mark;
+		lyramilk::data::uint64 wspeed_counter;
+		lyramilk::data::uint64 wspeed_speed;
+		time_t wspeed_tm;
 		virtual void notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
 		virtual bool notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 	  protected:
@@ -89,6 +90,7 @@ namespace lyramilk{ namespace cave
 		virtual void notify_rpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
 		virtual void notify_rpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
 	  public:
+		virtual lyramilk::data::uint64 wspeed();
 		virtual ~store();
 	};
 }}

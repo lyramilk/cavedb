@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.11)
+set(version 2.0.12)
 set(soversion 2.0)
 
 
@@ -69,7 +69,9 @@ list(APPEND LIBS_DEPENDS -ldl)
 if(UNIX)
 	pkg_check_modules(LIBMILK libmilk REQUIRED)
 	pkg_check_modules(SPARSEHASH sparsehash)
+
 	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
+	check_include_file_cxx(/usr/include/google/sparsehash/sparsehashtable.h Z_HAVE_SPARSEHASH)
 endif()
 
 if(LIBMILK_FOUND)
@@ -83,6 +85,9 @@ endif()
 if(SPARSEHASH_FOUND)
 	list(APPEND LIBS_DEPENDS ${SPARSEHASH_LDFLAGS})
 	list(APPEND INCS_DEPENDS ${SPARSEHASH_CFLAGS})
+	list(APPEND CONFIG_MACROS SPARSEHASH_FOUND)
+elseif(Z_HAVE_SPARSEHASH)
+	list(APPEND CONFIG_MACROS Z_HAVE_SPARSEHASH)
 	list(APPEND CONFIG_MACROS SPARSEHASH_FOUND)
 else()
 	list(REMOVE_ITEM src_hs src/store/dense_hash_map_minimal.h)
