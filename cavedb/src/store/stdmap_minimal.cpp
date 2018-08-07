@@ -92,17 +92,13 @@ namespace lyramilk{ namespace cave
 		return subit->second;
 	}
 
-	lyramilk::data::var::map stdmap_minimal::hgetall(const lyramilk::data::string& key) const
+	lyramilk::data::stringdict stdmap_minimal::hgetall(const lyramilk::data::string& key) const
 	{
-		lyramilk::data::var::map m;
+		lyramilk::data::stringdict m;
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);
 		if(it == data.end()) return m;
-		datamap_type::const_iterator subit = it->second.begin();
-		for(;subit!=it->second.end();++subit){
-			m[subit->first] = subit->second;
-		}
+		m = it->second;
 		return m;
 	}
-
 }}

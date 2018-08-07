@@ -15,6 +15,8 @@ namespace lyramilk{ namespace cave
 	{
 		leveldb::DB* ldb;
 	  protected:
+		mutable lyramilk::threading::mutex_semaphore sem;
+	  protected:
 		virtual bool notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 		virtual bool notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 		// db
@@ -36,11 +38,13 @@ namespace lyramilk{ namespace cave
 		virtual ~leveldb_minimal();
 		bool open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 		bool compact();
+
+		long long get_sigval();
 	  public:
 		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
-		virtual lyramilk::data::var::map hgetall(const lyramilk::data::string& key) const;
+		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const;
 	};
 }}
 

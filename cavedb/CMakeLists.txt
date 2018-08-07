@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.10)
+set(version 2.0.11)
 set(soversion 2.0)
 
 
@@ -67,17 +67,9 @@ list(APPEND LIBS_DEPENDS -ldl)
 
 ## 搜索可选的外部依赖
 if(UNIX)
-	pkg_check_modules(LIBMILK libmilk)
+	pkg_check_modules(LIBMILK libmilk REQUIRED)
 	pkg_check_modules(SPARSEHASH sparsehash)
 	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
-endif()
-
-if(NOT LIBMILK_FOUND)
-	message(FATAL_ERROR "require rpm package libmilk-devel")
-endif()
-
-if(NOT Z_HAVE_SNAPPY)
-	message(FATAL_ERROR "require rpm package snappy-devel")
 endif()
 
 if(LIBMILK_FOUND)
@@ -126,8 +118,6 @@ foreach(v ${INCS_DEPENDS})
 endforeach()
 
 set(CMAKE_LIBS_DEPENDS ${LIBS_DEPENDS})
-
-message(${CMAKE_LIBS_DEPENDS})
 
 foreach(v ${CONFIG_MACROS})
 	set(CMAKE_CONFIG_MACROS "${CMAKE_CONFIG_MACROS}#define ${v}\n")

@@ -12,8 +12,8 @@ namespace lyramilk{ namespace cave
 {
 	class stdmap_minimal:public lyramilk::cave::store,public lyramilk::cave::store_reader
 	{
-		typedef std::tr1::unordered_map<std::string,std::string> datamap_type;
-		typedef std::tr1::unordered_map<std::string,datamap_type > table_type;
+		typedef lyramilk::data::stringdict datamap_type;
+		typedef std::tr1::unordered_map<lyramilk::data::string,datamap_type > table_type;
 		table_type data;
 		mutable lyramilk::threading::mutex_rw lock;
 	  protected:
@@ -39,7 +39,7 @@ namespace lyramilk{ namespace cave
 		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
-		virtual lyramilk::data::var::map hgetall(const lyramilk::data::string& key) const;
+		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const;
 	};
 }}
 

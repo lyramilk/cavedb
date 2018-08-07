@@ -143,6 +143,7 @@ namespace lyramilk{ namespace cave
 	leveldb_minimal::leveldb_minimal()
 	{
 		ldb = nullptr;
+		sem.set_max_signal(10);
 	}
 
 	leveldb_minimal::~leveldb_minimal()
@@ -272,41 +273,54 @@ namespace lyramilk{ namespace cave
 		prefix.append(field.c_str(),field.size());
 
 		std::string result;
-		leveldb::Status ldbs = ldb->Get(ropt,prefix,&result);
-		if(!ldbs.ok()){
-			return "";
+		{
+			lyramilk::threading::mutex_sync _(sem);
+			leveldb::Status ldbs = ldb->Get(ropt,prefix,&result);
+			if(!ldbs.ok()){
+				return "";
+			}
 		}
 		return lyramilk::data::str(result);
 	}
 
-	lyramilk::data::var::map leveldb_minimal::hgetall(const lyramilk::data::string& key) const
+	lyramilk::data::stringdict leveldb_minimal::hgetall(const lyramilk::data::string& key) const
 	{
-		lyramilk::data::var::map result;
-
 		std::string prefix;
 		prefix.reserve(key.size() + 2 + 2);
 		prefix = key;
 		prefix.push_back(0xff);
 		prefix.push_back(0xfe);
-		leveldb::Iterator* it = ldb->NewIterator(ropt);
-		if(it == nullptr){
-			log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
-			return result;
+
+
+		lyramilk::data::stringdict result;
+		leveldb::Iterator* it = nullptr;
+		{
+			lyramilk::threading::mutex_sync _(sem);
+			it = ldb->NewIterator(ropt);
+			if(it == nullptr){
+				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
+				return result;
+			}
+
+			for(it->Seek(prefix);it->Valid();it->Next()){
+				if(!it->key().starts_with(prefix)) break;
+
+				leveldb::Slice datakey = it->key();
+				datakey.remove_prefix(prefix.size());
+
+				lyramilk::data::string skey(datakey.data(),datakey.size());
+				lyramilk::data::string svalue(it->value().data(),it->value().size());
+				result[skey] = svalue;
+			}
+
+			if (it) delete it;
 		}
-
-		for(it->Seek(prefix);it->Valid();it->Next()){
-			if(!it->key().starts_with(prefix)) break;
-
-			leveldb::Slice datakey = it->key();
-			datakey.remove_prefix(prefix.size());
-
-			lyramilk::data::string skey(datakey.data(),datakey.size());
-			lyramilk::data::string svalue(it->value().data(),it->value().size());
-			result[skey] = svalue;
-		}
-
-		if (it) delete it;
-
 		return result;
+	}
+
+
+	long long leveldb_minimal::get_sigval()
+	{
+		return sem.get_signal();
 	}
 }}

@@ -6,6 +6,7 @@
 #include <fstream>
 #include <stdlib.h>
 #include <algorithm>
+#include <unistd.h>
 
 namespace lyramilk{ namespace cave
 {

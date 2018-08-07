@@ -106,10 +106,10 @@ namespace lyramilk{ namespace cave
 		return subit->second;
 	}
 
-	lyramilk::data::var::map dense_hash_map_minimal::hgetall(const lyramilk::data::string& key) const
+	lyramilk::data::stringdict dense_hash_map_minimal::hgetall(const lyramilk::data::string& key) const
 	{
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
-		lyramilk::data::var::map m;
+		lyramilk::data::stringdict m;
 		lyramilk::threading::mutex_sync _(lock.r());
 		table_type::const_iterator it = data.find(key);
 		if(it == data.end()) return m;
@@ -119,5 +119,4 @@ namespace lyramilk{ namespace cave
 		}
 		return m;
 	}
-
 }}

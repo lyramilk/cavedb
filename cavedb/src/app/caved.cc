@@ -86,7 +86,7 @@ int main(int argc,char* argv[])
 
 	signal(SIGPIPE, SIG_IGN);
 
-#if 0
+#if 1
 	lyramilk::cave::leveldb_minimal mstore;
 	mstore.open(leveldb_path,1000);
 	if(isneedcompact){

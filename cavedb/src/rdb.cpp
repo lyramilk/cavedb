@@ -367,8 +367,8 @@ namespace lyramilk{ namespace cave
 					int64_t value;
 					intsetGet(zl,i,&value);
 					char buff[256];
-					int i = snprintf(buff,sizeof(buff),"%lld",(long long)value);
-					notify_sadd(key,lyramilk::data::string(buff,i));
+					int size = snprintf(buff,sizeof(buff),"%lld",(long long)value);
+					notify_sadd(key,lyramilk::data::string(buff,size));
 				}
 				return;
 			}break;

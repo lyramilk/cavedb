@@ -105,7 +105,7 @@ namespace lyramilk{ namespace cave
 		return subit->second;
 	}
 
-	lyramilk::data::var::map sparse_hash_map_minimal::hgetall(const lyramilk::data::string& key) const
+	lyramilk::data::stringdict sparse_hash_map_minimal::hgetall(const lyramilk::data::string& key) const
 	{
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::data::var::map m;
@@ -118,5 +118,4 @@ namespace lyramilk{ namespace cave
 		}
 		return m;
 	}
-
 }}

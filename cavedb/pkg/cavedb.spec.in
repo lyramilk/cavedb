@@ -19,7 +19,7 @@ Prefix:		%{_sysconfdir}
 %build
 	mkdir -p %{?_builddir}/%{?name}
 	cd %{?_builddir}/%{?name}
-	cmake -D install_dir=%{?_builddir}/%{?name}/output -D release=1 share_type=SHARED %{CMakeListPath}
+	cmake3 -D install_dir=%{?_builddir}/%{?name}/output -D release=1 share_type=SHARED %{CMakeListPath}
 	make
 	make install
 	tree %{?_builddir}/%{?name}/output
