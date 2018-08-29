@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.12)
+set(version 2.0.13)
 set(soversion 2.0)
 
 
@@ -102,6 +102,11 @@ if(Z_HAVE_SNAPPY)
 	list(APPEND LIBS_DEPENDS -lsnappy)
 	list(APPEND CONFIG_MACROS LEVELDB_FOUND)
 endif()
+
+
+list(APPEND INCS_DEPENDS -I"/etc/alternatives/java_sdk/include/"  -I"/etc/alternatives/java_sdk/include/linux/")
+
+
 
 if(UNIX)
 	set(LIBRARIES -lpthread)
