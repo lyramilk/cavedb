@@ -100,7 +100,7 @@ namespace lyramilk{ namespace cave
 
 
 
-lyramilk::data::string str(JNIEnv* env,jstring jstr) 
+lyramilk::data::string inline jstr2str(JNIEnv* env,jstring jstr) 
 { 
 	lyramilk::data::string result;
 	jclass clsstring = env->FindClass("java/lang/String");  
@@ -115,29 +115,34 @@ lyramilk::data::string str(JNIEnv* env,jstring jstr)
 	env->ReleaseByteArrayElements(barr,ba,0); 
 	return result;
 }
-/*
-  public java.lang.String get_sync_info_replid(java.lang.String, long);
-    descriptor: (Ljava/lang/String;J)Ljava/lang/String;
 
-  public long get_sync_info_offset(java.lang.String, long);
-    descriptor: (Ljava/lang/String;J)J
+lyramilk::data::string inline jbytes2str(JNIEnv* env,jbyteArray barr) 
+{ 
+	lyramilk::data::string result;
+	jsize alen = env->GetArrayLength(barr); 
+	jbyte* ba = env->GetByteArrayElements(barr,JNI_FALSE); 
+	if(alen > 0){ 
+		result.assign((const char*)ba,alen);
+	}  
+	env->ReleaseByteArrayElements(barr,ba,0); 
+	return result;
+}
 
-
-*/
 extern "C" {
+
 	/*
 	 * Class:     lyramilk_cave_cavedb
 	 * Method:    slaveof_ssdb
-	 * Signature: (Ljava/lang/String;ILjava/lang/String;)Z
+	 * Signature: (Ljava/lang/String;ILjava/lang/String;[BJ)Z
 	 */
-	JNIEXPORT jboolean JNICALL Java_lyramilk_cave_cavedb_slaveof_1ssdb(JNIEnv *env, jobject jthis, jstring jhost, jint jport, jstring jpwd)
+	JNIEXPORT jboolean JNICALL Java_lyramilk_cave_cavedb_slaveof_1ssdb(JNIEnv *env, jobject jthis, jstring jhost, jint jport, jstring jpwd,jbyteArray jreplid,jlong joffset)
 	{
-		lyramilk::data::string host = str(env,jhost);
+		lyramilk::data::string host = jstr2str(env,jhost);
 		unsigned short port = jport;
-		lyramilk::data::string pwd = str(env,jpwd);
+		lyramilk::data::string pwd = jstr2str(env,jpwd);
 
-		lyramilk::data::string replid;
-		lyramilk::data::uint64 offset = 0;
+		lyramilk::data::string replid = jbytes2str(env,jreplid);
+		lyramilk::data::uint64 offset = joffset;
 
 		lyramilk::cave::slave_ssdb datasource;
 		datasource.slaveof(host,port,pwd,replid,offset,new lyramilk::cave::jdk_store(env,jthis));
@@ -151,16 +156,16 @@ extern "C" {
 	/*
 	 * Class:     lyramilk_cave_cavedb
 	 * Method:    slaveof_redis
-	 * Signature: (Ljava/lang/String;ILjava/lang/String;)Z
+	 * Signature: (Ljava/lang/String;ILjava/lang/String;[BJ)Z
 	 */
-	JNIEXPORT jboolean JNICALL Java_lyramilk_cave_cavedb_slaveof_1redis(JNIEnv *env, jobject jthis, jstring jhost, jint jport, jstring jpwd)
+	JNIEXPORT jboolean JNICALL Java_lyramilk_cave_cavedb_slaveof_1redis(JNIEnv *env, jobject jthis, jstring jhost, jint jport, jstring jpwd,jbyteArray jreplid,jlong joffset)
 	{
-		lyramilk::data::string host = str(env,jhost);
+		lyramilk::data::string host = jstr2str(env,jhost);
 		unsigned short port = jport;
-		lyramilk::data::string pwd = str(env,jpwd);
+		lyramilk::data::string pwd = jstr2str(env,jpwd);
 
-		lyramilk::data::string replid;
-		lyramilk::data::uint64 offset = 0;
+		lyramilk::data::string replid = jbytes2str(env,jreplid);
+		lyramilk::data::uint64 offset = joffset;
 
 		lyramilk::cave::slave_redis datasource;
 		datasource.slaveof(host,port,pwd,replid,offset,new lyramilk::cave::jdk_store(env,jthis));

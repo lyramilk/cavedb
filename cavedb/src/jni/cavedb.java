@@ -3,17 +3,19 @@ package lyramilk.cave;
 import java.util.List;
 import java.util.HashMap;
 import java.lang.annotation.Annotation;
-import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.ElementType;
-import java.lang.reflect.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.InvocationTargetException;
 
 public class cavedb
 {
 	static{
-		System.loadLibrary("cavedbjni");
+		System.loadLibrary("cavedb");
 	}
 
 	// 定义一个注解
@@ -67,16 +69,6 @@ public class cavedb
 		}
 	}
 
-	public boolean notify_psync(byte[]  replid,long offset)
-	{
-		return true;
-	}
-
-	public boolean notify_idle(byte[]  replid,long offset)
-	{
-		return true;
-	}
-
-	public native boolean slaveof_ssdb(String host,int port,String password);
-	public native boolean slaveof_redis(String host,int port,String password);
+	public native boolean slaveof_ssdb(String host,int port,String password,byte[] replid,long offset);
+	public native boolean slaveof_redis(String host,int port,String password,byte[] replid,long offset);
 }
