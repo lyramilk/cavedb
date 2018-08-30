@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.14)
+set(version 2.0.15)
 set(soversion 2.0)
 
 
@@ -72,6 +72,7 @@ if(UNIX)
 
 	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
 	check_include_file_cxx(/usr/include/google/sparsehash/sparsehashtable.h Z_HAVE_SPARSEHASH)
+	check_include_file_cxx(/etc/alternatives/java_sdk/include/jni.h Z_HAVE_JDK)
 endif()
 
 if(LIBMILK_FOUND)
@@ -104,9 +105,12 @@ if(Z_HAVE_SNAPPY)
 endif()
 
 
-list(APPEND INCS_DEPENDS -I"/etc/alternatives/java_sdk/include/"  -I"/etc/alternatives/java_sdk/include/linux/")
-
-
+if(Z_HAVE_JDK)
+	list(APPEND INCS_DEPENDS -I"/etc/alternatives/java_sdk/include/"  -I"/etc/alternatives/java_sdk/include/linux/")
+	list(APPEND INCS_DEPENDS -I"/etc/alternatives/java_sdk/include/"  -I"/etc/alternatives/java_sdk/include/linux/")
+else()
+	list(REMOVE_ITEM src_cpps src/jni.cpp)
+endif()
 
 if(UNIX)
 	set(LIBRARIES -lpthread)

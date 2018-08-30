@@ -66,7 +66,20 @@ public class cavedb
 		}catch(IllegalAccessException e){
 		}catch(IllegalArgumentException e){
 		}catch(InvocationTargetException e){
+		}catch(Exception e){
 		}
+	}
+
+	public boolean notify_psync(byte[]  replid,long offset)
+	{
+		System.out.println("notify_psync," + offset);
+		return true;
+	}
+
+	public boolean notify_idle(byte[]  replid,long offset)
+	{
+		System.out.println("notify_idle," + offset);
+		return true;
 	}
 
 	public native boolean slaveof_ssdb(String host,int port,String password,byte[] replid,long offset);

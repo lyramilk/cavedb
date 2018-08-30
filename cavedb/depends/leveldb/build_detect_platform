@@ -56,8 +56,8 @@ fi
 COMMON_FLAGS=
 CROSS_COMPILE=
 PLATFORM_CCFLAGS=
-PLATFORM_CXXFLAGS="-fPIC -shared  -fvisibility=hidden"
-PLATFORM_LDFLAGS="-fPIC"
+PLATFORM_CXXFLAGS=
+PLATFORM_LDFLAGS=
 PLATFORM_LIBS=
 PLATFORM_SHARED_EXT="so"
 PLATFORM_SHARED_LDFLAGS="-shared -Wl,-soname -Wl,"
@@ -75,7 +75,7 @@ fi
 case "$TARGET_OS" in
     CYGWIN_*)
         PLATFORM=OS_LINUX
-        COMMON_FLAGS="$MEMCMP_FLAG -lpthread -DOS_LINUX -DCYGWIN"
+        COMMON_FLAGS="$MEMCMP_FLAG -lpthread -DOS_LINUX -DCYGWIN -fPIC -shared  -fvisibility=hidden"
         PLATFORM_LDFLAGS="-lpthread"
         PORT_FILE=port/port_posix.cc
         PORT_SSE_FILE=port/port_posix_sse.cc
@@ -91,7 +91,7 @@ case "$TARGET_OS" in
         ;;
     Linux)
         PLATFORM=OS_LINUX
-        COMMON_FLAGS="$MEMCMP_FLAG -pthread -DOS_LINUX"
+        COMMON_FLAGS="$MEMCMP_FLAG -pthread -DOS_LINUX -fPIC -shared  -fvisibility=hidden"
         PLATFORM_LDFLAGS="-pthread"
         PORT_FILE=port/port_posix.cc
         PORT_SSE_FILE=port/port_posix_sse.cc

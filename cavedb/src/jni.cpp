@@ -28,6 +28,10 @@ namespace lyramilk{ namespace cave
 				if(env == nullptr) return false;
 			}
 
+			if(!jid_notify_psync){
+				return false;
+			}
+
 			jbyteArray jstr = env->NewByteArray(replid.size());
 			env->SetByteArrayRegion(jstr,0,replid.size(),(const jbyte*)replid.c_str());
 			env->CallBooleanMethod(jthis,jid_notify_psync,jstr,(jint)offset);
@@ -42,6 +46,20 @@ namespace lyramilk{ namespace cave
 				jvm->AttachCurrentThread((void**)&env,nullptr);
 				if(env == nullptr) return;
 			}
+
+
+			if(!jid_arraylist_construct){
+				return ;
+			}
+
+			if(!jid_arraylist_add){
+				return ;
+			}
+
+			if(!jid_notify_command){
+				return ;
+			}
+
 			jobject jobj_arraylist = env->NewObject(jcls_arraylist,jid_arraylist_construct,"");
 
 			for(std::size_t i = 0;i < args.size();++i){
@@ -67,6 +85,10 @@ namespace lyramilk{ namespace cave
 			if(env == nullptr){
 				jvm->AttachCurrentThread((void**)&env,nullptr);
 				if(env == nullptr) return false;
+			}
+
+			if(!jid_notify_idle){
+				return false;
 			}
 
 			jbyteArray jstr = env->NewByteArray(replid.size());
