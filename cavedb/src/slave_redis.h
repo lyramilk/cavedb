@@ -11,7 +11,7 @@ namespace lyramilk{ namespace cave
 	class slave_redis:public lyramilk::threading::threads
 	{
 		lyramilk::netio::client c;
-		lyramilk::netio::socket_stream is;
+		lyramilk::netio::socket_istream is;
 		lyramilk::data::uint64 psync_rseq_diff;
 		unsigned int loadsum;
 		double loadcoff;

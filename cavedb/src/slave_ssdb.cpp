@@ -143,7 +143,7 @@ label_bodys:
 	{
 		c.close();
 		if(c.open(host,port)){
-			is.init(c);
+			is.init(&c);
 			if(!pwd.empty()){
 				lyramilk::data::var::array ar;
 				ar.push_back("auth");

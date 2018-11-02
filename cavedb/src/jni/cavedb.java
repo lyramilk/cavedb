@@ -72,13 +72,11 @@ public class cavedb
 
 	public boolean notify_psync(byte[]  replid,long offset)
 	{
-		System.out.println("notify_psync," + offset);
 		return true;
 	}
 
 	public boolean notify_idle(byte[]  replid,long offset)
 	{
-		System.out.println("notify_idle," + offset);
 		return true;
 	}
 

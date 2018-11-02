@@ -11,7 +11,7 @@ namespace lyramilk{ namespace cave
 	class slave_ssdb:public lyramilk::threading::threads
 	{
 		lyramilk::netio::client c;
-		lyramilk::netio::socket_stream is;
+		lyramilk::netio::socket_istream is;
 		unsigned int loadsum;
 		enum {
 			st_running,

@@ -12,98 +12,6 @@ namespace lyramilk{ namespace cave
 {
 	static lyramilk::log::logss log("lyramilk.cave.slave_redis");
 
-	bool inline is_hex_digit(char c) {
-		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-	}
-
-	char inline hex_digit_to_int(char c){
-		switch(c) {
-		  case '0': return 0;
-		  case '1': return 1;
-		  case '2': return 2;
-		  case '3': return 3;
-		  case '4': return 4;
-		  case '5': return 5;
-		  case '6': return 6;
-		  case '7': return 7;
-		  case '8': return 8;
-		  case '9': return 9;
-		  case 'a': case 'A': return 10;
-		  case 'b': case 'B': return 11;
-		  case 'c': case 'C': return 12;
-		  case 'd': case 'D': return 13;
-		  case 'e': case 'E': return 14;
-		  case 'f': case 'F': return 15;
-		  default: return 0;
-		}
-	}
-
-	lyramilk::data::string inline uconv(lyramilk::data::string str)
-	{
-		const char *p = str.c_str();
-		std::size_t sz = str.size();
-		const char *e = p + sz + 1;
-
-		lyramilk::data::string current;
-		current.reserve(sz);
-
-		enum {
-			s_0,
-			s_str1,
-			s_str2,
-		}s = s_0;
-
-		for(;*p && p < e;++p){
-			switch(s){
-			  case s_0:{
-				switch(*p) {
-				  case '"':
-					s = s_str1;
-					break;
-				  case '\'':
-					s = s_str2;
-					break;
-				}
-				current.push_back(*p);
-			  }break;
-			  case s_str1:{
-				if(*p == '\\' && *(p+1) == 'x' && is_hex_digit(*(p+2)) && is_hex_digit(*(p+3))){
-					unsigned char byte;
-					byte = (hex_digit_to_int(*(p+2))*16) + hex_digit_to_int(*(p+3));
-					current.push_back(byte);
-					p+=3;
-				}else if (*p == '\\' && *(p+1)) {
-					char c;
-					p++;
-					switch(*p) {
-					  case 'n': c = '\n'; break;
-					  case 'r': c = '\r'; break;
-					  case 't': c = '\t'; break;
-					  case 'b': c = '\b'; break;
-					  case 'a': c = '\a'; break;
-					  default: c = *p; break;
-					}
-					current.push_back(c);
-				} else {
-					current.push_back(*p);
-					if(*p == '"') s = s_0;
-				}
-			  }break;
-			  case s_str2:{
-				if (*p == '\\' && *(p+1) == '\''){
-					p++;
-					current.push_back('\'');
-				}else{
-					current.push_back(*p);
-					if(*p == '\'') s = s_0;
-				}
-			  }break;
-			}
-		}
-		return current;
-	}
-
-
 	bool inline parse_redis(std::istream& is,lyramilk::data::var& v)
 	{
 		char c = 0;
@@ -161,7 +69,7 @@ namespace lyramilk{ namespace cave
 						if(c == '\n') break;
 						str.push_back(c);
 					}
-					v = uconv(str);
+					v = str;
 					return true;
 				}
 				break;
@@ -173,7 +81,7 @@ namespace lyramilk{ namespace cave
 						if(c == '\n') break;
 						str.push_back(c);
 					}
-					v = uconv(str);
+					v = str;
 					return false;
 				}
 				break;
@@ -236,7 +144,7 @@ namespace lyramilk{ namespace cave
 	{
 		c.close();
 		if(c.open(host,port)){
-			is.init(c);
+			is.init(&c);
 			if(!pwd.empty()){
 				lyramilk::data::var::array ar;
 				ar.push_back("auth");
@@ -371,13 +279,22 @@ namespace lyramilk{ namespace cave
 		unsigned int tid = __sync_add_and_fetch(&loadsum,1);
 		
 		if(tid==1){
+			unsigned int tmp = 0;
 			while(status != st_stop){
+				++tmp;
 				sleep(1);
-				lyramilk::data::var::array ar;
-				ar.push_back("replconf");
-				ar.push_back("ack");
-				ar.push_back(psync_offset);
-				push(ar);
+				if(tmp%3 == 0){
+					lyramilk::data::var::array ar;
+					ar.push_back("replconf");
+					ar.push_back("ack");
+					ar.push_back(psync_offset);
+					push(ar);
+				}
+				if(tmp%10 == 0){
+					lyramilk::data::var::array ar;
+					ar.push_back("ping");
+					push(ar);
+				}
 			}
 		}else{
 			while(status != st_stop){
@@ -470,7 +387,9 @@ namespace lyramilk{ namespace cave
 							peventhandler->notify_command(psync_replid,psync_offset,ar);
 						}
 					}else{
-						log(lyramilk::log::warning,"psync") << D("从redis同步时发现未知的返回类型%s\n",ret.type_name().c_str()) << std::endl;
+						if(ret.type() == lyramilk::data::var::t_str && ret.str() != "PONG"){
+							log(lyramilk::log::warning,"psync") << D("从redis同步时发现未知的返回类型%s\n",ret.type_name().c_str()) << std::endl;
+						}
 					}
 				}else{
 					//log(lyramilk::log::warning,"psync") << D("负载%f",loadcoff) << std::endl;
