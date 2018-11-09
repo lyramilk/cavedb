@@ -28,8 +28,8 @@ namespace lyramilk{ namespace cave
 		slave* peventhandler;
 	  protected:
 		bool reconnect();
-		bool exec(const lyramilk::data::var::array& cmd,lyramilk::data::var* ret);
-		bool push(const lyramilk::data::var::array& cmd);
+		bool exec(const lyramilk::data::array& cmd,lyramilk::data::var* ret);
+		bool push(const lyramilk::data::array& cmd);
 		bool pop(lyramilk::data::var* ret);
 	  public:
 		slave_redis();

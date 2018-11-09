@@ -14,7 +14,7 @@ namespace lyramilk{ namespace cave
 			slave_of_redis,
 		};
 
-		virtual void notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args) = 0;
+		virtual void notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args) = 0;
 		virtual bool notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset) = 0;
 		virtual bool notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset) = 0;
 	};

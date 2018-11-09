@@ -6,7 +6,7 @@
 #include "store/dense_hash_map_minimal.h"
 #include "slave_ssdb.h"
 #include <signal.h>
-#include <libmilk/multilanguage.h>
+#include <libmilk/dict.h>
 #include <libmilk/log.h>
 #include <stdio.h>
 #include <getopt.h>

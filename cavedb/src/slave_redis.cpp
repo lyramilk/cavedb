@@ -1,6 +1,6 @@
 #include "slave_redis.h"
 #include "rdb.h"
-#include <libmilk/multilanguage.h>
+#include <libmilk/dict.h>
 #include <libmilk/log.h>
 #include <libmilk/exception.h>
 #include <fstream>
@@ -30,7 +30,7 @@ namespace lyramilk{ namespace cave
 					int ilen = len;
 					v.type(lyramilk::data::var::t_array);
 
-					lyramilk::data::var::array& ar = v;
+					lyramilk::data::array& ar = v;
 					ar.resize(ilen);
 
 					lyramilk::data::var* e = ar.data();
@@ -146,7 +146,7 @@ namespace lyramilk{ namespace cave
 		if(c.open(host,port)){
 			is.init(&c);
 			if(!pwd.empty()){
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.push_back("auth");
 				ar.push_back(pwd);
 				push(ar);
@@ -160,18 +160,18 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	bool slave_redis::exec(const lyramilk::data::var::array& cmd,lyramilk::data::var* ret)
+	bool slave_redis::exec(const lyramilk::data::array& cmd,lyramilk::data::var* ret)
 	{
 		push(cmd);
 		pop(ret);
 		return true;
 	}
 
-	bool slave_redis::push(const lyramilk::data::var::array& cmd)
+	bool slave_redis::push(const lyramilk::data::array& cmd)
 	{
 		lyramilk::data::stringstream ss;
 		{
-			lyramilk::data::var::array::const_iterator it = cmd.begin();
+			lyramilk::data::array::const_iterator it = cmd.begin();
 			ss << "*" << cmd.size() << "\r\n";
 			for(;it!=cmd.end();++it){
 				lyramilk::data::string str = it->str();
@@ -208,7 +208,7 @@ namespace lyramilk{ namespace cave
 
 		virtual void notify_select(lyramilk::data::uint64 dbid)
 		{
-			lyramilk::data::var::array ar;
+			lyramilk::data::array ar;
 			ar.push_back("select");
 			ar.push_back(dbid);
 			ps->notify_command("?",0,ar);
@@ -220,7 +220,7 @@ namespace lyramilk{ namespace cave
 		}
 		virtual void notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value)
 		{
-			lyramilk::data::var::array ar;
+			lyramilk::data::array ar;
 			ar.push_back("hset");
 			ar.push_back(key);
 			ar.push_back(field);
@@ -229,7 +229,7 @@ namespace lyramilk{ namespace cave
 		}
 		virtual void notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
 		{
-			lyramilk::data::var::array ar;
+			lyramilk::data::array ar;
 			ar.push_back("zadd");
 			ar.push_back(key);
 			ar.push_back(score);
@@ -238,7 +238,7 @@ namespace lyramilk{ namespace cave
 		}
 		virtual void notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
-			lyramilk::data::var::array ar;
+			lyramilk::data::array ar;
 			ar.push_back("set");
 			ar.push_back(key);
 			ar.push_back(value);
@@ -247,7 +247,7 @@ namespace lyramilk{ namespace cave
 
 		virtual void notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
 		{
-			lyramilk::data::var::array ar;
+			lyramilk::data::array ar;
 			ar.push_back("rpush");
 			ar.push_back(key);
 			ar.push_back(item);
@@ -256,7 +256,7 @@ namespace lyramilk{ namespace cave
 
 		virtual void notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
-			lyramilk::data::var::array ar;
+			lyramilk::data::array ar;
 			ar.push_back("sadd");
 			ar.push_back(key);
 			ar.push_back(value);
@@ -265,7 +265,7 @@ namespace lyramilk{ namespace cave
 
 		virtual void notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime)
 		{
-			lyramilk::data::var::array ar;
+			lyramilk::data::array ar;
 			ar.push_back("pexpireat");
 			ar.push_back(key);
 			ar.push_back(expiretime);
@@ -284,14 +284,14 @@ namespace lyramilk{ namespace cave
 				++tmp;
 				sleep(1);
 				if(tmp%3 == 0){
-					lyramilk::data::var::array ar;
+					lyramilk::data::array ar;
 					ar.push_back("replconf");
 					ar.push_back("ack");
 					ar.push_back(psync_offset);
 					push(ar);
 				}
 				if(tmp%10 == 0){
-					lyramilk::data::var::array ar;
+					lyramilk::data::array ar;
 					ar.push_back("ping");
 					push(ar);
 				}
@@ -301,7 +301,7 @@ namespace lyramilk{ namespace cave
 				if(!(is.good() && c.isalive())){
 					reconnect();
 					{
-						lyramilk::data::var::array ar;
+						lyramilk::data::array ar;
 						ar.push_back("replconf");
 						ar.push_back("listening-port");
 						ar.push_back("-1");
@@ -310,7 +310,7 @@ namespace lyramilk{ namespace cave
 						pop(&ret);
 					}
 					{
-						lyramilk::data::var::array ar;
+						lyramilk::data::array ar;
 						ar.push_back("client");
 						ar.push_back("setname");
 						ar.push_back("cavedb");
@@ -319,7 +319,7 @@ namespace lyramilk{ namespace cave
 						pop(&ret);
 					}
 					{
-						lyramilk::data::var::array ar;
+						lyramilk::data::array ar;
 						ar.push_back("psync");
 						ar.push_back(psync_replid);
 						ar.push_back(psync_offset + 1);	//psync_offset代表己验证的数据，所以psync时需要请求下一个字节
@@ -343,7 +343,7 @@ namespace lyramilk{ namespace cave
 							while(is.get() != '\n');
 
 							{
-								lyramilk::data::var::array ar;
+								lyramilk::data::array ar;
 								ar.push_back("flushall");
 								peventhandler->notify_command("?",0,ar);
 							}
@@ -378,7 +378,7 @@ namespace lyramilk{ namespace cave
 					pop(&ret);
 					if(ret.type() == lyramilk::data::var::t_array){
 						++loadsum;
-						lyramilk::data::var::array& ar = ret;
+						lyramilk::data::array& ar = ret;
 						if(ar.size() > 0){
 							lyramilk::data::string cmd = ar[0];
 							std::transform(cmd.begin(),cmd.end(),cmd.begin(),::tolower);

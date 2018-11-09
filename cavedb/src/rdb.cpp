@@ -10,7 +10,7 @@ extern "C" {
 }
 
 #include <fstream>
-#include <libmilk/multilanguage.h>
+#include <libmilk/dict.h>
 #include <libmilk/log.h>
 #include <libmilk/exception.h>
 #include <string.h>

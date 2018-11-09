@@ -2,7 +2,7 @@
 #include "store_reader.h"
 #include "rdb.h"
 #include <libmilk/log.h>
-#include <libmilk/multilanguage.h>
+#include <libmilk/dict.h>
 #include <sys/time.h>
 #include <map>
 
@@ -25,7 +25,7 @@ namespace lyramilk{ namespace cave
 
 		virtual void notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value)
 		{
-			lyramilk::data::var::array ar(4);
+			lyramilk::data::array ar(4);
 			ar[0] = "hset";
 			ar[1] = key;
 			ar[2] = field;
@@ -34,7 +34,7 @@ namespace lyramilk{ namespace cave
 		}
 		virtual void notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
 		{
-			lyramilk::data::var::array ar(4);
+			lyramilk::data::array ar(4);
 			ar[0] = "zadd";
 			ar[1] = key;
 			ar[2] = score;
@@ -43,7 +43,7 @@ namespace lyramilk{ namespace cave
 		}
 		virtual void notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
-			lyramilk::data::var::array ar(3);
+			lyramilk::data::array ar(3);
 			ar[0] = "set";
 			ar[1] = key;
 			ar[2] = value;
@@ -52,7 +52,7 @@ namespace lyramilk{ namespace cave
 
 		virtual void notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
 		{
-			lyramilk::data::var::array ar(3);
+			lyramilk::data::array ar(3);
 			ar[0] = "rpush";
 			ar[1] = key;
 			ar[2] = item;
@@ -61,7 +61,7 @@ namespace lyramilk{ namespace cave
 
 		virtual void notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
-			lyramilk::data::var::array ar(3);
+			lyramilk::data::array ar(3);
 			ar[0] = "sadd";
 			ar[1] = key;
 			ar[2] = value;
@@ -135,19 +135,19 @@ namespace lyramilk{ namespace cave
 	}
 
 	// db
-	void store::notify_select(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_select(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		dbid = args[1];
 	}
 
-	void store::notify_ping(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_ping(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::debug) << "ping" << std::endl;
 	}
 
 	// key
 
-	void store::notify_restore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_restore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		lyramilk::data::string key = args[1];
 		lyramilk::data::uint64 ttl = args[2];
@@ -158,9 +158,9 @@ namespace lyramilk{ namespace cave
 		r.restore(is,dbid,ttl,key);
 	}
 
-	void store::notify_expire(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_expire(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
-		lyramilk::data::var::array ar(3);
+		lyramilk::data::array ar(3);
 		ar[0] = "pexpireat";
 		ar[1] = args[1];
 		lyramilk::data::int64 expiretime = args[2];
@@ -169,9 +169,9 @@ namespace lyramilk{ namespace cave
 
 	}
 
-	void store::notify_expireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_expireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
-		lyramilk::data::var::array ar(3);
+		lyramilk::data::array ar(3);
 		ar[0] = "pexpireat";
 		ar[1] = args[1];
 		lyramilk::data::int64 expiretime = args[2];
@@ -179,9 +179,9 @@ namespace lyramilk{ namespace cave
 		notify_pexpireat(replid,offset,ar);
 	}
 
-	void store::notify_pexpire(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_pexpire(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
-		lyramilk::data::var::array ar(3);
+		lyramilk::data::array ar(3);
 		ar[0] = "pexpireat";
 		ar[1] = args[1];
 		lyramilk::data::int64 expiretime = args[2];
@@ -189,220 +189,220 @@ namespace lyramilk{ namespace cave
 		notify_pexpireat(replid,offset,ar);
 	}
 
-	void store::notify_renamenx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_renamenx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		notify_rename(replid,offset,args);
 	}
 
 	// string
-	void store::notify_append(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_append(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","append") << args << std::endl;
 	}
 
-	void store::notify_bitor(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_bitor(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","bitor") << args << std::endl;
 	}
 
-	void store::notify_getset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_getset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","getset") << args << std::endl;
 	}
 
-	void store::notify_decr(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_decr(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","decr") << args << std::endl;
 	}
 
-	void store::notify_decrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_decrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","decrby") << args << std::endl;
 	}
 
-	void store::notify_incr(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_incr(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","incr") << args << std::endl;
 	}
 
-	void store::notify_incrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_incrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","incrby") << args << std::endl;
 	}
 
-	void store::notify_mset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_mset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","mset") << args << std::endl;
 	}
 
-	void store::notify_msetnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_msetnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","msetnx") << args << std::endl;
 	}
 
-	void store::notify_psetex(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_psetex(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","psetex") << args << std::endl;
 	}
 
-	void store::notify_setex(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_setex(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","setex") << args << std::endl;
 	}
 
-	void store::notify_set(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_set(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","set") << args << std::endl;
 	}
 
-	void store::notify_setnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_setnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","setnx") << args << std::endl;
 	}
 
-	void store::notify_setbit(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_setbit(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","setbit") << args << std::endl;
 	}
 
-	void store::notify_setrange(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_setrange(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","setrange") << args << std::endl;
 	}
 
 	// hashmap
-	void store::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","hset") << args << std::endl;
 	}
 
-	void store::notify_hsetnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_hsetnx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","hsetnx") << args << std::endl;
 	}
 
-	void store::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","hdel") << args << std::endl;
 	}
 
-	void store::notify_hincrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_hincrby(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","hincrby") << args << std::endl;
 	}
 
-	void store::notify_hmset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_hmset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","hmset") << args << std::endl;
 	}
 
 
 	// set
-	void store::notify_sadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_sadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","sadd") << args << std::endl;
 	}
 
-	void store::notify_sdiffstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_sdiffstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","sdiffstore") << args << std::endl;
 	}
 
-	void store::notify_sinterstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_sinterstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","sinterstore") << args << std::endl;
 	}
 
-	void store::notify_smove(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_smove(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","smove") << args << std::endl;
 	}
 
-	void store::notify_srem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_srem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","srem") << args << std::endl;
 	}
 
-	void store::notify_sunionstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_sunionstore(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","sunionstore") << args << std::endl;
 	}
 
 
 	// list
-	void store::notify_blpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_blpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","blpop") << args << std::endl;
 	}
 
-	void store::notify_brpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_brpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","brpop") << args << std::endl;
 	}
 
-	void store::notify_brpoplpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_brpoplpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","brpoplpush") << args << std::endl;
 	}
 
-	void store::notify_linsert(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_linsert(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","linsert") << args << std::endl;
 	}
 
-	void store::notify_lpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_lpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","lpop") << args << std::endl;
 	}
 
-	void store::notify_lpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_lpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","lpush") << args << std::endl;
 	}
 
-	void store::notify_lpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_lpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","lpushx") << args << std::endl;
 	}
 
-	void store::notify_lrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_lrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","lrem") << args << std::endl;
 	}
 
-	void store::notify_lset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_lset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","lset") << args << std::endl;
 	}
 
-	void store::notify_ltrim(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_ltrim(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","ltrim") << args << std::endl;
 	}
 
-	void store::notify_rpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_rpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","rpop") << args << std::endl;
 	}
 
-	void store::notify_rpoplpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_rpoplpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","rpoplpush") << args << std::endl;
 	}
 
-	void store::notify_rpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_rpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","rpush") << args << std::endl;
 	}
 
-	void store::notify_rpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_rpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::warning) << D("%s未实现","rpushx") << args << std::endl;
 	}
 
-	typedef void (*store_event_callback)(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args);
+	typedef void (*store_event_callback)(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 
-	#define define_selector(mm) void static cbk_notify_##mm(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args){pthis->notify_##mm(replid,offset,args);}
+	#define define_selector(mm) void static cbk_notify_##mm(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args){pthis->notify_##mm(replid,offset,args);}
 	class store_dispatcher{
 	  public:
 		define_selector(append);
@@ -526,7 +526,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	void store::notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void store::notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		++wspeed_counter;
 		time_t tm_now = time(0);

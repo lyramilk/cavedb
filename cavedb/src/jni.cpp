@@ -39,7 +39,7 @@ namespace lyramilk{ namespace cave
 			return true;
 		}
 
-		virtual void notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+		virtual void notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 		{
 
 			if(env == nullptr){

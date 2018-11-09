@@ -2,7 +2,7 @@
 #include "slave_redis.h"
 #include "slave_ssdb.h"
 #include <libmilk/log.h>
-#include <libmilk/multilanguage.h>
+#include <libmilk/dict.h>
 
 #include <leveldb/db.h>
 #include <leveldb/filter_policy.h>
@@ -41,7 +41,7 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	void leveldb_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
 		if(it == nullptr){
@@ -58,7 +58,7 @@ namespace lyramilk{ namespace cave
 		ldb->Put(wopt,".cfver",cfver);
 	}
 
-	void leveldb_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
 		if(it == nullptr){
@@ -75,7 +75,7 @@ namespace lyramilk{ namespace cave
 		ldb->Put(wopt,".cfver",cfver);
 	}
 
-	void leveldb_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
@@ -98,25 +98,25 @@ namespace lyramilk{ namespace cave
 		ldb->Write(wopt,&batch);
 	}
 
-	void leveldb_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::error,__FUNCTION__) << D("未实现move函数，这在ssdb中不应该出现") << std::endl;
 	}
 
-	void leveldb_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 	}
 
-	void leveldb_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 	}
 
-	void leveldb_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::error,__FUNCTION__) << D("未实现rename函数，这在ssdb中不应该出现") << std::endl;
 	}
 
-	void leveldb_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
@@ -128,7 +128,7 @@ namespace lyramilk{ namespace cave
 		ldb->Write(wopt,&batch);
 	}
 
-	void leveldb_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::var::array& args)
+	void leveldb_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);

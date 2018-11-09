@@ -1,6 +1,6 @@
 #include "slave_ssdb.h"
 #include "const.h"
-#include <libmilk/multilanguage.h>
+#include <libmilk/dict.h>
 #include <libmilk/log.h>
 #include <libmilk/exception.h>
 #include <stdlib.h>
@@ -145,7 +145,7 @@ label_bodys:
 		if(c.open(host,port)){
 			is.init(&c);
 			if(!pwd.empty()){
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.push_back("auth");
 				ar.push_back(pwd);
 				if(push(ar)){
@@ -160,7 +160,7 @@ label_bodys:
 		return false;
 	}
 
-	bool slave_ssdb::exec(const lyramilk::data::var::array& cmd,lyramilk::data::strings* ret)
+	bool slave_ssdb::exec(const lyramilk::data::array& cmd,lyramilk::data::strings* ret)
 	{
 		if(push(cmd)){
 			pop(ret);
@@ -169,11 +169,11 @@ label_bodys:
 		return false;
 	}
 
-	bool slave_ssdb::push(const lyramilk::data::var::array& cmd)
+	bool slave_ssdb::push(const lyramilk::data::array& cmd)
 	{
 		lyramilk::data::stringstream ss;
 		{
-			lyramilk::data::var::array::const_iterator it = cmd.begin();
+			lyramilk::data::array::const_iterator it = cmd.begin();
 			for(;it!=cmd.end();++it){
 				lyramilk::data::string str = it->str();
 				ss << str.size() << "\n";
@@ -203,7 +203,7 @@ label_bodys:
 			try{
 				if(!(is.good() && c.isalive())){
 					reconnect();
-					lyramilk::data::var::array ar;
+					lyramilk::data::array ar;
 					ar.push_back("sync140");
 					ar.push_back(psync_offset);
 					ar.push_back(psync_replid);
@@ -229,7 +229,7 @@ label_bodys:
 						  case BinlogType::CTRL:
 							if(strcmp("OUT_OF_SYNC",reply[0].c_str() + cmdoffset) == 0){
 								log(lyramilk::log::error,"psync") << D("同步错误:%s","OUT_OF_SYNC") << std::endl;
-								lyramilk::data::var::array ar;
+								lyramilk::data::array ar;
 								ar.push_back("flushall");
 								peventhandler->notify_command(psync_replid,0,ar);
 								psync_offset = 0;
@@ -270,7 +270,7 @@ label_bodys:
 		  case BinlogCommand::BEGIN:
 			log(lyramilk::log::debug,"proc_copy") << D("拷贝开始") << std::endl;
 			{
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.push_back("flushall");
 				peventhandler->notify_command(psync_replid,0,ar);
 			}
@@ -297,7 +297,7 @@ label_bodys:
 				}
 				lyramilk::data::string tab(p+1,l-1);
 
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(3);
 				ar.push_back("set");
 				ar.push_back(tab);
@@ -309,7 +309,7 @@ label_bodys:
 			{
 				lyramilk::data::string tab(p+1,l-1);
 
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(3);
 				ar.push_back("del");
 				ar.push_back(tab);
@@ -326,7 +326,7 @@ label_bodys:
 				lyramilk::data::string tab(1+p+1,len);
 				lyramilk::data::string key(1+p+1+len+1,l-2-len-1);
 
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(4);
 				ar.push_back("hset");
 				ar.push_back(tab);
@@ -341,7 +341,7 @@ label_bodys:
 				lyramilk::data::string tab(1+p+1,len);
 				lyramilk::data::string key(1+p+1+len+1,l-2-len-1);
 
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(3);
 				ar.push_back("hdel");
 				ar.push_back(tab);
@@ -361,7 +361,7 @@ label_bodys:
 				unsigned int len2 = (unsigned int)p[1+1+len];
 				lyramilk::data::string key(1+p+1+len+1,len2);
 
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(4);
 				ar.push_back("zadd");
 				ar.push_back(tab);
@@ -377,7 +377,7 @@ label_bodys:
 				unsigned int len2 = (unsigned int)p[1+1+len];
 				lyramilk::data::string key(1+p+1+len+1,len2);
 
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(3);
 				ar.push_back("zrem");
 				ar.push_back(tab);
@@ -398,7 +398,7 @@ label_bodys:
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(3);
 				ar.push_back("rpush");
 				ar.push_back(tab);
@@ -419,7 +419,7 @@ label_bodys:
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(3);
 				ar.push_back("lpush");
 				ar.push_back(tab);
@@ -436,7 +436,7 @@ label_bodys:
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(2);
 				ar.push_back("rpop");
 				ar.push_back(tab);
@@ -452,7 +452,7 @@ label_bodys:
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(2);
 				ar.push_back("lpop");
 				ar.push_back(tab);
@@ -472,7 +472,7 @@ label_bodys:
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
-				lyramilk::data::var::array ar;
+				lyramilk::data::array ar;
 				ar.reserve(4);
 				ar.push_back("ssdb.qset");
 				ar.push_back(tab);

@@ -25,8 +25,8 @@ namespace lyramilk{ namespace cave
 		slave* peventhandler;
 	  protected:
 		bool reconnect();
-		bool exec(const lyramilk::data::var::array& cmd,lyramilk::data::strings* ret);
-		bool push(const lyramilk::data::var::array& cmd);
+		bool exec(const lyramilk::data::array& cmd,lyramilk::data::strings* ret);
+		bool push(const lyramilk::data::array& cmd);
 		bool pop(lyramilk::data::strings* ret);
 	  public:
 		slave_ssdb();
