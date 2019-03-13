@@ -231,7 +231,9 @@ label_bodys:
 								log(lyramilk::log::error,"psync") << D("同步错误:%s","OUT_OF_SYNC") << std::endl;
 								lyramilk::data::array ar;
 								ar.push_back("flushall");
-								peventhandler->notify_command(psync_replid,0,ar);
+								if(!peventhandler->notify_command(psync_replid,0,ar)){
+									status = st_stop;
+								}
 								psync_offset = 0;
 								psync_replid = "";
 								c.close();
@@ -239,17 +241,23 @@ label_bodys:
 							}
 							break;
 						  case BinlogType::COPY:
-							proc_copy(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply);
+							if(!proc_copy(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply)){
+								status = st_stop;
+							}
 							break;
 						  case BinlogType::SYNC:
 						  case BinlogType::MIRROR:
 							psync_offset = seq;
-							proc_sync(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply);
+							if(!proc_sync(seq,cmd,reply[0].c_str() + cmdoffset,reply[0].size() - cmdoffset,reply)){
+								status = st_stop;
+							}
 							break;
 						}
 					}
 				}else{
-					peventhandler->notify_idle(psync_replid,psync_offset);
+					if(!peventhandler->notify_idle(psync_replid,psync_offset)){
+						status = st_stop;
+					}
 				}
 			}catch(lyramilk::exception& e){
 				log(lyramilk::log::error,"psync.catch") << e.what() << std::endl;
@@ -259,12 +267,12 @@ label_bodys:
 		return 0;
 	}
 
-	void slave_ssdb::proc_noop(lyramilk::data::uint64 seq)
+	bool slave_ssdb::proc_noop(lyramilk::data::uint64 seq)
 	{
-		peventhandler->notify_idle(psync_replid,psync_offset);
+		return peventhandler->notify_idle(psync_replid,psync_offset);
 	}
 
-	void slave_ssdb::proc_copy(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args)
+	bool slave_ssdb::proc_copy(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args)
 	{
 		switch(cmd){
 		  case BinlogCommand::BEGIN:
@@ -272,21 +280,26 @@ label_bodys:
 			{
 				lyramilk::data::array ar;
 				ar.push_back("flushall");
-				peventhandler->notify_command(psync_replid,0,ar);
+				return peventhandler->notify_command(psync_replid,0,ar);
 			}
 			break;
 		  case BinlogCommand::END:
 			psync_replid = "";
-			peventhandler->notify_psync(psync_replid,seq);
-			log(lyramilk::log::debug,"proc_copy") << D("拷贝结束") << std::endl;
+			if(peventhandler->notify_psync(psync_replid,seq)){
+				log(lyramilk::log::debug,"proc_copy") << D("拷贝结束") << std::endl;
+				return true;
+			}
+			log(lyramilk::log::error,"proc_copy") << D("拷贝出错") << std::endl;
+			return false;
 			break;
 		  default:
 			psync_replid.assign(p,l);
-			proc_sync(seq,cmd,p,l,args);
+			return proc_sync(seq,cmd,p,l,args);
 		}
+		return false;
 	}
 
-	void slave_ssdb::proc_sync(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args)
+	bool slave_ssdb::proc_sync(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args)
 	{
 		switch(cmd){
 		  case BinlogCommand::KSET:
@@ -302,7 +315,7 @@ label_bodys:
 				ar.push_back("set");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::KDEL:
@@ -313,7 +326,7 @@ label_bodys:
 				ar.reserve(3);
 				ar.push_back("del");
 				ar.push_back(tab);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::HSET:
@@ -332,7 +345,7 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(key);
 				ar.push_back(args[1]);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::HDEL:
@@ -346,7 +359,7 @@ label_bodys:
 				ar.push_back("hdel");
 				ar.push_back(tab);
 				ar.push_back(key);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::ZSET:
@@ -367,7 +380,7 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(args[1]);
 				ar.push_back(key);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::ZDEL:
@@ -382,7 +395,7 @@ label_bodys:
 				ar.push_back("zrem");
 				ar.push_back(tab);
 				ar.push_back(key);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QPUSH_BACK:
@@ -403,7 +416,7 @@ label_bodys:
 				ar.push_back("rpush");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QPUSH_FRONT:
@@ -424,7 +437,7 @@ label_bodys:
 				ar.push_back("lpush");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QPOP_BACK:
@@ -440,7 +453,7 @@ label_bodys:
 				ar.reserve(2);
 				ar.push_back("rpop");
 				ar.push_back(tab);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QPOP_FRONT:
@@ -456,7 +469,7 @@ label_bodys:
 				ar.reserve(2);
 				ar.push_back("lpop");
 				ar.push_back(tab);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QSET:
@@ -478,12 +491,14 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(qseq);
 				ar.push_back(args[1]);
-				peventhandler->notify_command(psync_replid,psync_offset,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  default:
 			log(lyramilk::log::warning,"proc_sync") << D("拷贝开始") << std::endl;
 		}
+
+		return true;
 	}
 
 }}

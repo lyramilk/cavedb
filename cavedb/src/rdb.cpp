@@ -545,44 +545,52 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	void rdb::notify_select(lyramilk::data::uint64 dbid)
+	bool rdb::notify_select(lyramilk::data::uint64 dbid)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << "select " << dbid << std::endl;
+		return false;
 	}
 
-	void rdb::notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value)
+	bool rdb::notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << key << "=" << value << std::endl;
+		return false;
 	}
 
-	void rdb::notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value)
+	bool rdb::notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << "hset " << key << "," << field << "," << value << std::endl;
+		return false;
 	}
 
-	void rdb::notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
+	bool rdb::notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << "zadd " << key << "," << score << "," << value << std::endl;
+		return false;
 	}
 
-	void rdb::notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
+	bool rdb::notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << "set " << key << "," << value << std::endl;
+		return false;
 	}
 
-	void rdb::notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
+	bool rdb::notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << "rpush " << key << "," << item << std::endl;
+		return false;
 	}
 
-	void rdb::notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
+	bool rdb::notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << "sadd " << key << "," << value << std::endl;
+		return false;
 	}
 
-	void rdb::notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime)
+	bool rdb::notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime)
 	{
 		//log(lyramilk::log::debug,__FUNCTION__) << "pexpireat " << key << "," << expiretime << std::endl;
+		return false;
 	}
 
 

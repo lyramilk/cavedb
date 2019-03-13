@@ -206,70 +206,71 @@ namespace lyramilk{ namespace cave
 		{
 		}
 
-		virtual void notify_select(lyramilk::data::uint64 dbid)
+		virtual bool notify_select(lyramilk::data::uint64 dbid)
 		{
 			lyramilk::data::array ar;
 			ar.push_back("select");
 			ar.push_back(dbid);
-			ps->notify_command("?",0,ar);
+			return ps->notify_command("?",0,ar);
 		}
 
-
-		virtual void notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value)
+		virtual bool notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value)
 		{
+			return true;
 		}
-		virtual void notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value)
+
+		virtual bool notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value)
 		{
 			lyramilk::data::array ar;
 			ar.push_back("hset");
 			ar.push_back(key);
 			ar.push_back(field);
 			ar.push_back(value);
-			ps->notify_command("?",0,ar);
+			return ps->notify_command("?",0,ar);
 		}
-		virtual void notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
+		virtual bool notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
 		{
 			lyramilk::data::array ar;
 			ar.push_back("zadd");
 			ar.push_back(key);
 			ar.push_back(score);
 			ar.push_back(value);
-			ps->notify_command("?",0,ar);
+			return ps->notify_command("?",0,ar);
 		}
-		virtual void notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
+		virtual bool notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
 			lyramilk::data::array ar;
 			ar.push_back("set");
 			ar.push_back(key);
 			ar.push_back(value);
-			ps->notify_command("?",0,ar);
+			return ps->notify_command("?",0,ar);
 		}
 
-		virtual void notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
+		virtual bool notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
 		{
 			lyramilk::data::array ar;
 			ar.push_back("rpush");
 			ar.push_back(key);
 			ar.push_back(item);
-			ps->notify_command("?",0,ar);
+			return ps->notify_command("?",0,ar);
 		}
 
-		virtual void notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
+		virtual bool notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
 			lyramilk::data::array ar;
 			ar.push_back("sadd");
 			ar.push_back(key);
 			ar.push_back(value);
-			ps->notify_command("?",0,ar);
+			return ps->notify_command("?",0,ar);
 		}
 
-		virtual void notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime)
+		virtual bool notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime)
 		{
 			lyramilk::data::array ar;
 			ar.push_back("pexpireat");
 			ar.push_back(key);
 			ar.push_back(expiretime);
-			ps->notify_command("?",0,ar);
+			return ps->notify_command("?",0,ar);
 		}
 	};
 

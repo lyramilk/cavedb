@@ -29,7 +29,11 @@ namespace lyramilk{ namespace cave
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
-		ldb->Write(wopt,&batch);
+		leveldb::Status ldbs = ldb->Write(wopt,&batch);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
 		return true;
 	}
 
@@ -37,16 +41,20 @@ namespace lyramilk{ namespace cave
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
-		ldb->Write(wopt,&batch);
+		leveldb::Status ldbs = ldb->Write(wopt,&batch);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
 		return true;
 	}
 
-	void leveldb_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
 		if(it == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
-			return;
+			return false;
 		}
 
 		for(it->SeekToFirst();it->Valid();it->Next()){
@@ -55,15 +63,20 @@ namespace lyramilk{ namespace cave
 		if (it) delete it;
 
 		ldb->CompactRange(nullptr,nullptr);
-		ldb->Put(wopt,".cfver",cfver);
+		leveldb::Status ldbs = ldb->Put(wopt,".cfver",cfver);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		return true;
 	}
 
-	void leveldb_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
 		if(it == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
-			return;
+			return false;
 		}
 
 		for(it->SeekToFirst();it->Valid();it->Next()){
@@ -72,10 +85,15 @@ namespace lyramilk{ namespace cave
 		if (it) delete it;
 
 		ldb->CompactRange(nullptr,nullptr);
-		ldb->Put(wopt,".cfver",cfver);
+		leveldb::Status ldbs = ldb->Put(wopt,".cfver",cfver);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		return true;
 	}
 
-	void leveldb_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
@@ -86,7 +104,7 @@ namespace lyramilk{ namespace cave
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
 		if(it == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
-			return;
+			return false;
 		}
 
 		for(it->Seek(prefix);it->Valid();it->Next()){
@@ -95,28 +113,37 @@ namespace lyramilk{ namespace cave
 		}
 		if (it) delete it;
 
-		ldb->Write(wopt,&batch);
+		leveldb::Status ldbs = ldb->Write(wopt,&batch);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		return true;
 	}
 
-	void leveldb_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::error,__FUNCTION__) << D("未实现move函数，这在ssdb中不应该出现") << std::endl;
+		return false;
 	}
 
-	void leveldb_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
+		return false;
 	}
 
-	void leveldb_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
+		return false;
 	}
 
-	void leveldb_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		log(lyramilk::log::error,__FUNCTION__) << D("未实现rename函数，这在ssdb中不应该出现") << std::endl;
+		return false;
 	}
 
-	void leveldb_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
@@ -125,10 +152,15 @@ namespace lyramilk{ namespace cave
 		prefix.push_back(0xfe);
 		prefix.append(args[2]);
 		batch.Put(prefix,lyramilk::data::str(args[3].str()));
-		ldb->Write(wopt,&batch);
+		leveldb::Status ldbs = ldb->Write(wopt,&batch);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		return true;
 	}
 
-	void leveldb_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
@@ -137,7 +169,12 @@ namespace lyramilk{ namespace cave
 		prefix.push_back(0xfe);
 		prefix.append(args[2]);
 		batch.Delete(prefix);
-		ldb->Write(wopt,&batch);
+		leveldb::Status ldbs = ldb->Write(wopt,&batch);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		return true;
 	}
 
 	leveldb_minimal::leveldb_minimal()
@@ -161,8 +198,8 @@ namespace lyramilk{ namespace cave
 		if(max_open_files < 500){
 			max_open_files = 500;
 		}
-		if(max_open_files > 1000){
-			max_open_files = 1000;
+		if(max_open_files > 4000){
+			max_open_files = 4000;
 		}
 
 		opt.create_if_missing = true;

@@ -40,9 +40,9 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string psync_replid;
 		lyramilk::data::uint64 psync_offset;
 	  protected:
-		virtual void proc_noop(lyramilk::data::uint64 seq);
-		virtual void proc_copy(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args);
-		virtual void proc_sync(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args);
+		virtual bool proc_noop(lyramilk::data::uint64 seq);
+		virtual bool proc_copy(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args);
+		virtual bool proc_sync(lyramilk::data::uint64 seq,char cmd,const char* p,std::size_t l,const lyramilk::data::strings& args);
 	};
 
 }}

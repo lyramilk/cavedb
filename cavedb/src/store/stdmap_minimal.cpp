@@ -10,53 +10,62 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	void stdmap_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		lyramilk::threading::mutex_sync _(lock.w());
 		data.clear();
+		return true;
 	}
 
-	void stdmap_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		lyramilk::threading::mutex_sync _(lock.w());
 		data.clear();
+		return true;
 	}
 
-	void stdmap_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		lyramilk::threading::mutex_sync _(lock.w());
 		data.erase(args[1].str());
+		return true;
 	}
 
-	void stdmap_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
+		return false;
 	}
 
-	void stdmap_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
+		return false;
 	}
 
-	void stdmap_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
+		return false;
 	}
 
-	void stdmap_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		lyramilk::threading::mutex_sync _(lock.w());
 		data[args[2]] = data[args[1]];
 		data.erase(args[1]);
+		return true;
 	}
 
-	void stdmap_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		lyramilk::threading::mutex_sync _(lock.w());
 		data[args[1]][args[2]] = args[3].str();
+		return true;
 	}
 
-	void stdmap_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool stdmap_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{
 		lyramilk::threading::mutex_sync _(lock.w());
 		data[args[1]].erase(args[2]);
+		return true;
 	}
 
 	stdmap_minimal::stdmap_minimal()

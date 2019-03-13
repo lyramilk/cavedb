@@ -27,14 +27,14 @@ namespace lyramilk{ namespace cave
 		bool init(std::istream& is);
 		bool restore(std::istream& is,lyramilk::data::uint64 dbid,lyramilk::data::uint64 expiretime,const lyramilk::data::string& key);
 
-		virtual void notify_select(lyramilk::data::uint64 dbid);
-		virtual void notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value);
-		virtual void notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value);
-		virtual void notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score);
-		virtual void notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value);
-		virtual void notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item);
-		virtual void notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value);
-		virtual void notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime);
+		virtual bool notify_select(lyramilk::data::uint64 dbid);
+		virtual bool notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value);
+		virtual bool notify_hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::var& value);
+		virtual bool notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score);
+		virtual bool notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value);
+		virtual bool notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item);
+		virtual bool notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value);
+		virtual bool notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime);
 	};
 }}
 

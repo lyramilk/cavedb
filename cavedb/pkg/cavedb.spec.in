@@ -76,7 +76,7 @@ Prefix:		%{_sysconfdir}
 %package devel 
 Summary:	Development files for %{?name} 
 Group:		Development/Libraries
-Requires:       %{name} = %{?version}
+Requires:       %{name} = %{?version} libmilk-devel
 Prefix:		%{_prefix}
 Prefix:		%{_sysconfdir}
 %description devel
