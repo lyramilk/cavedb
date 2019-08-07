@@ -480,6 +480,18 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
+	bool store::notify_ssdb_qset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	{
+		log(lyramilk::log::warning) << D("%s未实现","ssdb_qset") << args << std::endl;
+		return false;
+	}
+
+	bool store::notify_ssdb_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	{
+		log(lyramilk::log::warning) << D("%s未实现","ssdb_del") << args << std::endl;
+		return false;
+	}
+
 	typedef bool (*store_event_callback)(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 
 	#define define_selector(mm) bool static cbk_notify_##mm(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args){return pthis->notify_##mm(replid,offset,args);}
@@ -546,6 +558,8 @@ namespace lyramilk{ namespace cave
 		define_selector(zremrangebyscore);
 		define_selector(zunionstore);
 		define_selector(zinterstore);
+		define_selector(ssdb_qset);
+		define_selector(ssdb_del);
 	};
 
 	#define init_selector(mm) m[#mm] = &store_dispatcher::cbk_notify_##mm
@@ -613,11 +627,11 @@ namespace lyramilk{ namespace cave
 		init_selector(zremrangebyscore);
 		init_selector(zunionstore);
 		init_selector(zinterstore);
+		init_selector(ssdb_qset);
+		init_selector(ssdb_del);
 		return m;
 	}
 	std::map<lyramilk::data::string,store_event_callback> dispatch_map = init_dispatcher();
-
-
 
 	bool store::notify_command(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
 	{

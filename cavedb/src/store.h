@@ -98,6 +98,10 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_rpoplpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 		virtual bool notify_rpush(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 		virtual bool notify_rpushx(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
+		// ssdb queue
+		virtual bool notify_ssdb_qset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
+		// ssdb kv
+		virtual bool notify_ssdb_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 	  public:
 		virtual lyramilk::data::uint64 wspeed();
 		virtual ~store();

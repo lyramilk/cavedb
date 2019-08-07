@@ -107,7 +107,15 @@ int main(int argc,char* argv[])
 	datasource.slaveof(ssdb_host,ssdb_port,ssdb_password,replid,offset,&mstore);
 
 	while(true){
-		sleep(1);
+
+
+		//COUT << mstore.wspeed() << std::endl;
+
+
+
+
+
+		sleep(6);
 	}
 	return 0;
 }

@@ -35,9 +35,10 @@ namespace lyramilk{ namespace cave
 		slave_redis();
 		virtual ~slave_redis();
 		void slaveof(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler);
+		void init(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler);
 		lyramilk::data::uint64 tell_offset();
-	  protected:
 		virtual int svc();
+	  protected:
 		lyramilk::data::string psync_replid;
 		lyramilk::data::uint64 psync_offset;
 	};

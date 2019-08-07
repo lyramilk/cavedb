@@ -98,6 +98,16 @@ label_bodys:
 		active(1);
 	}
 
+	void slave_ssdb::init(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler)
+	{
+		this->host = host;
+		this->port = port;
+		this->pwd = pwd;
+		this->peventhandler = peventhandler;
+		this->psync_replid = psync_replid;
+		this->psync_offset = psync_offset;
+	}
+
 	lyramilk::data::string slave_ssdb::hexmem(const void *p, int size)
 	{
 		int capacity = (size < 20)? 32 : (size * 1.2);
@@ -324,7 +334,7 @@ label_bodys:
 
 				lyramilk::data::array ar;
 				ar.reserve(3);
-				ar.push_back("del");
+				ar.push_back("ssdb_del");
 				ar.push_back(tab);
 				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
@@ -374,11 +384,16 @@ label_bodys:
 				unsigned int len2 = (unsigned int)p[1+1+len];
 				lyramilk::data::string key(1+p+1+len+1,len2);
 
+				const lyramilk::data::string& sscore = args[1];
+
+				char* p;
+				long long score = strtoll(sscore.c_str(),&p,10);
+
 				lyramilk::data::array ar;
 				ar.reserve(4);
 				ar.push_back("zadd");
 				ar.push_back(tab);
-				ar.push_back(args[1]);
+				ar.push_back(score);
 				ar.push_back(key);
 				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
@@ -406,15 +421,20 @@ label_bodys:
 				}
 				unsigned int len = (unsigned int)p[1];
 				lyramilk::data::string tab(1+p+1,len);
+				/*
+				lyramilk::data::string qseq(1+p+1+len,8);
+				/*/
 				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
 				unsigned long long qseq = be64toh(qseq_net);
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
+				/**/
 				lyramilk::data::array ar;
 				ar.reserve(3);
-				ar.push_back("rpush");
+				ar.push_back("ssdb_qset");
 				ar.push_back(tab);
+				ar.push_back(qseq);
 				ar.push_back(args[1]);
 				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
@@ -427,28 +447,27 @@ label_bodys:
 				}
 				unsigned int len = (unsigned int)p[1];
 				lyramilk::data::string tab(1+p+1,len);
+				/*
+				lyramilk::data::string qseq(1+p+1+len,8);
+				/*/
 				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
 				unsigned long long qseq = be64toh(qseq_net);
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
+				/**/
 				lyramilk::data::array ar;
 				ar.reserve(3);
-				ar.push_back("lpush");
+				ar.push_back("ssdb_qset");
 				ar.push_back(tab);
+				ar.push_back(qseq);
 				ar.push_back(args[1]);
 				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::QPOP_BACK:
 			{
-				unsigned int len = (unsigned int)p[1];
-				lyramilk::data::string tab(1+p+1,len);
-				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
-				unsigned long long qseq = be64toh(qseq_net);
-				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
-					break;
-				}
+				lyramilk::data::string tab(p,l);
 				lyramilk::data::array ar;
 				ar.reserve(2);
 				ar.push_back("rpop");
@@ -458,13 +477,7 @@ label_bodys:
 			break;
 		  case BinlogCommand::QPOP_FRONT:
 			{
-				unsigned int len = (unsigned int)p[1];
-				lyramilk::data::string tab(1+p+1,len);
-				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
-				unsigned long long qseq = be64toh(qseq_net);
-				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
-					break;
-				}
+				lyramilk::data::string tab(p,l);
 				lyramilk::data::array ar;
 				ar.reserve(2);
 				ar.push_back("lpop");
@@ -480,14 +493,18 @@ label_bodys:
 				}
 				unsigned int len = (unsigned int)p[1];
 				lyramilk::data::string tab(1+p+1,len);
+				/*
+				lyramilk::data::string qseq(1+p+1+len,8);
+				/*/
 				unsigned long long qseq_net = *(unsigned long long*)(1+p+1+len);
 				unsigned long long qseq = be64toh(qseq_net);
 				if(qseq == QFRONT_SEQ || qseq == QBACK_SEQ){
 					break;
 				}
+				/**/
 				lyramilk::data::array ar;
 				ar.reserve(4);
-				ar.push_back("ssdb.qset");
+				ar.push_back("ssdb_qset");
 				ar.push_back(tab);
 				ar.push_back(qseq);
 				ar.push_back(args[1]);

@@ -32,11 +32,12 @@ namespace lyramilk{ namespace cave
 		slave_ssdb();
 		virtual ~slave_ssdb();
 		void slaveof(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler);
+		void init(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler);
 		lyramilk::data::uint64 tell_offset();
 
 		lyramilk::data::string static hexmem(const void *p, int size);
-	  protected:
 		virtual int svc();
+	  protected:
 		lyramilk::data::string psync_replid;
 		lyramilk::data::uint64 psync_offset;
 	  protected:

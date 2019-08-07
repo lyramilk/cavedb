@@ -140,6 +140,16 @@ namespace lyramilk{ namespace cave
 		active(2);
 	}
 
+	void slave_redis::init(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler)
+	{
+		this->host = host;
+		this->port = port;
+		this->pwd = pwd;
+		this->peventhandler = peventhandler;
+		this->psync_replid = psync_replid;
+		this->psync_rseq_diff = psync_rseq_diff;
+	}
+
 	bool slave_redis::reconnect()
 	{
 		c.close();

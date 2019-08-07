@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.19)
+set(version 2.0.20)
 set(soversion 2.0)
 
 
@@ -26,24 +26,29 @@ include(UsePkgConfig)
 enable_testing()
 
 #定制编译选项
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall")
-set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -g -Wall -Bsymbolic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -Wall -fPIC -Bsymbolic")
 
 if(release)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O4 -DNDEBUG -Wall ")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -std=c99 -O4 -DNDEBUG -Wall ")
-	set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -O4 -Wall ")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -DNDEBUG ")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -std=c99 -O2 -DNDEBUG ")
+	set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -O2")
 	message("Build as release")
 else()
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DEBUG -g -Wall -fstack-protector ")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -D_DEBUG -std=c99 -g -Wall -fstack-protector ")
-	set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -g -Wall -fstack-protector ")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_DEBUG -g -fstack-protector ")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -D_DEBUG -std=c99 -g -fstack-protector ")
+	set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -g -fstack-protector ")
 	message("Build as debug")
 endif()
 
 #定义安装目录
 if(NOT install_dir)
 	set(install_dir ${CMAKE_CURRENT_SOURCE_DIR}/output)
+endif()
+
+if(NOT share_type)
+	set(share_type SHARED)
 endif()
 
 #搜索源代码
@@ -143,7 +148,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pkg/cavedb.spec.in ${CMAKE_CURRENT_SO
 
 
 #目标动态库
-add_library(${PROJECT_NAME} SHARED ${src_cpps} ${src_hs} ${src_hs_store})
+add_library(${PROJECT_NAME} ${share_type} ${src_cpps} ${src_hs} ${src_hs_store})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${version} SOVERSION ${soversion})
 
