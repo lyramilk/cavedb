@@ -286,6 +286,7 @@ label_bodys:
 	{
 		switch(cmd){
 		  case BinlogCommand::BEGIN:
+			peventhandler->is_in_full_sync = true;
 			log(lyramilk::log::debug,"proc_copy") << D("拷贝开始") << std::endl;
 			{
 				lyramilk::data::array ar;
@@ -297,6 +298,8 @@ label_bodys:
 			psync_replid = "";
 			if(peventhandler->notify_psync(psync_replid,seq)){
 				log(lyramilk::log::debug,"proc_copy") << D("拷贝结束") << std::endl;
+				psync_offset = seq;
+				peventhandler->is_in_full_sync = false;
 				return true;
 			}
 			log(lyramilk::log::error,"proc_copy") << D("拷贝出错") << std::endl;

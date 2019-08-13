@@ -151,7 +151,6 @@ namespace lyramilk{ namespace cave
 	{
 		leveldb::WriteBatch batch;
 		save_process(batch,replid,offset);
-
 		std::string prefix;
 		prefix.reserve(256);
 		prefix.push_back(0xff);
@@ -401,7 +400,8 @@ namespace lyramilk{ namespace cave
 
 	leveldb_minimal2::leveldb_minimal2()
 	{
-		ver = 0;
+		ldb = nullptr;
+		sem.set_max_signal(10);
 	}
 
 	leveldb_minimal2::~leveldb_minimal2()
@@ -409,7 +409,7 @@ namespace lyramilk{ namespace cave
 		delete ldb;
 	}
 
-	bool leveldb_minimal2::open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB)
+	minimal_interface* leveldb_minimal2::open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB)
 	{
 		leveldb::Options opt;
 
@@ -425,33 +425,89 @@ namespace lyramilk{ namespace cave
 
 		opt.create_if_missing = true;
 		opt.max_open_files = max_open_files;
-		opt.filter_policy = leveldb::NewBloomFilterPolicy(10);
+		opt.filter_policy = leveldb::NewBloomFilterPolicy(12);
 		opt.block_cache = leveldb::NewLRUCache(cache_size_MB * 1024 * 1024);
 		opt.block_size = block_size * 1024;
 		opt.write_buffer_size = write_buffer_size * 1024 * 1024;
 		opt.max_file_size = 32 * 1024 * 1024;
 		opt.compression = leveldb::kSnappyCompression;
 
-		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
-		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
-		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
-		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_file_size=" << opt.max_file_size << std::endl;
-		log(lyramilk::log::debug,__FUNCTION__) << "leveldb.compression=" << opt.compression << std::endl;
 
+		leveldb::DB* ldb = nullptr;
 		leveldb::Status ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
-			return false;
+			return nullptr;
 		}
 		if(ldb == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败") << std::endl;
-			return false;
+			return nullptr;
 		}
 
 		leveldb::ReadOptions ropt;
 		std::string formatseq;
 		ldbs = ldb->Get(ropt,".cfver",&formatseq);
-		log(lyramilk::log::debug,__FUNCTION__) << D("cfver=%.*s",cfver.size(),cfver.c_str()) << std::endl;
+		if(ldbs.ok()){
+			if(formatseq != cfver){
+				delete ldb;
+				ldb = nullptr;
+				log(lyramilk::log::warning,__FUNCTION__) << D("leveldb打开失败：[%.*s]与[%.*s]不匹配",formatseq.size(),formatseq.c_str(),cfver.size(),cfver.c_str()) << std::endl;
+				return nullptr;
+			}
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_file_size=" << opt.max_file_size << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.compression=" << opt.compression << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << D("cfver=%.*s",cfver.size(),cfver.c_str()) << std::endl;
+			leveldb_minimal2* ins = new leveldb_minimal2();
+			ins->ldb = ldb;
+			return ins;
+		}
+		delete ldb;
+		ldb = nullptr;
+		log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
+		return nullptr;
+	}
+
+	minimal_interface* leveldb_minimal2::open_focus(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB)
+	{
+		leveldb::Options opt;
+
+		int block_size = 32;		//KB	16
+		int write_buffer_size = 64;	//MB	16
+		int max_open_files = cache_size_MB / 1024 * 300;
+		if(max_open_files < 500){
+			max_open_files = 500;
+		}
+		if(max_open_files > 4000){
+			max_open_files = 4000;
+		}
+
+		opt.create_if_missing = true;
+		opt.max_open_files = max_open_files;
+		opt.filter_policy = leveldb::NewBloomFilterPolicy(12);
+		opt.block_cache = leveldb::NewLRUCache(cache_size_MB * 1024 * 1024);
+		opt.block_size = block_size * 1024;
+		opt.write_buffer_size = write_buffer_size * 1024 * 1024;
+		opt.max_file_size = 32 * 1024 * 1024;
+		opt.compression = leveldb::kSnappyCompression;
+
+
+		leveldb::DB* ldb = nullptr;
+		leveldb::Status ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
+			return nullptr;
+		}
+		if(ldb == nullptr){
+			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败") << std::endl;
+			return nullptr;
+		}
+
+		leveldb::ReadOptions ropt;
+		std::string formatseq;
+		ldbs = ldb->Get(ropt,".cfver",&formatseq);
 		if(ldbs.ok() || ldbs.IsNotFound()){
 			if(formatseq != cfver){
 				delete ldb;
@@ -460,32 +516,41 @@ namespace lyramilk{ namespace cave
 				leveldb::Status ldbs = DestroyDB(leveldbpath.c_str(),opt);
 				if(!ldbs.ok()){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
-					return false;
+					return nullptr;
 				}
 				ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
 				if(!ldbs.ok()){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
-					return false;
+					return nullptr;
 				}
 				if(ldb == nullptr){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败") << std::endl;
-					return false;
+					return nullptr;
 				}
 
 				leveldb::WriteOptions wopt;
 				ldbs = ldb->Put(wopt,".cfver",cfver);
 				if(!ldbs.ok()){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
-					return false;
+					return nullptr;
 				}
 			}
-		}else{
-			delete ldb;
-			ldb = nullptr;
-			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
-			return false;
+
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_file_size=" << opt.max_file_size << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.compression=" << opt.compression << std::endl;
+			log(lyramilk::log::debug,__FUNCTION__) << D("cfver=%.*s",cfver.size(),cfver.c_str()) << std::endl;
+			leveldb_minimal2* ins = new leveldb_minimal2();
+			ins->ldb = ldb;
+
+			return ins;
 		}
-		return true;
+		delete ldb;
+		ldb = nullptr;
+		log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
+		return nullptr;
 	}
 
 	bool leveldb_minimal2::get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include "store/stdmap_minimal.h"
-#include "store/leveldb_minimal.h"
+#include "store/leveldb_minimal_adapter.h"
 #include "store/sparse_hash_map_minimal.h"
 #include "store/dense_hash_map_minimal.h"
 #include "slave_ssdb.h"
@@ -88,7 +88,7 @@ int main(int argc,char* argv[])
 	signal(SIGPIPE, SIG_IGN);
 
 #if 1
-	lyramilk::cave::leveldb_minimal mstore;
+	lyramilk::cave::leveldb_minimal_adapter mstore;
 	mstore.open(leveldb_path,1000);
 	if(isneedcompact){
 		mstore.compact();
@@ -103,7 +103,6 @@ int main(int argc,char* argv[])
 	lyramilk::data::string replid = "";
 	lyramilk::data::uint64 offset = 0;
 	mstore.get_sync_info(&replid,&offset);
-
 	datasource.slaveof(ssdb_host,ssdb_port,ssdb_password,replid,offset,&mstore);
 
 	while(true){

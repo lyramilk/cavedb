@@ -5,6 +5,7 @@
 #include <libmilk/thread.h>
 #include "../store.h"
 #include "../store_reader.h"
+#include "leveldb_minimal_adapter.h"
 
 namespace leveldb{class DB;};
 
@@ -16,10 +17,9 @@ namespace leveldb{class DB;};
 namespace lyramilk{ namespace cave
 {
 
-	class leveldb_minimal:public lyramilk::cave::store,public lyramilk::cave::store_reader
+	class leveldb_minimal:public minimal_interface
 	{
 		leveldb::DB* ldb;
-		int ver;
 	  protected:
 		mutable lyramilk::threading::mutex_semaphore sem;
 	  protected:
@@ -48,11 +48,12 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_zadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 		virtual bool notify_zrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 
+		leveldb_minimal();
 	  public:
 		const static std::string cfver;
-		leveldb_minimal();
 		virtual ~leveldb_minimal();
-		bool open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+		static minimal_interface* open_focus(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 		bool compact();
 
 		long long get_sigval();

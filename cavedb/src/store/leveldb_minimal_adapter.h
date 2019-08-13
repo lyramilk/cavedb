@@ -1,13 +1,10 @@
-#ifndef _casedb_leveldb_minimal2_h_
-#define _casedb_leveldb_minimal2_h_
+#ifndef _casedb_leveldb_minimal_adapter_h_
+#define _casedb_leveldb_minimal_adapter_h_
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>
 #include "../store.h"
 #include "../store_reader.h"
-#include "leveldb_minimal_adapter.h"
-
-namespace leveldb{class DB;};
 
 /*
 	由于打算支持多种容器， 1_mininal 的键构造对多种容器时leveldb缓存不友好，故增加 2_mininal 版本，这一版本对leveldb排键时会把同种容器排在一起。
@@ -16,11 +13,41 @@ namespace leveldb{class DB;};
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
-	class leveldb_minimal2:public minimal_interface
+
+	class minimal_interface:public lyramilk::cave::store,public lyramilk::cave::store_reader
 	{
-		leveldb::DB* ldb;
+		friend class leveldb_minimal_adapter;
 	  protected:
-		mutable lyramilk::threading::mutex_semaphore sem;
+		virtual bool notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
+	  public:
+		virtual long long get_sigval() = 0;
+		virtual bool compact() = 0;
+		virtual lyramilk::data::string get_leveldb_property(const lyramilk::data::string& property) = 0;
+
+		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
+		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const = 0;
+		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const = 0;
+		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const = 0;
+	};
+
+
+
+	struct minimal_version
+	{
+		minimal_interface*(*open_or_create_instance)(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+		minimal_interface*(*format_instance)(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+	};
+
+
+	class leveldb_minimal_adapter:public minimal_interface
+	{
+		minimal_interface* adapter;
+	  protected:
+		typedef std::map<lyramilk::data::string,minimal_version> leveldb_minimal_version_master;
+		leveldb_minimal_version_master version_map;
+		lyramilk::data::string default_version;
+	  protected:
+		lyramilk::data::string ver;
 	  protected:
 		virtual bool notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
 		virtual bool notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset);
@@ -47,26 +74,21 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_zadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 		virtual bool notify_zrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 
-		leveldb_minimal2();
 	  public:
-		const static std::string cfver;
-		virtual ~leveldb_minimal2();
-		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
-		static minimal_interface* open_focus(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
-		bool compact();
-
-		long long get_sigval();
+		leveldb_minimal_adapter();
+		virtual ~leveldb_minimal_adapter();
+		bool open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 	  public:
-		//	leveldb.num-files-at-level<N>
-		//	leveldb.stats
-		//	leveldb.sstables
+		virtual long long get_sigval();
+		virtual bool compact();
 		virtual lyramilk::data::string get_leveldb_property(const lyramilk::data::string& property);
-
+	  public:
 		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const;
 	};
+
 }}
 
 #endif
