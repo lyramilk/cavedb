@@ -1,5 +1,5 @@
-#ifndef _casedb_stdmap_minimal_h_
-#define _casedb_stdmap_minimal_h_
+#ifndef _cavedb_stdmap_minimal_h_
+#define _cavedb_stdmap_minimal_h_
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>

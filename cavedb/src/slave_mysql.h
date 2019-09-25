@@ -1,5 +1,5 @@
-#ifndef _casedb_slave_mysql_h_
-#define _casedb_slave_mysql_h_
+#ifndef _cavedb_slave_mysql_h_
+#define _cavedb_slave_mysql_h_
 
 #include <libmilk/thread.h>
 #include <libmilk/netio.h>

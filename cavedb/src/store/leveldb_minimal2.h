@@ -1,5 +1,5 @@
-#ifndef _casedb_leveldb_minimal2_h_
-#define _casedb_leveldb_minimal2_h_
+#ifndef _cavedb_leveldb_minimal2_h_
+#define _cavedb_leveldb_minimal2_h_
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>

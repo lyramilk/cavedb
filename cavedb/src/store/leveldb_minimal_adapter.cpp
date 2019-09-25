@@ -127,6 +127,17 @@ namespace lyramilk{ namespace cave
 				adapter = it->second.open_or_create_instance(leveldbpath,cache_size_MB);
 			}
 		}
+		return adapter != nullptr;
+	}
+
+	bool leveldb_minimal_adapter::open_focus(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB)
+	{
+		leveldb_minimal_version_master::const_iterator it = version_map.begin();
+		for(;it!=version_map.end() && adapter == nullptr;++it){
+			if((void*)it->second.open_or_create_instance){
+				adapter = it->second.open_or_create_instance(leveldbpath,cache_size_MB);
+			}
+		}
 		if(adapter == nullptr && !version_map.empty()){
 			it = version_map.find(default_version);
 			if (it != version_map.end())
@@ -153,6 +164,17 @@ namespace lyramilk{ namespace cave
 	{
 		if(adapter) return adapter->get_leveldb_property(property);
 		return "";
+	}
+
+	bool leveldb_minimal_adapter::is_on_full_sync()
+	{
+		return on_full_sync();
+	}
+
+	lyramilk::data::uint64 leveldb_minimal_adapter::rspeed() const
+	{
+		if(adapter) return adapter->rspeed();
+		return 0;
 	}
 
 	bool leveldb_minimal_adapter::get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const

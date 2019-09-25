@@ -1,5 +1,5 @@
-#ifndef _casedb_null_store_h_
-#define _casedb_null_store_h_
+#ifndef _cavedb_null_store_h_
+#define _cavedb_null_store_h_
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>

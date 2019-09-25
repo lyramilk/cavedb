@@ -1,5 +1,5 @@
-#ifndef _casedb_redis_vserver_h_
-#define _casedb_redis_vserver_h_
+#ifndef _cavedb_redis_vserver_h_
+#define _cavedb_redis_vserver_h_
 
 #include <libmilk/thread.h>
 #include <libmilk/netio.h>

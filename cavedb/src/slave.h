@@ -1,5 +1,5 @@
-#ifndef _casedb_slave_h_
-#define _casedb_slave_h_
+#ifndef _cavedb_slave_h_
+#define _cavedb_slave_h_
 
 #include <libmilk/var.h>
 /// namespace lyramilk::cave

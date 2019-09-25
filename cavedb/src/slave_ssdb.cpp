@@ -240,7 +240,7 @@ label_bodys:
 							if(strcmp("OUT_OF_SYNC",reply[0].c_str() + cmdoffset) == 0){
 								log(lyramilk::log::error,"psync") << D("同步错误:%s","OUT_OF_SYNC") << std::endl;
 								lyramilk::data::array ar;
-								ar.push_back("flushall");
+								ar.push_back("sync_overflow");
 								if(!peventhandler->notify_command(psync_replid,0,ar)){
 									status = st_stop;
 								}
@@ -290,7 +290,7 @@ label_bodys:
 			log(lyramilk::log::debug,"proc_copy") << D("拷贝开始") << std::endl;
 			{
 				lyramilk::data::array ar;
-				ar.push_back("flushall");
+				ar.push_back("sync_start");
 				return peventhandler->notify_command(psync_replid,0,ar);
 			}
 			break;
@@ -300,7 +300,9 @@ label_bodys:
 				log(lyramilk::log::debug,"proc_copy") << D("拷贝结束") << std::endl;
 				psync_offset = seq;
 				peventhandler->is_in_full_sync = false;
-				return true;
+				lyramilk::data::array ar;
+				ar.push_back("sync_continue");
+				return peventhandler->notify_command(psync_replid,0,ar);
 			}
 			log(lyramilk::log::error,"proc_copy") << D("拷贝出错") << std::endl;
 			return false;

@@ -492,6 +492,22 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
+
+	bool store::notify_sync_start(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	{
+		return notify_flushall(replid,offset,args);
+	}
+
+	bool store::notify_sync_continue(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	{
+		return notify_psync(replid,offset);
+	}
+
+	bool store::notify_sync_overflow(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	{
+		return notify_flushall(replid,offset,args);
+	}
+
 	typedef bool (*store_event_callback)(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 
 	#define define_selector(mm) bool static cbk_notify_##mm(store* pthis,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args){return pthis->notify_##mm(replid,offset,args);}
@@ -560,6 +576,9 @@ namespace lyramilk{ namespace cave
 		define_selector(zinterstore);
 		define_selector(ssdb_qset);
 		define_selector(ssdb_del);
+		define_selector(sync_start);
+		define_selector(sync_continue);
+		define_selector(sync_overflow);
 	};
 
 	#define init_selector(mm) m[#mm] = &store_dispatcher::cbk_notify_##mm
@@ -629,6 +648,9 @@ namespace lyramilk{ namespace cave
 		init_selector(zinterstore);
 		init_selector(ssdb_qset);
 		init_selector(ssdb_del);
+		init_selector(sync_start);
+		init_selector(sync_continue);
+		init_selector(sync_overflow);
 		return m;
 	}
 	std::map<lyramilk::data::string,store_event_callback> dispatch_map = init_dispatcher();

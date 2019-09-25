@@ -1,5 +1,5 @@
-#ifndef _casedb_leveldb_minimal_adapter_h_
-#define _casedb_leveldb_minimal_adapter_h_
+#ifndef _cavedb_leveldb_minimal_adapter_h_
+#define _cavedb_leveldb_minimal_adapter_h_
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>
@@ -78,11 +78,14 @@ namespace lyramilk{ namespace cave
 		leveldb_minimal_adapter();
 		virtual ~leveldb_minimal_adapter();
 		bool open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+		bool open_focus(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 	  public:
 		virtual long long get_sigval();
 		virtual bool compact();
 		virtual lyramilk::data::string get_leveldb_property(const lyramilk::data::string& property);
+		virtual bool is_on_full_sync();
 	  public:
+		virtual lyramilk::data::uint64 rspeed() const;
 		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;

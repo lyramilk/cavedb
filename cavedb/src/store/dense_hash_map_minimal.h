@@ -1,5 +1,5 @@
-#ifndef _casedb_dense_hash_map_minimal_h_
-#define _casedb_dense_hash_map_minimal_h_
+#ifndef _cavedb_dense_hash_map_minimal_h_
+#define _cavedb_dense_hash_map_minimal_h_
 
 #include "config.h"
 #include <libmilk/var.h>

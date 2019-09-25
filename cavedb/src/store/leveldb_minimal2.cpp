@@ -447,13 +447,13 @@ namespace lyramilk{ namespace cave
 		leveldb::ReadOptions ropt;
 		std::string formatseq;
 		ldbs = ldb->Get(ropt,".cfver",&formatseq);
-		if(ldbs.ok()){
-			if(formatseq != cfver){
-				delete ldb;
-				ldb = nullptr;
-				log(lyramilk::log::warning,__FUNCTION__) << D("leveldb打开失败：[%.*s]与[%.*s]不匹配",formatseq.size(),formatseq.c_str(),cfver.size(),cfver.c_str()) << std::endl;
-				return nullptr;
-			}
+		if(ldbs.ok() && formatseq != cfver){
+			delete ldb;
+			ldb = nullptr;
+			log(lyramilk::log::warning,__FUNCTION__) << D("leveldb打开失败：[%.*s]与[%.*s]不匹配",formatseq.size(),formatseq.c_str(),cfver.size(),cfver.c_str()) << std::endl;
+			return nullptr;
+		}
+		if(ldbs.ok() || ldbs.IsNotFound()){
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
