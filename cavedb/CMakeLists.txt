@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.22)
+set(version 2.0.23)
 set(soversion 2.0)
 
 
@@ -71,7 +71,8 @@ file(GLOB src_hs_store RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/store/*.h)
 list(APPEND LIBS_DEPENDS -ldl)
 
 ## 搜索可选的外部依赖
-if(UNIX)
+
+if(NOT minimal)
 	pkg_check_modules(LIBMILK libmilk REQUIRED)
 	pkg_check_modules(SPARSEHASH sparsehash)
 
@@ -79,6 +80,20 @@ if(UNIX)
 	check_include_file_cxx(/usr/include/google/sparsehash/sparsehashtable.h Z_HAVE_SPARSEHASH)
 	check_include_file_cxx("/etc/alternatives/java_sdk/include/jni.h" Z_HAVE_JDK)
 endif()
+
+
+
+
+if(minimal)
+	list(REMOVE_ITEM src_hs src/store/leveldb_minimal.h)
+	list(REMOVE_ITEM src_hs src/store/leveldb_minimal2.h)
+	list(REMOVE_ITEM src_hs src/store/leveldb_minimal_adapter.h)
+	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal.cpp)
+	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal2.cpp)
+	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal_adapter.cpp)
+endif()
+
+
 
 if(LIBMILK_FOUND)
 	list(APPEND BUILD_DEPENDS libmilk-devel)
@@ -158,12 +173,14 @@ if(NOT ${LIBMILK_CFLAGS})
 	add_dependencies(${PROJECT_NAME} milk)
 endif()
 
-#对leveldb的依赖
-execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
-execute_process(COMMAND  make -C ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/include/)
-target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libleveldb.a ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libmemenv.a)
 
+if(NOT minimal)
+	#对leveldb的依赖
+	execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
+	execute_process(COMMAND  make -C ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/ out-static/libleveldb.a out-static/libmemenv.a)
+	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/include/)
+	target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libleveldb.a ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libmemenv.a)
+endif()
 
 #链接库
 if(UNIX)

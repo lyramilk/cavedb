@@ -1,5 +1,5 @@
-#ifndef _casedb_store_reader_h_
-#define _casedb_store_reader_h_
+#ifndef _cavedb_store_reader_h_
+#define _cavedb_store_reader_h_
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>

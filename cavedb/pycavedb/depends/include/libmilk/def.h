@@ -270,6 +270,41 @@ namespace lyramilk{namespace data
 	};
 
 
+
+	template <int T>
+	struct intc;
+
+	template <>
+	struct intc<2>
+	{
+		typedef lyramilk::data::int16 t;
+		typedef lyramilk::data::uint16 ut;
+		enum {
+			square = 1
+		};
+	};
+
+	template <>
+	struct intc<4>
+	{
+		typedef lyramilk::data::int32 t;
+		typedef lyramilk::data::uint32 ut;
+		enum {
+			square = 2
+		};
+	};
+
+	template <>
+	struct intc<8>
+	{
+		typedef lyramilk::data::int64 t;
+		typedef lyramilk::data::uint64 ut;
+		enum {
+			square = 3
+		};
+	};
+
+
 }}
 
 #ifdef Z_HAVE_UNORDEREDMAP

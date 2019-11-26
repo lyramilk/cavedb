@@ -40,11 +40,7 @@
 	#define THROW(e)	std::cout << "\x1b[31m" << __FILE__ << "[" << __LINE__ << "]\x1b[0m函数" << __FUNCTION__ << "抛出异常" <<std::endl,throw(e)
 	#define COUT		(std::cout << "\x1b[36m" << __FILE__ << "[" << __LINE__ << "]\x1b[0m")
 
-#define OPENSSL_FOUND
-#define Z_HAVE_YAML
-#define JS17_FOUND
 #define Z_HAVE_TR1_UNORDEREDMAP
-#define Z_HAVE_TINYXML2
 
 
 

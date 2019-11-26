@@ -1,5 +1,5 @@
-#ifndef _casedb_slave_ssdb_h_
-#define _casedb_slave_ssdb_h_
+#ifndef _cavedb_slave_ssdb_h_
+#define _cavedb_slave_ssdb_h_
 
 #include <libmilk/thread.h>
 #include <libmilk/netio.h>

@@ -238,7 +238,7 @@ static PyObject * slaveof_ssdb(PyObject *self, PyObject *args)
 	PyObject *replid;
 	long long offset;
 
-	if (!(PyArg_ParseTuple(args, "sHsO!I", &host,&port,&pwd,&PyBytes_Type,&replid,&offset))) {
+	if (!(PyArg_ParseTuple(args, "sHsO!l", &host,&port,&pwd,&PyBytes_Type,&replid,&offset))) {
 		return NULL;
 	}
 
@@ -269,7 +269,7 @@ static PyObject * slaveof_redis(PyObject *self, PyObject *args)
 	PyObject *replid;
 	long long offset;
 
-	if (!(PyArg_ParseTuple(args, "sHsO!I", &host,&port,&pwd,&PyBytes_Type,&replid,&offset))) {
+	if (!(PyArg_ParseTuple(args, "sHsO!l", &host,&port,&pwd,&PyBytes_Type,&replid,&offset))) {
 		return NULL;
 	}
 

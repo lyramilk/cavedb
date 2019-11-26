@@ -1,5 +1,5 @@
-#ifndef _casedb_rdb_h_
-#define _casedb_rdb_h_
+#ifndef _cavedb_rdb_h_
+#define _cavedb_rdb_h_
 
 #include <libmilk/var.h>
 

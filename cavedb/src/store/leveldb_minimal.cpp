@@ -383,12 +383,14 @@ namespace lyramilk{ namespace cave
 		leveldb::DB* ldb = nullptr;
 
 		leveldb::Status ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
-		if(!ldbs.ok()){
+		if(ldb == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 			return nullptr;
 		}
-		if(ldb == nullptr){
-			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败") << std::endl;
+		if(!ldbs.ok()){
+			delete ldb;
+			ldb = nullptr;
+			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 			return nullptr;
 		}
 
@@ -402,6 +404,31 @@ namespace lyramilk{ namespace cave
 			return nullptr;
 		}
 		if(ldbs.ok() || ldbs.IsNotFound()){
+			leveldb::Iterator* it = ldb->NewIterator(ropt);
+			if(it == nullptr){
+				delete ldb;
+				ldb = nullptr;
+				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败%s",ldbs.ToString().c_str()) << std::endl;
+				return nullptr;
+			}
+
+			it->SeekToFirst();
+			if(!it->Valid()){
+				leveldb::WriteBatch batch;
+				batch.Put(".cfver",cfver);
+				save_process(batch,"",0);
+				leveldb::Status ldbs = ldb->Write(wopt,&batch);
+				if(!ldbs.ok()){
+					delete it;
+					delete ldb;
+					ldb = nullptr;
+					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
+					return nullptr;
+				}
+			}
+			delete it;
+
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.cfver=" << formatseq << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
@@ -445,12 +472,14 @@ namespace lyramilk{ namespace cave
 
 		leveldb::DB* ldb = nullptr;
 		leveldb::Status ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
-		if(!ldbs.ok()){
+		if(ldb == nullptr){
 			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 			return nullptr;
 		}
-		if(ldb == nullptr){
-			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败") << std::endl;
+		if(!ldbs.ok()){
+			delete ldb;
+			ldb = nullptr;
+			log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 			return nullptr;
 		}
 
@@ -468,23 +497,32 @@ namespace lyramilk{ namespace cave
 					return nullptr;
 				}
 				ldbs = leveldb::DB::Open(opt,leveldbpath.c_str(),&ldb);
-				if(!ldbs.ok()){
+				if(ldb == nullptr){
 					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 					return nullptr;
 				}
-				if(ldb == nullptr){
-					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败") << std::endl;
+				if(!ldbs.ok()){
+					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
+					delete ldb;
+					ldb = nullptr;
 					return nullptr;
 				}
 
-				leveldb::WriteOptions wopt;
-				ldbs = ldb->Put(wopt,".cfver",cfver);
-				if(!ldbs.ok()){
-					log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
-					return nullptr;
+				{
+					leveldb::WriteBatch batch;
+					batch.Put(".cfver",cfver);
+					save_process(batch,"",0);
+					leveldb::Status ldbs = ldb->Write(wopt,&batch);
+					if(!ldbs.ok()){
+						delete ldb;
+						ldb = nullptr;
+						log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
+						return nullptr;
+					}
 				}
 			}
 
+			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.cfver=" << formatseq << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.max_open_files=" << opt.max_open_files << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.block_size=" << opt.block_size << std::endl;
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.write_buffer_size=" << opt.write_buffer_size << std::endl;
@@ -504,13 +542,24 @@ namespace lyramilk{ namespace cave
 	bool leveldb_minimal::get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const
 	{
 		if(replid == nullptr || offset == nullptr) return false;
+		{
+			std::string formatseq;
+			leveldb::Status ldbs = ldb->Get(ropt,".cfver",&formatseq);
+			if(formatseq != cfver){
+				log(lyramilk::log::error,__FUNCTION__) << D("获取同步位置失败1 %s",ldbs.ToString().c_str()) << std::endl;
+				return false;
+			}
+		}
+
 		std::string stlsync_info;
 		leveldb::Status ldbs = ldb->Get(ropt,key_sync,&stlsync_info);
 		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("获取同步位置失败2 %s",ldbs.ToString().c_str()) << std::endl;
 			return false;
 		}
 		*replid = lyramilk::data::str(stlsync_info.substr(sizeof(lyramilk::data::uint64)));
 		stlsync_info.copy((char*)offset,sizeof(lyramilk::data::uint64));
+
 		return true;
 	}
 

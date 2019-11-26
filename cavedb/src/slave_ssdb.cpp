@@ -291,7 +291,7 @@ label_bodys:
 			{
 				lyramilk::data::array ar;
 				ar.push_back("sync_start");
-				return peventhandler->notify_command(psync_replid,0,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			break;
 		  case BinlogCommand::END:
@@ -302,7 +302,7 @@ label_bodys:
 				peventhandler->is_in_full_sync = false;
 				lyramilk::data::array ar;
 				ar.push_back("sync_continue");
-				return peventhandler->notify_command(psync_replid,0,ar);
+				return peventhandler->notify_command(psync_replid,psync_offset,ar);
 			}
 			log(lyramilk::log::error,"proc_copy") << D("拷贝出错") << std::endl;
 			return false;

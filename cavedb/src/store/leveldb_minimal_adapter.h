@@ -78,7 +78,6 @@ namespace lyramilk{ namespace cave
 		leveldb_minimal_adapter();
 		virtual ~leveldb_minimal_adapter();
 		bool open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
-		bool open_focus(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 	  public:
 		virtual long long get_sigval();
 		virtual bool compact();

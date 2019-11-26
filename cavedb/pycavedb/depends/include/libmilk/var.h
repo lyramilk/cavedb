@@ -27,24 +27,19 @@
 
 namespace lyramilk{namespace data
 {
+
+	class datawrapper;
+	lyramilk::data::string iconv(const lyramilk::data::string& str,const lyramilk::data::string& from,const lyramilk::data::string& to);
+
 	/**
 		@brief 这是一个超级变量，封装了对整数、小数、字符串、数组、映射表的表达，它尽可能在各种类型间进行转换。
 	*/
 	class _lyramilk_api_ var
 	{
-#ifdef HAVE_UNORDEREDMAP
-		typedef lyramilk::data::unordered_map<lyramilk::data::string,const void*> _userdata;
-#else
-		typedef lyramilk::data::map<lyramilk::data::string,const void*> _userdata;
-#endif
 	  public:
 
 		typedef class _lyramilk_api_ std::vector<lyramilk::data::var, allocator<lyramilk::data::var> > array;
-#ifdef HAVE_UNORDEREDMAP
 		typedef lyramilk::data::unordered_map<lyramilk::data::string,lyramilk::data::var,hash<lyramilk::data::string>, std::equal_to<lyramilk::data::string> ,lyramilk::data::allocator<std::pair<lyramilk::data::string,lyramilk::data::var> > > map;
-#else
-		typedef class _lyramilk_api_ std::lyramilk::data::map<lyramilk::data::string, lyramilk::data::var, std::less<lyramilk::data::string>, allocator<lyramilk::data::string> > map;
-#endif
 
 
 		const static lyramilk::data::var nil;
@@ -92,63 +87,20 @@ namespace lyramilk{namespace data
 		var(const lyramilk::data::stringdict& v);
 		var(const lyramilk::data::case_insensitive_unordered_map& v);
 		var(const lyramilk::data::case_insensitive_map& v);
-		var(const lyramilk::data::string& n,const void* v);
+		var(const lyramilk::data::datawrapper& v);
 		var(const lyramilk::data::var& v);
 
-		lyramilk::data::var operator +(const lyramilk::data::var& v) const throw(type_invalid);
-		lyramilk::data::var& operator +=(const lyramilk::data::var& v) throw(type_invalid);
 		bool operator ==(const lyramilk::data::var& v) const throw(type_invalid);
 		bool operator !=(const lyramilk::data::var& v) const throw(type_invalid);
 		bool operator <(const lyramilk::data::var& v) const throw(type_invalid);
-		bool operator >(const lyramilk::data::var& v) const throw(type_invalid);
 
-		template <typename T>
-		lyramilk::data::var operator +(const T& v) const
-		{
-			return lyramilk::data::var(*this) += lyramilk::data::var(v);
-		}
-		
-		template <typename T>
-		lyramilk::data::var& operator +=(const T& v)
-		{
-			return *this += lyramilk::data::var(v);
-		}
-
-		template <typename T>
-		bool operator ==(const T& v) const
-		{
-			return *this == lyramilk::data::var(v);
-		}
-
-		template <typename T>
-		bool operator !=(const T& v) const
-		{
-			return *this != lyramilk::data::var(v);
-		}
-
+/*
 		template <typename T>
 		bool operator <(const T& v) const
 		{
 			return *this < lyramilk::data::var(v);
 		}
-
-		template <typename T>
-		bool operator >(const T& v) const
-		{
-			return *this > lyramilk::data::var(v);
-		}
-
-		template <typename T>
-		bool operator <=(const T& v) const
-		{
-			return !(*this > lyramilk::data::var(v));
-		}
-
-		template <typename T>
-		bool operator >=(const T& v) const
-		{
-			return !(*this < lyramilk::data::var(v));
-		}
+*/
 
 		lyramilk::data::var& operator =(const lyramilk::data::var& v);
 
@@ -197,7 +149,7 @@ namespace lyramilk{namespace data
 			@param v 用户数据的指针。
 			@return 返回自身的引用。
 		*/
-		lyramilk::data::var& assign(const lyramilk::data::string& n,const void* v);
+		lyramilk::data::var& assign(const datawrapper& v);
 
 		operator lyramilk::data::chunk () const throw(type_invalid);
 		operator lyramilk::data::string () const throw(type_invalid);
@@ -253,26 +205,12 @@ namespace lyramilk{namespace data
 		lyramilk::data::var::map& conv(lyramilk::data::var::map& if_not_compat);
 		const lyramilk::data::var::array& conv(const lyramilk::data::var::array& if_not_compat) const;
 		const lyramilk::data::var::map& conv(const lyramilk::data::var::map& if_not_compat) const;
-
-		/**
-			@brief 定义额外的用户数据。
-			@param v 用户数据的标识。
-			@param p 用户数据的指针。
-		*/
-		void userdata(const lyramilk::data::string& v,const void* p) throw(type_invalid);
-		/**
-			@brief 取得用户数据的值。
-			@details 根据用户数据的标识获取用户数据的指针。
-			@param v 用户数据的标识。
-			@return 用户数据的指针。
-		*/
-		const void* userdata(const lyramilk::data::string& v) const;
 		/**
 			@brief 取得用户数据的值。
 			@details 取得第一个用户数据的指针。
 			@return 用户数据的指针。
 		*/
-		const void* userdata() const;
+		datawrapper* userdata() const;
 		/**
 			@brief 取得var的类型。
 		*/
@@ -304,33 +242,13 @@ namespace lyramilk{namespace data
 		lyramilk::data::var& operator[](const wchar_t* index) throw(type_invalid);
 		lyramilk::data::var& operator[](const lyramilk::data::string& index) throw(type_invalid);
 		lyramilk::data::var& operator[](const lyramilk::data::wstring& index) throw(type_invalid);
-		lyramilk::data::var& operator[](bool index) throw(type_invalid);
-		lyramilk::data::var& operator[](int8 index) throw(type_invalid);
-		lyramilk::data::var& operator[](uint8 index) throw(type_invalid);
-		lyramilk::data::var& operator[](int16 index) throw(type_invalid);
-		lyramilk::data::var& operator[](uint16 index) throw(type_invalid);
-		lyramilk::data::var& operator[](int32 index) throw(type_invalid);
-		lyramilk::data::var& operator[](uint32 index) throw(type_invalid);
-		lyramilk::data::var& operator[](long index) throw(type_invalid);
-		lyramilk::data::var& operator[](int64 index) throw(type_invalid);
 		lyramilk::data::var& operator[](uint64 index) throw(type_invalid);
-		lyramilk::data::var& operator[](double index) throw(type_invalid);
 
 		const lyramilk::data::var& operator[](const char* index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](const wchar_t* index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](const lyramilk::data::string& index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](const lyramilk::data::wstring& index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](bool index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](int8 index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](uint8 index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](int16 index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](uint16 index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](int32 index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](uint32 index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](long index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](int64 index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](uint64 index) const throw(type_invalid);
-		const lyramilk::data::var& operator[](double index) const throw(type_invalid);
 
 		/**
 			@brief 以字符串返回
@@ -390,8 +308,8 @@ namespace lyramilk{namespace data
 			@param varpath 该var对象内部的路径表达式
 			@return 返回容器类型var内部的一个var。
 		*/
-		lyramilk::data::var& path(lyramilk::data::string varpath) throw(type_invalid);
-		const lyramilk::data::var& path(lyramilk::data::string varpath) const throw(type_invalid);
+		lyramilk::data::var& path(const lyramilk::data::string& varpath) throw(type_invalid);
+		const lyramilk::data::var& path(const lyramilk::data::string& varpath) const throw(type_invalid);
 	  private:
 		vt t;
 
@@ -401,18 +319,16 @@ namespace lyramilk{namespace data
 			int64 i8;
 			uint64 u8;
 			double f8;
+			datawrapper* pu;
 
 			char bp[sizeof(lyramilk::data::chunk)];
 			char bs[sizeof(lyramilk::data::string)];
 			char bw[sizeof(lyramilk::data::wstring)];
 			char ba[sizeof(std::vector<int>)];
-			char bm[sizeof(_userdata)];
-			char bo[sizeof(_userdata)];
+			char bm[sizeof(lyramilk::data::unordered_map<lyramilk::data::string,int,hash<lyramilk::data::string>, std::equal_to<lyramilk::data::string> ,lyramilk::data::allocator<std::pair<lyramilk::data::string,int> > >)];
 		}u;
 		bool _serialize(ostream& os) const throw(type_invalid);
 		bool _deserialize(istream& is);
-
-		static _userdata __reserve0;
 	};
 
 

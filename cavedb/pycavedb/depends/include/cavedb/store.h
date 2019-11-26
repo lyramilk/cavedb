@@ -1,5 +1,5 @@
-#ifndef _casedb_store_h_
-#define _casedb_store_h_
+#ifndef _cavedb_store_h_
+#define _cavedb_store_h_
 
 #include <libmilk/var.h>
 #include <libmilk/iterator.h>
@@ -102,6 +102,11 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_ssdb_qset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 		// ssdb kv
 		virtual bool notify_ssdb_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
+
+		// sync
+		virtual bool notify_sync_start(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
+		virtual bool notify_sync_continue(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
+		virtual bool notify_sync_overflow(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args);
 	  public:
 		virtual lyramilk::data::uint64 wspeed();
 		virtual ~store();
