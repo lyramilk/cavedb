@@ -1,6 +1,6 @@
 prefix=/usr
-libdir=/usr/lib64
-includedir=/usr/include
+libdir=${prefix}/lib64
+includedir=${prefix}/include
 
 Name: cavedb
 Description: lyramilk data base.

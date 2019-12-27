@@ -53,7 +53,6 @@ namespace lyramilk{ namespace cave
 		const static std::string cfver;
 		virtual ~leveldb_minimal();
 		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
-		static minimal_interface* open_focus(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 		bool compact();
 
 		long long get_sigval();

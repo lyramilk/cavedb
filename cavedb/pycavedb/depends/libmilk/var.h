@@ -243,12 +243,14 @@ namespace lyramilk{namespace data
 		lyramilk::data::var& operator[](const lyramilk::data::string& index) throw(type_invalid);
 		lyramilk::data::var& operator[](const lyramilk::data::wstring& index) throw(type_invalid);
 		lyramilk::data::var& operator[](uint64 index) throw(type_invalid);
+		lyramilk::data::var& operator[](int index) throw(type_invalid);
 
 		const lyramilk::data::var& operator[](const char* index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](const wchar_t* index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](const lyramilk::data::string& index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](const lyramilk::data::wstring& index) const throw(type_invalid);
 		const lyramilk::data::var& operator[](uint64 index) const throw(type_invalid);
+		const lyramilk::data::var& operator[](int index) const throw(type_invalid);
 
 		/**
 			@brief 以字符串返回

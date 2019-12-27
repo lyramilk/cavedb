@@ -1,12 +1,12 @@
 #include <iostream>
 #include <Python.h>
 #include <pythread.h>
-#include <libmilk/var.h>
-#include <libmilk/json.h>
-#include <cavedb/slave.h>
-#include <cavedb/slave_ssdb.h>
-#include <cavedb/slave_redis.h>
+#include "libmilk/var.h"
+#include "cavedb/slave.h"
+#include "cavedb/slave_ssdb.h"
+#include "cavedb/slave_redis.h"
 #include <pthread.h>
+
 
 #if PY_MAJOR_VERSION == 3
 	#define PyString_FromStringAndSize PyBytes_FromStringAndSize

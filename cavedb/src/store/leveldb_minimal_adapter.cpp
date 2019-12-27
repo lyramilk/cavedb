@@ -107,9 +107,7 @@ namespace lyramilk{ namespace cave
 	leveldb_minimal_adapter::leveldb_minimal_adapter()
 	{
 		version_map[leveldb_minimal::cfver].open_or_create_instance = leveldb_minimal::open;
-		version_map[leveldb_minimal::cfver].format_instance = leveldb_minimal::open_focus;
 		version_map[leveldb_minimal2::cfver].open_or_create_instance = leveldb_minimal2::open;
-		version_map[leveldb_minimal2::cfver].format_instance = leveldb_minimal2::open_focus;
 
 		default_version = leveldb_minimal2::cfver;
 		adapter = nullptr;

@@ -35,7 +35,6 @@ namespace lyramilk{ namespace cave
 	struct minimal_version
 	{
 		minimal_interface*(*open_or_create_instance)(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
-		minimal_interface*(*format_instance)(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
 	};
 
 
