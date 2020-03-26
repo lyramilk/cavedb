@@ -350,7 +350,7 @@ label_bodys:
 					log(lyramilk::log::error,"psync") << D("同步错误:hset 参数过少") << std::endl;
 					break;
 				}
-				unsigned int len = (unsigned int)p[1];
+				unsigned int len = (unsigned int)p[1]&0xff;
 				lyramilk::data::string tab(1+p+1,len);
 				lyramilk::data::string key(1+p+1+len+1,l-2-len-1);
 
@@ -365,7 +365,7 @@ label_bodys:
 			break;
 		  case BinlogCommand::HDEL:
 			{
-				unsigned int len = (unsigned int)p[1];
+				unsigned int len = (unsigned int)p[1]&0xff;
 				lyramilk::data::string tab(1+p+1,len);
 				lyramilk::data::string key(1+p+1+len+1,l-2-len-1);
 
@@ -384,9 +384,9 @@ label_bodys:
 					break;
 				}
 
-				unsigned int len = (unsigned int)p[1];
+				unsigned int len = (unsigned int)p[1]&0xff;
 				lyramilk::data::string tab(1+p+1,len);
-				unsigned int len2 = (unsigned int)p[1+1+len];
+				unsigned int len2 = (unsigned int)p[1+1+len]&0xff;
 				lyramilk::data::string key(1+p+1+len+1,len2);
 
 				const lyramilk::data::string& sscore = args[1];
@@ -405,9 +405,9 @@ label_bodys:
 			break;
 		  case BinlogCommand::ZDEL:
 			{
-				unsigned int len = (unsigned int)p[1];
+				unsigned int len = (unsigned int)p[1]&0xff;
 				lyramilk::data::string tab(1+p+1,len);
-				unsigned int len2 = (unsigned int)p[1+1+len];
+				unsigned int len2 = (unsigned int)p[1+1+len]&0xff;
 				lyramilk::data::string key(1+p+1+len+1,len2);
 
 				lyramilk::data::array ar;
@@ -424,7 +424,7 @@ label_bodys:
 					log(lyramilk::log::error,"psync") << D("同步错误:rpush 参数过少") << std::endl;
 					break;
 				}
-				unsigned int len = (unsigned int)p[1];
+				unsigned int len = (unsigned int)p[1]&0xff;
 				lyramilk::data::string tab(1+p+1,len);
 				/*
 				lyramilk::data::string qseq(1+p+1+len,8);
@@ -450,7 +450,7 @@ label_bodys:
 					log(lyramilk::log::error,"psync") << D("同步错误:lpush 参数过少") << std::endl;
 					break; 
 				}
-				unsigned int len = (unsigned int)p[1];
+				unsigned int len = (unsigned int)p[1]&0xff;
 				lyramilk::data::string tab(1+p+1,len);
 				/*
 				lyramilk::data::string qseq(1+p+1+len,8);
@@ -496,7 +496,7 @@ label_bodys:
 					log(lyramilk::log::error,"psync") << D("同步错误:lset 参数过少") << std::endl;
 					break;
 				}
-				unsigned int len = (unsigned int)p[1];
+				unsigned int len = (unsigned int)p[1]&0xff;
 				lyramilk::data::string tab(1+p+1,len);
 				/*
 				lyramilk::data::string qseq(1+p+1+len,8);
