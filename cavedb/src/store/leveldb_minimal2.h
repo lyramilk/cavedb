@@ -51,7 +51,7 @@ namespace lyramilk{ namespace cave
 	  public:
 		const static std::string cfver;
 		virtual ~leveldb_minimal2();
-		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing);
 		bool compact();
 
 		long long get_sigval();
@@ -59,7 +59,7 @@ namespace lyramilk{ namespace cave
 		//	leveldb.num-files-at-level<N>
 		//	leveldb.stats
 		//	leveldb.sstables
-		virtual lyramilk::data::string get_leveldb_property(const lyramilk::data::string& property);
+		virtual lyramilk::data::string get_property(const lyramilk::data::string& property);
 
 		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;

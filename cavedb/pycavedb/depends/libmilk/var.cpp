@@ -598,28 +598,25 @@ lyramilk::data::var& lyramilk::data::var::assign(const lyramilk::data::var& v)
 	  case t_bin:
 		{
 			const lyramilk::data::chunk* vbp = reinterpret_cast<const lyramilk::data::chunk*>(&v.u.bp);
-			vu newu;
-			new (newu.bp) lyramilk::data::chunk(*vbp);
+			lyramilk::data::chunk cache = *vbp;
 			clear();
-			u = newu;
+			(new (u.bp) lyramilk::data::chunk)->swap(cache);
 		}
 		break;
 	  case t_str:
 		{
 			const lyramilk::data::string* vbs = reinterpret_cast<const lyramilk::data::string*>(&v.u.bs);
-			vu newu;
-			new (newu.bs) lyramilk::data::string(*vbs);
+			lyramilk::data::string cache = *vbs;
 			clear();
-			u = newu;
+			(new (u.bs) lyramilk::data::string)->swap(cache);
 		}
 		break;
 	  case t_wstr:
 		{
 			const lyramilk::data::wstring* vbw = reinterpret_cast<const lyramilk::data::wstring*>(&v.u.bw);
-			vu newu;
-			new (newu.bw) lyramilk::data::wstring(*vbw);
+			lyramilk::data::wstring cache = *vbw;
 			clear();
-			u = newu;
+			(new (u.bw) lyramilk::data::wstring)->swap(cache);
 		}
 		break;
 	  case t_bool:
@@ -653,19 +650,17 @@ lyramilk::data::var& lyramilk::data::var::assign(const lyramilk::data::var& v)
 	  case t_array:
 		{
 			const lyramilk::data::array* vba = reinterpret_cast<const lyramilk::data::array*>(&v.u.ba);
-			vu newu;
-			new (newu.ba) lyramilk::data::array(*vba);
+			lyramilk::data::array cache = *vba;
 			clear();
-			u = newu;
+			(new (u.ba) lyramilk::data::array)->swap(cache);
 		}
 		break;
 	  case t_map:
 		{
 			const lyramilk::data::map* vbm = reinterpret_cast<const lyramilk::data::map*>(&v.u.bm);
-			vu newu;
-			new (newu.bm) lyramilk::data::map(*vbm);
+			lyramilk::data::map cache = *vbm;
 			clear();
-			u = newu;
+			(new (u.bm) lyramilk::data::map)->swap(cache);
 		}
 		break;
 	  case t_user:
@@ -1736,12 +1731,7 @@ lyramilk::data::var& lyramilk::data::var::type(lyramilk::data::var::vt nt) throw
 
 bool lyramilk::data::var::type_like(lyramilk::data::var::vt nt) const
 {
-	if((nt == t_bin || nt == t_str || nt == t_wstr) && (t == t_bin || t == t_str || t == t_wstr ||   t == t_int ||  t == t_uint ||  t == t_double)){
-		return true;
-	}
-
-	if((nt == t_int || nt == t_uint || nt == t_double) &&
-		(t == t_int ||  t == t_uint ||  t == t_double)){
+	if((nt == t_bin || nt == t_str || nt == t_wstr || nt == t_int ||  nt == t_uint ||  nt == t_double) && (t == t_bin || t == t_str || t == t_wstr || t == t_int ||  t == t_uint ||  t == t_double)){
 		return true;
 	}
 

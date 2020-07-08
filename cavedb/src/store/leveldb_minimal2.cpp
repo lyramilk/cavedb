@@ -3,11 +3,17 @@
 #include "slave_ssdb.h"
 #include <libmilk/log.h>
 #include <libmilk/dict.h>
+#include <libmilk/testing.h>
 
 #include <leveldb/db.h>
 #include <leveldb/filter_policy.h>
 #include <leveldb/cache.h>
 #include <leveldb/write_batch.h>
+
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
 
 namespace lyramilk{ namespace cave
 {
@@ -409,8 +415,43 @@ namespace lyramilk{ namespace cave
 		delete ldb;
 	}
 
-	minimal_interface* leveldb_minimal2::open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB)
+	minimal_interface* leveldb_minimal2::open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing = false)
 	{
+		lyramilk::data::string flag;
+		{
+			lyramilk::data::string fflag = leveldbpath + "/cavedb.flag";
+			struct stat st = {0};
+			if(0 !=::stat(fflag.c_str(),&st)){
+				if(errno == ENOENT){
+					if(create_if_missing){
+						int fd_flag = ::open(fflag.c_str(),O_WRONLY | O_CREAT | O_APPEND,0444);
+						if(fd_flag == -1)  return nullptr;
+						int w = write(fd_flag,cfver.c_str(),cfver.size());
+						::close(fd_flag);
+						if(w == (int)cfver.size()){
+							flag = cfver;
+						}
+					}else{
+						return nullptr;
+					}
+				}else{
+					return nullptr;
+				}
+			}else{
+				int fd_flag = ::open(fflag.c_str(),O_RDONLY,0444);
+				if(fd_flag == -1)  return nullptr;
+				char buff[1024];
+				int r = read(fd_flag,buff,sizeof(buff));
+				::close(fd_flag);
+				if(r > 0){
+					flag.assign(buff,r);
+				}
+			}
+		}
+
+		if(flag != cfver) return nullptr;
+
+
 		leveldb::Options opt;
 
 		int block_size = 32;		//KB	16
@@ -423,7 +464,7 @@ namespace lyramilk{ namespace cave
 			max_open_files = 4000;
 		}
 
-		opt.create_if_missing = true;
+		opt.create_if_missing = create_if_missing;
 		opt.max_open_files = max_open_files;
 		opt.filter_policy = leveldb::NewBloomFilterPolicy(12);
 		opt.block_cache = leveldb::NewLRUCache(cache_size_MB * 1024 * 1024);
@@ -515,6 +556,7 @@ namespace lyramilk{ namespace cave
 
 	bool leveldb_minimal2::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		lyramilk::debug::nsecdiff nd;
 		rspeed_on_read();
 
 		std::string prefix;
@@ -528,11 +570,17 @@ namespace lyramilk{ namespace cave
 
 		std::string result;
 		leveldb::Status ldbs = ldb->Get(ropt,prefix,&result);
+
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,"hexist") << D("命令 hexist %.*s,%.*s 耗时%.3f",key.size(),key.c_str(),field.size(),field.c_str(),double(nsec) / 1000000);
+		}
 		return ldbs.ok();
 	}
 
 	lyramilk::data::string leveldb_minimal2::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
+		lyramilk::debug::nsecdiff nd;
 		rspeed_on_read();
 
 		std::string prefix;
@@ -549,14 +597,19 @@ namespace lyramilk{ namespace cave
 			lyramilk::threading::mutex_sync _(sem);
 			leveldb::Status ldbs = ldb->Get(ropt,prefix,&result);
 			if(!ldbs.ok()){
-				return "";
+				result.clear();
 			}
+		}
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,"hget") << D("命令 hget %.*s,%.*s 耗时%.3f",key.size(),key.c_str(),field.size(),field.c_str(),double(nsec) / 1000000);
 		}
 		return lyramilk::data::str(result);
 	}
 
 	lyramilk::data::stringdict leveldb_minimal2::hgetall(const lyramilk::data::string& key) const
 	{
+		lyramilk::debug::nsecdiff nd;
 		rspeed_on_read();
 
 		std::string prefix;
@@ -574,26 +627,29 @@ namespace lyramilk{ namespace cave
 			it = ldb->NewIterator(ropt);
 			if(it == nullptr){
 				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
-				return result;
+			}else{
+				for(it->Seek(prefix);it->Valid();it->Next()){
+					if(!it->key().starts_with(prefix)) break;
+
+					leveldb::Slice datakey = it->key();
+					datakey.remove_prefix(prefix.size());
+
+					lyramilk::data::string skey(datakey.data(),datakey.size());
+					lyramilk::data::string svalue(it->value().data(),it->value().size());
+					result[skey] = svalue;
+				}
+
+				if (it) delete it;
 			}
-
-			for(it->Seek(prefix);it->Valid();it->Next()){
-				if(!it->key().starts_with(prefix)) break;
-
-				leveldb::Slice datakey = it->key();
-				datakey.remove_prefix(prefix.size());
-
-				lyramilk::data::string skey(datakey.data(),datakey.size());
-				lyramilk::data::string svalue(it->value().data(),it->value().size());
-				result[skey] = svalue;
-			}
-
-			if (it) delete it;
+		}
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,"hgetall") << D("命令 hgetall %.*s 耗时%.3f",key.size(),key.c_str(),double(nsec) / 1000000);
 		}
 		return result;
 	}
 
-	lyramilk::data::string leveldb_minimal2::get_leveldb_property(const lyramilk::data::string& property)
+	lyramilk::data::string leveldb_minimal2::get_property(const lyramilk::data::string& property)
 	{
 		std::string result;
 		if(ldb->GetProperty(property,&result)){

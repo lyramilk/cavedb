@@ -27,6 +27,8 @@ namespace lyramilk{ namespace cave
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const = 0;
 			///	[hashmap]	取得一个key的所有value
 		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const = 0;
+			///	[hashmap]	取得一个key的所有value，以var::map形似返回
+		virtual lyramilk::data::map hgetallv(const lyramilk::data::string& key) const;
 	};
 }}
 

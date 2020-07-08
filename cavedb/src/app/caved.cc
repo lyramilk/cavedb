@@ -89,7 +89,7 @@ int main(int argc,char* argv[])
 
 #if 1
 	lyramilk::cave::leveldb_minimal_adapter mstore;
-	mstore.open(leveldb_path,1000);
+	mstore.open_leveldb(leveldb_path,1000);
 	if(isneedcompact){
 		mstore.compact();
 	}

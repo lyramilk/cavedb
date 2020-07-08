@@ -1,6 +1,7 @@
 #include "leveldb_minimal_adapter.h"
 #include "leveldb_minimal.h"
 #include "leveldb_minimal2.h"
+#include "rocksdb_minimal.h"
 #include <libmilk/log.h>
 #include <libmilk/dict.h>
 
@@ -106,10 +107,10 @@ namespace lyramilk{ namespace cave
 
 	leveldb_minimal_adapter::leveldb_minimal_adapter()
 	{
-		version_map[leveldb_minimal::cfver].open_or_create_instance = leveldb_minimal::open;
-		version_map[leveldb_minimal2::cfver].open_or_create_instance = leveldb_minimal2::open;
+		leveldb_version_map[leveldb_minimal::cfver].open_instance = leveldb_minimal::open;
+		leveldb_version_map[leveldb_minimal2::cfver].open_instance = leveldb_minimal2::open;
 
-		default_version = leveldb_minimal2::cfver;
+		leveldb_default_version = leveldb_minimal2::cfver;
 		adapter = nullptr;
 	}
 
@@ -117,16 +118,29 @@ namespace lyramilk{ namespace cave
 	{
 	}
 
-	bool leveldb_minimal_adapter::open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB)
+	bool leveldb_minimal_adapter::open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing)
 	{
-		leveldb_minimal_version_master::const_iterator it = version_map.begin();
-		for(;it!=version_map.end() && adapter == nullptr;++it){
-			if((void*)it->second.open_or_create_instance){
-				adapter = it->second.open_or_create_instance(leveldbpath,cache_size_MB);
+		leveldb_minimal_version_master::const_iterator it = leveldb_version_map.begin();
+		for(;it!=leveldb_version_map.end() && adapter == nullptr;++it){
+			if((void*)it->second.open_instance){
+				adapter = it->second.open_instance(leveldbpath,cache_size_MB,false);
+			}
+		}
+
+		if(create_if_missing){
+			if(adapter == nullptr){
+				adapter = leveldb_version_map[leveldb_default_version].open_instance(leveldbpath,cache_size_MB,true);
 			}
 		}
 		return adapter != nullptr;
 	}
+
+	bool leveldb_minimal_adapter::open(minimal_interface* adapter)
+	{
+		this->adapter = adapter;
+		return adapter != nullptr;
+	}
+
 
 	long long leveldb_minimal_adapter::get_sigval()
 	{
@@ -140,9 +154,9 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	lyramilk::data::string leveldb_minimal_adapter::get_leveldb_property(const lyramilk::data::string& property)
+	lyramilk::data::string leveldb_minimal_adapter::get_property(const lyramilk::data::string& property)
 	{
-		if(adapter) return adapter->get_leveldb_property(property);
+		if(adapter) return adapter->get_property(property);
 		return "";
 	}
 
@@ -165,19 +179,29 @@ namespace lyramilk{ namespace cave
 
 	bool leveldb_minimal_adapter::hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
-		if(adapter) return adapter->hexist(key,field);
+		if(adapter){
+			return adapter->hexist(key,field);
+		}
 		return false;
 	}
 
 	lyramilk::data::string leveldb_minimal_adapter::hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const
 	{
-		if(adapter) return adapter->hget(key,field);
+		if(adapter){
+			return adapter->hget(key,field);
+		}
 		return "";
 	}
 
 	lyramilk::data::stringdict leveldb_minimal_adapter::hgetall(const lyramilk::data::string& key) const
 	{
-		if(adapter) return adapter->hgetall(key);
+		if(adapter){
+			return adapter->hgetall(key);
+		}
 		return lyramilk::data::stringdict();
 	}
 }}
+
+
+
+

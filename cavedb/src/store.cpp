@@ -104,6 +104,16 @@ namespace lyramilk{ namespace cave
 		return rspeed_speed;
 	}
 
+	lyramilk::data::map store_reader::hgetallv(const lyramilk::data::string& key) const
+	{
+		lyramilk::data::stringdict smap = hgetall(key);
+		lyramilk::data::map rmap;
+		for(lyramilk::data::stringdict::const_iterator it = smap.begin();it!=smap.end();++it){
+			rmap[it->first] = it->second;
+		}
+		return rmap;
+	}
+
 	/// store
 	store::store()
 	{

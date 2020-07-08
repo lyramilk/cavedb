@@ -22,7 +22,7 @@ namespace lyramilk{ namespace cave
 	  public:
 		virtual long long get_sigval() = 0;
 		virtual bool compact() = 0;
-		virtual lyramilk::data::string get_leveldb_property(const lyramilk::data::string& property) = 0;
+		virtual lyramilk::data::string get_property(const lyramilk::data::string& property) = 0;
 
 		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const = 0;
@@ -34,7 +34,7 @@ namespace lyramilk{ namespace cave
 
 	struct minimal_version
 	{
-		minimal_interface*(*open_or_create_instance)(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+		minimal_interface*(*open_instance)(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing);
 	};
 
 
@@ -43,8 +43,8 @@ namespace lyramilk{ namespace cave
 		minimal_interface* adapter;
 	  protected:
 		typedef std::map<lyramilk::data::string,minimal_version> leveldb_minimal_version_master;
-		leveldb_minimal_version_master version_map;
-		lyramilk::data::string default_version;
+		leveldb_minimal_version_master leveldb_version_map;
+		lyramilk::data::string leveldb_default_version;
 	  protected:
 		lyramilk::data::string ver;
 	  protected:
@@ -76,11 +76,12 @@ namespace lyramilk{ namespace cave
 	  public:
 		leveldb_minimal_adapter();
 		virtual ~leveldb_minimal_adapter();
-		bool open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB);
+		bool open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing = false);
+		bool open(minimal_interface* adapter);
 	  public:
 		virtual long long get_sigval();
 		virtual bool compact();
-		virtual lyramilk::data::string get_leveldb_property(const lyramilk::data::string& property);
+		virtual lyramilk::data::string get_property(const lyramilk::data::string& property);
 		virtual bool is_on_full_sync();
 	  public:
 		virtual lyramilk::data::uint64 rspeed() const;
