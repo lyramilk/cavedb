@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.26)
+set(version 2.0.27)
 set(soversion 2.0)
 
 
@@ -78,6 +78,7 @@ if(NOT minimal)
 	pkg_check_modules(LIBMILK libmilk REQUIRED)
 	pkg_check_modules(SPARSEHASH sparsehash)
 	pkg_check_modules(LEVELDB leveldb)
+	#pkg_check_modules(LMDB lmdb)
 
 	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
 	check_include_file_cxx(rocksdb/db.h Z_HAVE_ROCKSDB)
@@ -107,6 +108,19 @@ if(Z_HAVE_ROCKSDB AND NOT minimal)
 else()
 	list(REMOVE_ITEM src_hs src/store/rocksdb_minimal.h)
 	list(REMOVE_ITEM src_cpps src/store/rocksdb_minimal.cpp)
+endif()
+
+
+
+if(LMDB_FOUND AND NOT minimal)
+	list(APPEND BUILD_DEPENDS lmdb-devel)
+	list(APPEND RUN_DEPENDS lmdb-libs)
+	list(APPEND LIBS_DEPENDS ${LMDB_LDFLAGS})
+	list(APPEND INCS_DEPENDS ${LMDB_CFLAGS})
+	list(APPEND CONFIG_MACROS LMDB_FOUND)
+else()
+	list(REMOVE_ITEM src_hs src/store/lmdb_minimal.h)
+	list(REMOVE_ITEM src_cpps src/store/lmdb_minimal.cpp)
 endif()
 
 

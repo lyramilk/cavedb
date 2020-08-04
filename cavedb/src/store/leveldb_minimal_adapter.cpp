@@ -9,100 +9,100 @@ namespace lyramilk{ namespace cave
 {
 	lyramilk::log::logss static log(lyramilk::klog,"lyramilk.cave.store.leveldb_minimal_adapter");
 
-	bool minimal_interface::notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	bool minimal_interface::notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
 		return true;
 	}
 
-	bool leveldb_minimal_adapter::notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	bool leveldb_minimal_adapter::notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
-		return adapter->notify_idle(replid,offset);
+		return adapter->notify_idle(replid,offset,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	bool leveldb_minimal_adapter::notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
-		return adapter->notify_idle(replid,offset);
+		return adapter->notify_idle(replid,offset,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_flushdb(replid,offset,args);
+		return adapter->notify_flushdb(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_flushall(replid,offset,args);
+		return adapter->notify_flushall(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_del(replid,offset,args);
+		return adapter->notify_del(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_move(replid,offset,args);
+		return adapter->notify_move(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_pexpireat(replid,offset,args);
+		return adapter->notify_pexpireat(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_persist(replid,offset,args);
+		return adapter->notify_persist(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_rename(replid,offset,args);
+		return adapter->notify_rename(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_hset(replid,offset,args);
+		return adapter->notify_hset(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_hdel(replid,offset,args);
+		return adapter->notify_hdel(replid,offset,args,userdata);
 	}
 
 
-	bool leveldb_minimal_adapter::notify_set(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_set(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_set(replid,offset,args);
+		return adapter->notify_set(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_ssdb_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_ssdb_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_ssdb_del(replid,offset,args);
+		return adapter->notify_ssdb_del(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_ssdb_qset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_ssdb_qset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_ssdb_qset(replid,offset,args);
+		return adapter->notify_ssdb_qset(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_lpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_lpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_lpop(replid,offset,args);
+		return adapter->notify_lpop(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_rpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_rpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_rpop(replid,offset,args);
+		return adapter->notify_rpop(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_zadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_zadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_zadd(replid,offset,args);
+		return adapter->notify_zadd(replid,offset,args,userdata);
 	}
 
-	bool leveldb_minimal_adapter::notify_zrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool leveldb_minimal_adapter::notify_zrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		return adapter->notify_zrem(replid,offset,args);
+		return adapter->notify_zrem(replid,offset,args,userdata);
 	}
 
 	leveldb_minimal_adapter::leveldb_minimal_adapter()
@@ -139,13 +139,6 @@ namespace lyramilk{ namespace cave
 	{
 		this->adapter = adapter;
 		return adapter != nullptr;
-	}
-
-
-	long long leveldb_minimal_adapter::get_sigval()
-	{
-		if(adapter) return adapter->get_sigval();
-		return 0;
 	}
 
 	bool leveldb_minimal_adapter::compact()

@@ -13,20 +13,12 @@ typedef google::dense_hash_map<std::string,datamap_type > table_type;
 
 namespace lyramilk{ namespace cave
 {
-	bool dense_hash_map_minimal::notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	bool dense_hash_map_minimal::notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
 		return true;
 	}
 
-	bool dense_hash_map_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
-	{
-		table_type& data = *reinterpret_cast<table_type*>(this->data);
-		lyramilk::threading::mutex_sync _(lock.w());
-		data.clear();
-		return true;
-	}
-
-	bool dense_hash_map_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::threading::mutex_sync _(lock.w());
@@ -34,7 +26,15 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool dense_hash_map_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	{
+		table_type& data = *reinterpret_cast<table_type*>(this->data);
+		lyramilk::threading::mutex_sync _(lock.w());
+		data.clear();
+		return true;
+	}
+
+	bool dense_hash_map_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::threading::mutex_sync _(lock.w());
@@ -42,22 +42,22 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool dense_hash_map_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		return false;
 	}
 
-	bool dense_hash_map_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		return false;
 	}
 
-	bool dense_hash_map_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		return false;
 	}
 
-	bool dense_hash_map_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::threading::mutex_sync _(lock.w());
@@ -66,7 +66,7 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool dense_hash_map_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::threading::mutex_sync _(lock.w());
@@ -74,7 +74,7 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool dense_hash_map_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args)
+	bool dense_hash_map_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		table_type& data = *reinterpret_cast<table_type*>(this->data);
 		lyramilk::threading::mutex_sync _(lock.w());
