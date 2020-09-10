@@ -1,13 +1,12 @@
-#ifndef _cavedb_leveldb_minimal2_h_
-#define _cavedb_leveldb_minimal2_h_
+#ifndef _cavedb_lmdb_minimal_h_
+#define _cavedb_lmdb_minimal_h_
 
 #include <libmilk/var.h>
 #include <libmilk/thread.h>
 #include "../store.h"
 #include "../store_reader.h"
 #include "leveldb_minimal_adapter.h"
-
-namespace leveldb{class DB;};
+#include <lmdb.h>
 
 /*
 	由于打算支持多种容器， 1_mininal 的键构造对多种容器时leveldb缓存不友好，故增加 2_mininal 版本，这一版本对leveldb排键时会把同种容器排在一起。
@@ -16,10 +15,10 @@ namespace leveldb{class DB;};
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
-	class leveldb_minimal2:public minimal_interface
+	class lmdb_minimal:public minimal_interface
 	{
-	  protected:
-		leveldb::DB* ldb;
+		MDB_env *env;
+		MDB_dbi dbi;
 	  protected:
 		virtual bool notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata);
 		virtual bool notify_psync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata);
@@ -46,10 +45,10 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_zadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_zrem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 
-		leveldb_minimal2();
 	  public:
+		lmdb_minimal();
 		const static std::string cfver;
-		virtual ~leveldb_minimal2();
+		virtual ~lmdb_minimal();
 		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing);
 		bool compact();
 	  public:
@@ -58,7 +57,7 @@ namespace lyramilk{ namespace cave
 		//	leveldb.sstables
 		virtual lyramilk::data::string get_property(const lyramilk::data::string& property);
 
-		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
+		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset,const lyramilk::data::string& name = "") const;
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const;

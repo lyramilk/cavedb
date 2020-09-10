@@ -410,9 +410,11 @@ namespace lyramilk{ namespace cave
 						}
 
 						if (sval) {
-							memcpy(sval,sval,slen);
-							sval[slen] = '\0';
-							score = strtod((const char*)sval,NULL);
+							std::vector<char> buff;
+							buff.resize(slen + 1);
+							memcpy(buff.data(),sval,slen);
+							buff[slen] = '\0';
+							score = strtod((const char*)buff.data(),NULL);
 						} else {
 							score = lval;
 						}
@@ -518,9 +520,11 @@ namespace lyramilk{ namespace cave
 				notify_select(dbid);
 				continue;
 			} else if (type == RDB_OPCODE_RESIZEDB) {
+				/*
 				lyramilk::data::uint64 db_size,expires_size;
 				db_size = load_length(is,nullptr);
 				expires_size = load_length(is,nullptr);
+				*/
 				continue;
 			} else if (type == RDB_OPCODE_AUX) {
 				lyramilk::data::var key = load_var(is);

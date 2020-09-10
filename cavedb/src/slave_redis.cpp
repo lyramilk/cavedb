@@ -129,7 +129,7 @@ namespace lyramilk{ namespace cave
 		return is.rseq() + psync_rseq_diff;
 	}
 
-	void slave_redis::slaveof(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler)
+	void slave_redis::slaveof(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,const lyramilk::data::string& masterid,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler)
 	{
 		this->host = host;
 		this->port = port;
@@ -137,10 +137,11 @@ namespace lyramilk{ namespace cave
 		this->peventhandler = peventhandler;
 		this->psync_replid = psync_replid;
 		this->psync_rseq_diff = psync_rseq_diff;
+		this->masterid = masterid;
 		active(2);
 	}
 
-	void slave_redis::init(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler)
+	void slave_redis::init(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,const lyramilk::data::string& masterid,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler)
 	{
 		this->host = host;
 		this->port = port;
@@ -148,6 +149,7 @@ namespace lyramilk{ namespace cave
 		this->peventhandler = peventhandler;
 		this->psync_replid = psync_replid;
 		this->psync_rseq_diff = psync_rseq_diff;
+		this->masterid = masterid;
 	}
 
 	bool slave_redis::reconnect()
@@ -207,9 +209,11 @@ namespace lyramilk{ namespace cave
 	class myrdb:public rdb
 	{
 		slave* ps;
+		lyramilk::data::string masterid;
 	  public:
-		myrdb(slave* s)
+		myrdb(const lyramilk::data::string& masterid,slave* s)
 		{
+			this->masterid = masterid;
 			ps = s;
 		}
 		virtual ~myrdb()
@@ -221,7 +225,7 @@ namespace lyramilk{ namespace cave
 			lyramilk::data::array ar;
 			ar.push_back("select");
 			ar.push_back(dbid);
-			return ps->notify_command("?",0,ar,nullptr);
+			return ps->notify_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value)
@@ -236,7 +240,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back(key);
 			ar.push_back(field);
 			ar.push_back(value);
-			return ps->notify_command("?",0,ar,nullptr);
+			return ps->notify_command(masterid,"?",0,ar,nullptr);
 		}
 		virtual bool notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
 		{
@@ -245,7 +249,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back(key);
 			ar.push_back(score);
 			ar.push_back(value);
-			return ps->notify_command("?",0,ar,nullptr);
+			return ps->notify_command(masterid,"?",0,ar,nullptr);
 		}
 		virtual bool notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
@@ -253,7 +257,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("set");
 			ar.push_back(key);
 			ar.push_back(value);
-			return ps->notify_command("?",0,ar,nullptr);
+			return ps->notify_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
@@ -262,7 +266,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("rpush");
 			ar.push_back(key);
 			ar.push_back(item);
-			return ps->notify_command("?",0,ar,nullptr);
+			return ps->notify_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
@@ -271,7 +275,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("sadd");
 			ar.push_back(key);
 			ar.push_back(value);
-			return ps->notify_command("?",0,ar,nullptr);
+			return ps->notify_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime)
@@ -280,7 +284,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("pexpireat");
 			ar.push_back(key);
 			ar.push_back(expiretime);
-			return ps->notify_command("?",0,ar,nullptr);
+			return ps->notify_command(masterid,"?",0,ar,nullptr);
 		}
 	};
 
@@ -357,11 +361,11 @@ namespace lyramilk{ namespace cave
 							{
 								lyramilk::data::array ar;
 								ar.push_back("sync_start");
-								peventhandler->notify_command("?",0,ar,nullptr);
+								peventhandler->notify_command(masterid,"?",0,ar,nullptr);
 							}
-							myrdb r(peventhandler);
+							myrdb r(masterid,peventhandler);
 							r.init(is);
-							if(!peventhandler->notify_psync(psync_replid,psync_offset,nullptr)){
+							if(!peventhandler->notify_psync(masterid,psync_replid,psync_offset,nullptr)){
 								log(lyramilk::log::error,"psync") << D("从redis同步时保存psync数据发生错误") << std::endl;
 							}
 							psync_rseq_diff = psync_offset - is.rseq();
@@ -373,7 +377,7 @@ namespace lyramilk{ namespace cave
 							{
 								lyramilk::data::array ar;
 								ar.push_back("sync_continue");
-								peventhandler->notify_command(psync_replid,psync_offset,ar,nullptr);
+								peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
 							}
 							log(lyramilk::log::debug,"psync") << D("继续同步:masterid=%s,offset=%llu",psync_replid.c_str(),psync_offset) << std::endl;
 						}
@@ -403,7 +407,7 @@ namespace lyramilk{ namespace cave
 							std::transform(cmd.begin(),cmd.end(),cmd.begin(),::tolower);
 							ar[0] = cmd;
 							psync_offset = is.rseq() + psync_rseq_diff;
-							peventhandler->notify_command(psync_replid,psync_offset,ar,nullptr);
+							peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
 						}
 					}else{
 						if(ret.type() == lyramilk::data::var::t_str && ret.str() != "PONG"){
@@ -414,7 +418,7 @@ namespace lyramilk{ namespace cave
 					//log(lyramilk::log::warning,"psync") << D("负载%f",loadcoff) << std::endl;
 					if(loadcoff * loadcoff * 10 < loadalive){
 						psync_offset = is.rseq() + psync_rseq_diff;
-						peventhandler->notify_idle(psync_replid,psync_offset,nullptr);
+						peventhandler->notify_idle(masterid,psync_replid,psync_offset,nullptr);
 						loadalive = 1;
 					}
 				}

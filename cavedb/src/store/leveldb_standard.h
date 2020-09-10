@@ -1,25 +1,28 @@
-#ifndef _cavedb_leveldb_minimal2_h_
-#define _cavedb_leveldb_minimal2_h_
+#ifndef _cavedb_leveldb_standard_h_
+#define _cavedb_leveldb_standard_h_
 
 #include <libmilk/var.h>
-#include <libmilk/thread.h>
+#include <libmilk/iterator.h>
+#include <libmilk/atom.h>
+
 #include "../store.h"
 #include "../store_reader.h"
-#include "leveldb_minimal_adapter.h"
+#include "../slice.h"
+#include "../redis_pack.h"
 
 namespace leveldb{class DB;};
-
-/*
-	由于打算支持多种容器， 1_mininal 的键构造对多种容器时leveldb缓存不友好，故增加 2_mininal 版本，这一版本对leveldb排键时会把同种容器排在一起。
-*/
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
-	class leveldb_minimal2:public minimal_interface
+
+
+	class leveldb_standard : public lyramilk::cave::store , public lyramilk::cave::store_reader
 	{
 	  protected:
 		leveldb::DB* ldb;
+		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
+		static void* thread_auto_compact(leveldb::DB* ldb);
 	  protected:
 		virtual bool notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata);
 		virtual bool notify_psync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata);
@@ -34,6 +37,7 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_rename(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		// hashmap
 		virtual bool notify_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
+		virtual bool notify_hmset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		// kv
 		virtual bool notify_set(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
@@ -46,22 +50,34 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_zadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_zrem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 
-		leveldb_minimal2();
 	  public:
 		const static std::string cfver;
-		virtual ~leveldb_minimal2();
-		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing);
-		bool compact();
-	  public:
-		//	leveldb.num-files-at-level<N>
-		//	leveldb.stats
-		//	leveldb.sstables
-		virtual lyramilk::data::string get_property(const lyramilk::data::string& property);
 
+		leveldb_standard();
+		virtual ~leveldb_standard();
+		bool open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing = false);
+	  public:
+		virtual bool compact();
+		virtual lyramilk::data::string get_property(const lyramilk::data::string& property);
+		virtual bool is_on_full_sync();
+	  public:
 		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;
+
+
+		virtual bool zrange(const lyramilk::data::string& key,lyramilk::data::int64 start,lyramilk::data::int64 stop,bool withscore,lyramilk::data::strings* result) const;
+		virtual lyramilk::data::string zscan(const lyramilk::data::string& key,const lyramilk::data::string& current,lyramilk::data::uint64 count,lyramilk::data::strings* result) const;
+		virtual lyramilk::data::uint64 zcard(const lyramilk::data::string& key) const;
+
+		virtual bool get(const lyramilk::data::string& key,lyramilk::data::string* value) const;
+
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
-		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
+		virtual bool hget(const lyramilk::data::string& key,const lyramilk::data::string& field,lyramilk::data::string* value) const;
 		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const;
+		virtual lyramilk::data::string hscan(const lyramilk::data::string& key,const lyramilk::data::string& current,lyramilk::data::uint64 count,lyramilk::data::strings* result) const;
+		virtual lyramilk::data::uint64 hlen(const lyramilk::data::string& key) const;
+
+		virtual lyramilk::data::string scan(const lyramilk::data::string& current,lyramilk::data::uint64 count,lyramilk::data::strings* result) const;
+		virtual lyramilk::data::string type(const lyramilk::data::string& key) const;
 	};
 }}
 

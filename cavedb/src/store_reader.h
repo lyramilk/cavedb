@@ -20,7 +20,7 @@ namespace lyramilk{ namespace cave
 			/// 获取读取速度
 		virtual lyramilk::data::uint64 rspeed() const;
 			/// 获取同步进度
-		virtual bool get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
+		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
 			///	[hashmap]	判断key是否存在
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const = 0;
 			///	[hashmap]	根据key和field取得一个value

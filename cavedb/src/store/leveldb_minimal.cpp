@@ -22,20 +22,27 @@ namespace lyramilk{ namespace cave
 	leveldb::ReadOptions ropt;
 	leveldb::WriteOptions wopt;
 
-	const char* key_sync = ".sync.key";
-
-	void inline save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	void inline save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
 	{
 		if(offset == 0 && replid.empty()) return;
+
+		lyramilk::data::string repkey;
+		if(masterid.empty()){
+			repkey = ".sync.key";
+		}else{
+			repkey = ".sync.key.";
+			repkey += masterid;
+		}
+
 		lyramilk::data::string str((const char*)&offset,sizeof(lyramilk::data::uint64));
 		str.append(replid);
-		batch.Put(key_sync,leveldb::Slice(str.c_str(),str.size()));
+		batch.Put(repkey,leveldb::Slice(str.c_str(),str.size()));
 	}
 
-	bool leveldb_minimal::notify_idle(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
+	bool leveldb_minimal::notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		leveldb::Status ldbs = ldb->Write(wopt,&batch);
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
@@ -44,10 +51,10 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_psync(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
+	bool leveldb_minimal::notify_psync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		leveldb::Status ldbs = ldb->Write(wopt,&batch);
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
@@ -56,7 +63,7 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_flushdb(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_flushdb(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
 		if(it == nullptr){
@@ -78,7 +85,7 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_flushall(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_flushall(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::Iterator* it = ldb->NewIterator(ropt);
 		if(it == nullptr){
@@ -100,10 +107,10 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_del(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
@@ -128,32 +135,32 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_move(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_move(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		log(lyramilk::log::error,__FUNCTION__) << D("未实现move函数，这在ssdb中不应该出现") << std::endl;
 		return false;
 	}
 
-	bool leveldb_minimal::notify_pexpireat(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_pexpireat(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		return false;
 	}
 
-	bool leveldb_minimal::notify_persist(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_persist(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		return false;
 	}
 
-	bool leveldb_minimal::notify_rename(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_rename(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		log(lyramilk::log::error,__FUNCTION__) << D("未实现rename函数，这在ssdb中不应该出现") << std::endl;
 		return false;
 	}
 
-	bool leveldb_minimal::notify_hset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
 		prefix.push_back(0xfe);
@@ -167,10 +174,10 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_hdel(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
 		prefix.push_back(0xfe);
@@ -185,10 +192,10 @@ namespace lyramilk{ namespace cave
 	}
 
 
-	bool leveldb_minimal::notify_set(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_set(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
 		prefix.push_back(0xfd);
@@ -201,10 +208,10 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_ssdb_del(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_ssdb_del(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
 		prefix.push_back(0xfd);
@@ -217,10 +224,10 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_ssdb_qset(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_ssdb_qset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
 		prefix.push_back(0xfc);
@@ -234,7 +241,7 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_lpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_lpop(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
@@ -256,7 +263,7 @@ namespace lyramilk{ namespace cave
 			if(it->key().starts_with(prefix)){
 			}
 				leveldb::WriteBatch batch;
-				save_process(batch,replid,offset);
+				save_process(batch,masterid,replid,offset);
 				batch.Delete(it->key());
 				leveldb::Status ldbs = ldb->Write(wopt,&batch);
 				if(!ldbs.ok()){
@@ -268,7 +275,7 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_rpop(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_rpop(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
@@ -307,7 +314,7 @@ namespace lyramilk{ namespace cave
 				return true;
 			}
 			leveldb::WriteBatch batch;
-			save_process(batch,replid,offset);
+			save_process(batch,masterid,replid,offset);
 			batch.Delete(it->key());
 			leveldb::Status ldbs = ldb->Write(wopt,&batch);
 			if(!ldbs.ok()){
@@ -318,10 +325,10 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_zadd(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_zadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
 		prefix.push_back(0xfb);
@@ -335,10 +342,10 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
-	bool leveldb_minimal::notify_zrem(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool leveldb_minimal::notify_zrem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		leveldb::WriteBatch batch;
-		save_process(batch,replid,offset);
+		save_process(batch,masterid,replid,offset);
 		std::string prefix = args[1];
 		prefix.push_back(0xff);
 		prefix.push_back(0xfb);
@@ -468,19 +475,26 @@ namespace lyramilk{ namespace cave
 		return nullptr;
 	}
 
-	bool leveldb_minimal::get_sync_info(lyramilk::data::string* replid,lyramilk::data::uint64* offset) const
+	bool leveldb_minimal::get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const
 	{
 		if(replid == nullptr || offset == nullptr) return false;
 
+		lyramilk::data::string repkey;
+		if(masterid.empty()){
+			repkey = ".sync.key";
+		}else{
+			repkey = ".sync.key.";
+			repkey += masterid;
+		}
+
 		std::string stlsync_info;
-		leveldb::Status ldbs = ldb->Get(ropt,key_sync,&stlsync_info);
+		leveldb::Status ldbs = ldb->Get(ropt,repkey,&stlsync_info);
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("获取同步位置失败2 %s",ldbs.ToString().c_str()) << std::endl;
 			return false;
 		}
 		*replid = lyramilk::data::str(stlsync_info.substr(sizeof(lyramilk::data::uint64)));
 		stlsync_info.copy((char*)offset,sizeof(lyramilk::data::uint64));
-
 		return true;
 	}
 
