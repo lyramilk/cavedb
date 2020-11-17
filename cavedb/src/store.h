@@ -4,6 +4,7 @@
 #include <libmilk/var.h>
 #include <libmilk/iterator.h>
 #include <libmilk/atom.h>
+#include <pthread.h>
 #include "slave.h"
 
 /// namespace lyramilk::cave
@@ -20,6 +21,8 @@ namespace lyramilk{ namespace cave
 		time_t wspeed_tm;
 		virtual bool notify_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata);
+
+		std::list<int> monitor_list;
 	  protected:
 		store();
 		lyramilk::data::int64 mstime();
@@ -107,9 +110,15 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_sync_start(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_sync_continue(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_sync_overflow(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
+
+
 	  public:
-		virtual bool post_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
+		virtual bool post_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata,bool monitor_lookup = true);
 		virtual lyramilk::data::uint64 wspeed();
+
+		virtual bool add_monitor(int fd);
+		virtual bool monitor_lookup(const lyramilk::data::string& masterid,const lyramilk::data::array& args);
+
 		virtual ~store();
 	};
 }}

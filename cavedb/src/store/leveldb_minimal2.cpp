@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
 
 namespace lyramilk{ namespace cave
@@ -530,9 +531,16 @@ namespace lyramilk{ namespace cave
 		std::string stlsync_info;
 		leveldb::Status ldbs = ldb->Get(ropt,repkey,&stlsync_info);
 		if(!ldbs.ok()){
+			if(ldbs.IsNotFound()){
+				replid->clear();
+				*offset = 0;
+				return true;
+			}
+
 			log(lyramilk::log::error,__FUNCTION__) << D("获取同步位置失败 %s",ldbs.ToString().c_str()) << std::endl;
 			return false;
 		}
+
 		*replid = lyramilk::data::str(stlsync_info.substr(sizeof(lyramilk::data::uint64)));
 		stlsync_info.copy((char*)offset,sizeof(lyramilk::data::uint64));
 		return true;

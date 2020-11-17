@@ -13,6 +13,7 @@
 #include <signal.h>
 #include <fstream>
 #include <algorithm>
+#include <errno.h>
 
 #include <sys/wait.h>
 
@@ -48,6 +49,7 @@ struct redis_cmd_spec
 
 std::map<lyramilk::data::string,redis_cmd_spec> dispatch;
 
+
 class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyramilk::cave::redis_session
 {
   public:
@@ -59,7 +61,6 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 	bool readonly;
 	lyramilk::cave::leveldb_standard* store;
 	std::map<lyramilk::data::uint64,lyramilk::data::string> scan_cursors;
-
 
 	TeapoyDBServer_session()
 	{
@@ -86,8 +87,8 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 		def_cmd(auth,2,redis_cmd_spec::readonly|redis_cmd_spec::loading|redis_cmd_spec::noauth,0,0,0);
 		def_cmd(multi,1,redis_cmd_spec::readonly,0,0,0);
 		def_cmd(exec,1,redis_cmd_spec::readonly,0,0,0);
-		def_cmd(command,1,redis_cmd_spec::readonly,0,0,0);
-		def_cmd(info,1,redis_cmd_spec::readonly,0,0,0);
+		def_cmd(command,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor,0,0,0);
+		def_cmd(info,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor,0,0,0);
 		def_cmd(scan,2,redis_cmd_spec::readonly,0,0,0);
 		def_cmd(type,2,redis_cmd_spec::readonly,1,1,1);
 		def_cmd(set,3,redis_cmd_spec::write,1,1,1);
@@ -97,19 +98,21 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 		def_cmd(zscan,3,redis_cmd_spec::readonly,1,1,1);
 		def_cmd(zrange,-4,redis_cmd_spec::readonly,1,1,1);
 		def_cmd(del,2,redis_cmd_spec::write,1,1,1);
+		def_cmd(monitor,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor,1,1,1);
+		def_cmd(ping,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor,1,1,1);
 		#undef def_cmd
 	}
 
 	result_status notify_zadd(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr);
+		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr,false);
 		os << ":1\r\n";
 		return rs_ok;
 	}
 
 	result_status notify_zrem(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr);
+		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr,false);
 		os << ":1\r\n";
 		return rs_ok;
 	}
@@ -187,7 +190,7 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 
 	result_status notify_set(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr);
+		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr,false);
 		os << ":1\r\n";
 		return rs_ok;
 	}
@@ -208,7 +211,7 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 
 	result_status notify_hset(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr);
+		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr,false);
 		os << "+OK\r\n";
 		return rs_ok;
 	}
@@ -216,15 +219,15 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 
 	result_status notify_hmset(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr);
+		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr,false);
 		os << "+OK\r\n";
 		return rs_ok;
 	}
 
 	result_status notify_hdel(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr);
-		os << "+OK\r\n";
+		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr,false);
+		os << ":1\r\n";
 		return rs_ok;
 	}
 
@@ -348,7 +351,7 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 
 	result_status notify_del(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr);
+		store->post_command(masterid,"",0,(lyramilk::data::array&)cmd,nullptr,false);
 		os << ":1\r\n";
 		return rs_ok;
 	}
@@ -454,6 +457,20 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 		return rs_ok;
 	}
 
+	result_status notify_monitor(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		os << "+OK\r\n";
+
+		store->add_monitor(fd());
+		return rs_ok;
+	}
+
+	result_status notify_ping(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		os << "+PONG\r\n";
+		return rs_ok;
+	}
+
 	result_status notify_sample(const lyramilk::data::array& cmd, std::ostream& os)
 	{
 		return rs_ok;
@@ -474,6 +491,9 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 		return true;
 	}
 
+
+
+
 	result_status notify_cmd(const lyramilk::data::array& cmd, void* userdata)
 	{
 		if(cmd.size() < 1) return rs_error;
@@ -484,6 +504,10 @@ class TeapoyDBServer_session:public lyramilk::netio::aiosession_sync,public lyra
 
 		std::map<lyramilk::data::string,redis_cmd_spec>::const_iterator it = dispatch.find(rcmd);
 		if(it!=dispatch.end()){
+			if((it->second.f&redis_cmd_spec::skip_monitor) == 0){
+				store->monitor_lookup(masterid,cmd);
+			}
+
 			if(requirepass != pass && it->second.f&redis_cmd_spec::noauth){
 				os << "-NOAUTH authentication required.\r\n";
 				return rs_ok;
@@ -544,6 +568,13 @@ class TeapoyDBServer_impl:public lyramilk::netio::aioserver<TeapoyDBServer_sessi
 };
 
 
+
+/*
+1605600138.465654 [0 unix:/dev/shm/testredis.sock] "AUTH" "test123abc"
+1605600153.989455 [0 unix:/dev/shm/testredis.sock] "AUTH" "test123abc"
+1605600153.989573 [0 unix:/dev/shm/testredis.sock] "get" "abc"
+
+*/
 
 
 void useage(lyramilk::data::string selfname)

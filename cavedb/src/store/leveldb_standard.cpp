@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
 
 namespace lyramilk{ namespace cave
@@ -205,7 +206,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string key = args[1].str();
 		lyramilk::data::string field = args[2].str();
 		pk.key = key;
-		pk.hash.field = field;
+		pk.hash.field.assign(field.data(),field.size());
 
 		std::string lkey = redis_pack::pack(&pk);
 
@@ -238,7 +239,7 @@ namespace lyramilk{ namespace cave
 		for(lyramilk::data::uint64 i=2;i<c;i+=2){
 			lyramilk::data::string field = args[i].str();
 			pk.key = key;
-			pk.hash.field = field;
+			pk.hash.field.assign(field.data(),field.size());
 
 			std::string lkey = redis_pack::pack(&pk);
 			batch.Put(lkey,lyramilk::data::str(args[i + 1].str()));
@@ -264,7 +265,7 @@ namespace lyramilk{ namespace cave
 
 		for(std::size_t idx = 2;idx < args.size();++idx){
 			lyramilk::data::string field = args[idx].str();
-			pk.hash.field = field;
+			pk.hash.field.assign(field.data(),field.size());
 			std::string lkey = redis_pack::pack(&pk);
 			batch.Delete(lkey);
 		}
@@ -366,7 +367,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string value = args[3].str();
 		pk.key = key;
 		pk.zset.score = score;
-		pk.zset.member = value;
+		pk.zset.member.assign(value.data(),value.size());
 
 
 		leveldb::WriteBatch batch;
@@ -402,7 +403,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string key = args[1].str();
 		lyramilk::data::string value = args[2].str();
 		pk.key = key;
-		pk.zset.member = value;
+		pk.zset.member.assign(value.data(),value.size());
 
 		std::string lkey = redis_pack::pack(&pk);
 		std::string data;
@@ -696,7 +697,7 @@ namespace lyramilk{ namespace cave
 		pk.type = redis_pack::s_hash;
 
 		pk.key = key;
-		pk.hash.field = field;
+		pk.hash.field.assign(field.data(),field.size());
 
 		std::string lkey = redis_pack::pack(&pk);
 
@@ -720,7 +721,7 @@ namespace lyramilk{ namespace cave
 		pk.type = redis_pack::s_hash;
 
 		pk.key = key;
-		pk.hash.field = field;
+		pk.hash.field.assign(field.data(),field.size());
 
 		std::string lkey = redis_pack::pack(&pk);
 
@@ -747,7 +748,7 @@ namespace lyramilk{ namespace cave
 		pk.type = redis_pack::s_hash;
 
 		pk.key = key;
-		pk.hash.field = field;
+		pk.hash.field.assign(field.data(),field.size());
 
 		std::string lkey = redis_pack::pack(&pk);
 

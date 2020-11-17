@@ -2,6 +2,7 @@
 #define _cavedb_redis_pack_h_
 #include "slice.h"
 #include <libmilk/def.h>
+#include <leveldb/slice.h>
 
 namespace lyramilk{ namespace cave
 {
@@ -12,8 +13,6 @@ namespace lyramilk{ namespace cave
 
 	struct string_too_large
 	{};
-
-
 
 	struct redis_pack
 	{
@@ -34,14 +33,14 @@ namespace lyramilk{ namespace cave
 
 		union{
 			struct{
-				cavedb::Slice field;
+				cavedb::Slice2 field;
 			}hash;
 			struct{
 				double score;
-				cavedb::Slice member;
+				cavedb::Slice2 member;
 			}zset;
 			struct{
-				cavedb::Slice member;
+				cavedb::Slice2 member;
 			}set;
 			struct{
 				lyramilk::data::uint64 seq;
@@ -54,13 +53,13 @@ namespace lyramilk{ namespace cave
 		~redis_pack()
 		{}
 
-		static bool unpack(redis_pack* s,cavedb::Slice key);
+		static bool unpack(redis_pack* s,leveldb::Slice key);
 		static std::string pack(redis_pack* s);
-		static std::string make_key_prefix(cavedb::Slice key);
-		static std::string make_hashmap_prefix(cavedb::Slice key,cavedb::Slice field);
+		static std::string make_key_prefix(leveldb::Slice key);
+		static std::string make_hashmap_prefix(leveldb::Slice key,leveldb::Slice field);
 
-		static int Compare(const cavedb::Slice& a, const cavedb::Slice& b);
-		static void FindShortestSeparator(std::string* start,const cavedb::Slice& limit);
+		static int Compare(const leveldb::Slice& a, const leveldb::Slice& b);
+		static void FindShortestSeparator(std::string* start,const leveldb::Slice& limit);
 		static void FindShortSuccessor(std::string* key);
 	};
 

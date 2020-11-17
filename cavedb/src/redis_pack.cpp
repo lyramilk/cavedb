@@ -35,7 +35,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	inline bool redis_pack_put_str(std::string* r,cavedb::Slice s)
+	inline bool redis_pack_put_str(std::string* r,cavedb::Slice2& s)
 	{
 		if(s.size() < 0x80){
 			unsigned char c = (unsigned char)s.size();
@@ -52,7 +52,7 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	inline cavedb::Slice redis_pack_get_str(const char* p,const char**n)
+	inline cavedb::Slice2 redis_pack_get_str(const char* p,const char**n)
 	{
 		char c = *p;
 		if((c&0x80) == 0){
@@ -79,7 +79,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	bool redis_pack::unpack(redis_pack* s,cavedb::Slice key)
+	bool redis_pack::unpack(redis_pack* s,leveldb::Slice key)
 	{
 		if(key.size() < 2) return false;
 
@@ -204,26 +204,28 @@ namespace lyramilk{ namespace cave
 		throw type_error();
 	}
 
-	std::string redis_pack::make_key_prefix(cavedb::Slice key)
+	std::string redis_pack::make_key_prefix(leveldb::Slice key)
 	{
+		cavedb::Slice cskey(key.data(),key.size());
 		std::string r;
 		r.push_back(magic);
-		redis_pack_put_str(&r,key);
+		redis_pack_put_str(&r,cskey);
 		r.push_back(magic);
 		return r;
 	}
 
-	std::string redis_pack::make_hashmap_prefix(cavedb::Slice key,cavedb::Slice field)
+	std::string redis_pack::make_hashmap_prefix(leveldb::Slice key,leveldb::Slice field)
 	{
+		cavedb::Slice cskey(key.data(),key.size());
 		std::string r;
 		r.push_back(magic);
-		redis_pack_put_str(&r,key);
+		redis_pack_put_str(&r,cskey);
 		r.push_back(magic);
 		r.push_back(s_hash%0xff);
 		return r;
 	}
 
-	int redis_pack::Compare(const cavedb::Slice& a, const cavedb::Slice& b)
+	int redis_pack::Compare(const leveldb::Slice& a, const leveldb::Slice& b)
 	{
 		redis_pack pa;
 		if(!redis_pack::unpack(&pa,a)){
@@ -278,7 +280,7 @@ TODO();
 		return a.compare(b);
 	}
 
-	void redis_pack::FindShortestSeparator(std::string* start,const cavedb::Slice& limit)
+	void redis_pack::FindShortestSeparator(std::string* start,const leveldb::Slice& limit)
 	{
 	}
 

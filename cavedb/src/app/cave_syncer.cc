@@ -4,7 +4,9 @@
 #include "store/leveldb_minimal_adapter.h"
 #include "store/sparse_hash_map_minimal.h"
 #include "store/dense_hash_map_minimal.h"
-#include "store/lmdb_minimal.h"
+#ifdef LMDB_FOUND
+	#include "store/lmdb_minimal.h"
+#endif
 #include "store/rocksdb_minimal.h"
 #include "slave_ssdb.h"
 #include <signal.h>

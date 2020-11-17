@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.28)
+set(version 2.0.29)
 set(soversion 2.0)
 
 
@@ -77,7 +77,7 @@ list(APPEND LIBS_DEPENDS -ldl)
 if(NOT minimal)
 	pkg_check_modules(LIBMILK libmilk REQUIRED)
 	pkg_check_modules(SPARSEHASH sparsehash)
-	pkg_check_modules(LEVELDB leveldb)
+	#pkg_check_modules(LEVELDB leveldb>=1.19)
 	#pkg_check_modules(LMDB lmdb)
 
 	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
@@ -132,9 +132,6 @@ if(LIBMILK_FOUND)
 	list(APPEND CONFIG_MACROS LIBMILK_FOUND)
 endif()
 
-
-
-
 if(NOT minimal)
 	if(LEVELDB_FOUND)
 		list(APPEND BUILD_DEPENDS leveldb-devel)
@@ -142,15 +139,8 @@ if(NOT minimal)
 		list(APPEND LIBS_DEPENDS ${LEVELDB_LDFLAGS})
 		list(APPEND INCS_DEPENDS ${LEVELDB_CFLAGS})
 		list(APPEND CONFIG_MACROS LEVELDB_FOUND)
-	else()
-		#对leveldb的依赖
-		execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
-		execute_process(COMMAND  make -j -C ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/ out-static/libleveldb.a out-static/libmemenv.a)
-		include_directories(${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/include/)
-		target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libleveldb.a ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libmemenv.a)
 	endif()
 endif()
-
 
 
 if(SPARSEHASH_FOUND)
@@ -217,8 +207,23 @@ add_library(${PROJECT_NAME} ${share_type} ${src_cpps} ${src_hs} ${src_hs_store})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${version} SOVERSION ${soversion})
 
+
+if(NOT minimal)
+	if(NOT LEVELDB_FOUND)
+		#对leveldb的依赖
+		execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
+		execute_process(COMMAND  make -j -C ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/ out-static/libleveldb.a out-static/libmemenv.a)
+		include_directories(${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/include/)
+		target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libleveldb.a)
+		target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libmemenv.a)
+	endif()
+endif()
+
+
+
+
 #对libmilk的依赖
-if(NOT ${LIBMILK_CFLAGS})
+if(NOT ${LIBMILK_FOUND})
 	add_custom_target(milk COMMAND make -C /usr/local/src/libmilk/build)
 	add_dependencies(${PROJECT_NAME} milk)
 endif()

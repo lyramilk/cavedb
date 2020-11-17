@@ -5,6 +5,7 @@
 #include <libmilk/dict.h>
 #include <sys/time.h>
 #include <map>
+#include <sys/socket.h>
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
@@ -126,7 +127,8 @@ namespace lyramilk{ namespace cave
 	}
 
 	store::~store()
-	{}
+	{
+	}
 
 	lyramilk::data::int64 store::mstime()
 	{
@@ -685,7 +687,11 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string cmd = args[0];
 		cmd_dispatch_map::const_iterator it = dispatch_map.find(cmd);
 		if(it!=dispatch_map.end()){
-			return it->second(this,masterid,replid,offset,args,userdata);
+			if(it->second(this,masterid,replid,offset,args,userdata)){
+				monitor_lookup(masterid,args);
+				return true;
+			}
+			return false;
 		}else{
 			log(lyramilk::log::error) << D("未实现命令",cmd.c_str()) << args << std::endl;
 		}
@@ -694,7 +700,7 @@ namespace lyramilk{ namespace cave
 	}
 
 
-	bool store::post_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool store::post_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata,bool monitor_lookup)
 	{
 		++wspeed_counter;
 		time_t tm_now = time(0);
@@ -704,16 +710,79 @@ namespace lyramilk{ namespace cave
 			wspeed_counter = 0;
 		}
 
+
 		lyramilk::data::string cmd = args[0];
 		cmd_dispatch_map::const_iterator it = dispatch_map.find(cmd);
 		if(it!=dispatch_map.end()){
-			return it->second(this,masterid,replid,offset,args,userdata);
+			if(it->second(this,masterid,replid,offset,args,userdata)){
+				if(monitor_lookup) this->monitor_lookup(masterid,args);
+				return true;
+			}
+			return false;
 		}else{
 			log(lyramilk::log::error) << D("未实现命令",cmd.c_str()) << args << std::endl;
 		}
 		return true;
 	}
 
+	bool store::monitor_lookup(const lyramilk::data::string& masterid,const lyramilk::data::array& args)
+	{
+		if(monitor_list.empty()) return true;
+
+		lyramilk::data::stringstream ss;
+
+		if(masterid.empty()){
+			ss << "+" << time(nullptr) << " [" << dbid << " unknow]";
+		}else{
+			ss << "+" << time(nullptr) << " [" << dbid << " " << masterid << "]";
+		}
+		for(lyramilk::data::array::const_iterator it = args.begin();it!=args.end();++it){
+			lyramilk::data::string tmp = it->str();
+			std::size_t p = tmp.find_first_of('\"');
+			if(p != tmp.npos){
+				lyramilk::data::string tmp = *it;
+				do{
+					tmp = tmp.replace(p,0,"\"");
+					p = tmp.find_first_of('\"');
+				}while(p != tmp.npos);
+
+				ss << " \"" << tmp << "\"";
+			}else{
+				ss << " \"" << tmp << "\"";
+			}
+		}
+
+		ss << "\r\n";
+
+		lyramilk::data::string msg = ss.str();
+		std::list<int>::iterator it = monitor_list.begin();
+		for(;it!=monitor_list.end();){
+			int r = ::send(*it,msg.c_str(),msg.size(),MSG_DONTWAIT);
+			if(r == 0){
+				::close(r);
+				it = monitor_list.erase(it);
+				continue;
+			}else if(r == -1 && errno != EAGAIN && errno != EINTR){
+				::close(r);
+				it = monitor_list.erase(it);
+				continue;
+			}
+
+			++it;
+		}
+
+		return true;
+	}
+
+	bool store::add_monitor(int fd)
+	{
+		std::list<int>::iterator it = monitor_list.begin();
+		for(;it!=monitor_list.end();++it){
+			if(fd == *it) return false;
+		}
+		monitor_list.push_back(fd);
+		return true;
+	}
 
 	bool store::notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
