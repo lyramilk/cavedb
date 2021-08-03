@@ -279,6 +279,12 @@ label_bodys:
 		return 0;
 	}
 
+
+	slave_ssdb::st_status slave_ssdb::get_sync_status()
+	{
+		return status;
+	}
+
 	bool slave_ssdb::proc_noop(lyramilk::data::uint64 seq)
 	{
 		return peventhandler->notify_idle(masterid,psync_replid,psync_offset,nullptr);

@@ -16,17 +16,18 @@ namespace lyramilk{ namespace cave
 		unsigned int loadsum;
 		double loadcoff;
 		unsigned int loadalive;
-		enum {
-			st_running,
-			st_sync,
-			st_idle,
-			st_stop,
-		}status;
 		lyramilk::data::string host;
 		lyramilk::data::uint16 port;
 		lyramilk::data::string pwd;
 		lyramilk::data::string masterid;
 		slave* peventhandler;
+	  public:
+		enum st_status{
+			st_running,
+			st_sync,
+			st_idle,
+			st_stop,
+		}status;
 	  protected:
 		bool reconnect();
 		bool exec(const lyramilk::data::array& cmd,lyramilk::data::var* ret);
@@ -39,6 +40,8 @@ namespace lyramilk{ namespace cave
 		void init(const lyramilk::data::string& host,lyramilk::data::uint16 port,const lyramilk::data::string& pwd,const lyramilk::data::string& masterid,lyramilk::data::string psync_replid,lyramilk::data::uint64 psync_offset,slave* peventhandler);
 		lyramilk::data::uint64 tell_offset();
 		virtual int svc();
+
+		virtual st_status get_sync_status();
 	  protected:
 		lyramilk::data::string psync_replid;
 		lyramilk::data::uint64 psync_offset;

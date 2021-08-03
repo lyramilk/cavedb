@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.29)
+set(version 2.0.30)
 set(soversion 2.0)
 
 
@@ -69,6 +69,8 @@ include_directories(src/ssdb)
 aux_source_directory(src/store src_cpps)
 include_directories(src/store)
 file(GLOB src_hs_store RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/store/*.h)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 
 list(APPEND LIBS_DEPENDS -ldl)
 
@@ -206,6 +208,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pkg/cavedb.spec.in ${CMAKE_CURRENT_SO
 add_library(${PROJECT_NAME} ${share_type} ${src_cpps} ${src_hs} ${src_hs_store})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${version} SOVERSION ${soversion})
+
+#拷贝文件
+file(COPY ${src_hs} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/)
+file(COPY ${src_hs_store} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/store)
 
 
 if(NOT minimal)

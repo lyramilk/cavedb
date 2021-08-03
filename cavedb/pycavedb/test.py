@@ -24,8 +24,11 @@ class cavedb_impl(cavedb.cavedb):
 
 cavedb_instance = cavedb_impl();
 
-cavedb_instance.slaveof_ssdb("192.168.226.168",7011,"CNVXlB8CmSZgDCB4yI8mqbquQmAr4XKt",b"",10233487807 + 1000000);
-#cavedb_instance.slaveof_redis("127.0.0.1",6379,"",b"",0);
+
+last_offset = 0;
+last_replid = "";
+
+cavedb_instance.slaveof_redis("127.0.0.1",6379,"",last_replid,last_offset);
 
 
 while True:

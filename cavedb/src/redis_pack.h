@@ -27,6 +27,7 @@ namespace lyramilk{ namespace cave
 			s_zset		= 0x50,	//	msmtmfms
 			s_zset_m2s	= 0x51,	//	msmtms
 			s_native	= 0x70,	//	msmt
+			s_eof		= 0xff,	//	msmt
 		}type;
 
 		cavedb::Slice key;
@@ -56,6 +57,7 @@ namespace lyramilk{ namespace cave
 		static bool unpack(redis_pack* s,leveldb::Slice key);
 		static std::string pack(redis_pack* s);
 		static std::string make_key_prefix(leveldb::Slice key);
+		static std::string make_key_eof(leveldb::Slice key);
 		static std::string make_hashmap_prefix(leveldb::Slice key,leveldb::Slice field);
 
 		static int Compare(const leveldb::Slice& a, const leveldb::Slice& b);

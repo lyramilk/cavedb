@@ -208,12 +208,16 @@ namespace lyramilk{ namespace cave
 	{
 		result_status r = rs_continue;
 		char c;
-		for(is.get(c);is && r == rs_continue;is.get(c)){
-			r = parsing(c,userdata);
-		}
-
-		if(is.eof()){
-			is.clear();
+		while(is && r == rs_continue){
+			is.get(c);
+			if(is){
+				r = parsing(c,userdata);
+			}else if(is.eof()){
+				is.clear();
+				break;
+			}else{
+				break;
+			}
 		}
 
 		return r;

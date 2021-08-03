@@ -411,6 +411,87 @@ namespace lyramilk{ namespace cave
 		delete ldb;
 	}
 
+
+
+	void* leveldb_minimal2::thread_auto_compact(leveldb::DB* ldb)
+	{
+		lyramilk::data::string cursor;
+		int skip_day = 0;
+		long long compact_total = 0;
+		long long compact_count = 0;
+		time_t lastti = time(nullptr);
+		while(true){
+			time_t ti = time(nullptr);
+#ifdef __GNUC__
+			tm __t;
+			tm *t = localtime_r(&ti,&__t);
+#else
+			tm __t;
+			tm* t = &__t;
+			localtime_s(t, &ti);
+#endif
+			int h = t->tm_hour;
+			int d = t->tm_mday;
+
+			if(h >= 2 && h < 6 && d != skip_day){
+				leveldb::Iterator* it = nullptr;
+				{
+					it = ldb->NewIterator(ropt);
+					if(it == nullptr){
+						log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
+					}else{
+						if(cursor.empty()){
+							log(lyramilk::log::trace,__FUNCTION__) << D("自动整理开始") << std::endl;
+							it->SeekToFirst();
+						}else{
+							it->Seek(cursor);
+						}
+						if(it->Valid()){
+							int result = 0;
+							for(;it->Valid() && result <= 300000;it->Next()){
+								++result;
+								if(lastti != ti && result >= 200) break;
+							}
+							compact_total += result;
+							compact_count += result;
+							if(it->Valid()){
+								lyramilk::data::string end_key = it->key().ToString();
+								leveldb::Slice range_start = cursor;
+								leveldb::Slice range_end = end_key;
+								ldb->CompactRange(&range_start,&range_end);
+								cursor = end_key;
+								skip_day = 0;
+
+								if(lastti != ti){
+									log(lyramilk::log::trace,__FUNCTION__) << D("自动整理中... 整理了%lld条",compact_count) << std::endl;
+									lastti = ti;
+									compact_count = 0;
+								}
+							}else{
+								leveldb::Slice range_start = cursor;
+								ldb->CompactRange(&range_start,nullptr);
+								cursor.clear();
+								skip_day = d;
+								log(lyramilk::log::trace,__FUNCTION__) << D("自动整理完成，共整理%lld条",compact_total) << std::endl;
+							}
+						}else{
+							skip_day = d;
+							cursor.clear();
+						}
+
+						if (it) delete it;
+					}
+				}
+				usleep(10000);
+			}else{
+				sleep(60 - t->tm_sec);
+				//log(lyramilk::log::debug,__FUNCTION__) << D("不满足自动整理条件") << std::endl;
+			}
+		}
+
+		return nullptr;
+	}
+
 	minimal_interface* leveldb_minimal2::open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing = false)
 	{
 		lyramilk::data::string flag;
@@ -508,6 +589,10 @@ namespace lyramilk{ namespace cave
 			log(lyramilk::log::debug,__FUNCTION__) << D("cfver=%.*s",cfver.size(),cfver.c_str()) << std::endl;
 			leveldb_minimal2* ins = new leveldb_minimal2();
 			ins->ldb = ldb;
+			pthread_t thread;
+			if(pthread_create(&thread,NULL,(void* (*)(void*))thread_auto_compact,ldb) == 0){
+				pthread_detach(thread);
+			}
 			return ins;
 		}
 		delete ldb;

@@ -13,17 +13,18 @@ namespace lyramilk{ namespace cave
 		lyramilk::netio::client c;
 		lyramilk::netio::socket_istream is;
 		unsigned int loadsum;
-		enum {
-			st_running,
-			st_sync,
-			st_idle,
-			st_stop,
-		}status;
 		lyramilk::data::string host;
 		lyramilk::data::uint16 port;
 		lyramilk::data::string pwd;
 		lyramilk::data::string masterid;
 		slave* peventhandler;
+	  public:
+		enum st_status{
+			st_running,
+			st_sync,
+			st_idle,
+			st_stop,
+		}status;
 	  protected:
 		bool reconnect();
 		bool exec(const lyramilk::data::array& cmd,lyramilk::data::strings* ret);
@@ -38,6 +39,8 @@ namespace lyramilk{ namespace cave
 
 		lyramilk::data::string static hexmem(const void *p, int size);
 		virtual int svc();
+
+		virtual st_status get_sync_status();
 	  protected:
 		lyramilk::data::string psync_replid;
 		lyramilk::data::uint64 psync_offset;

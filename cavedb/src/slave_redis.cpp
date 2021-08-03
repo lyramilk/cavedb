@@ -361,12 +361,16 @@ namespace lyramilk{ namespace cave
 							{
 								lyramilk::data::array ar;
 								ar.push_back("sync_start");
-								peventhandler->notify_command(masterid,"?",0,ar,nullptr);
+								if(peventhandler->notify_command(masterid,"?",0,ar,nullptr)){
+									log(lyramilk::log::error,"sync_start") << D("从redis开始同步数据时发生错误") << std::endl;
+									status = st_stop;
+								}
 							}
 							myrdb r(masterid,peventhandler);
 							r.init(is);
 							if(!peventhandler->notify_psync(masterid,psync_replid,psync_offset,nullptr)){
 								log(lyramilk::log::error,"psync") << D("从redis同步时保存psync数据发生错误") << std::endl;
+								status = st_stop;
 							}
 							psync_rseq_diff = psync_offset - is.rseq();
 							peventhandler->is_in_full_sync = false;
@@ -377,7 +381,10 @@ namespace lyramilk{ namespace cave
 							{
 								lyramilk::data::array ar;
 								ar.push_back("sync_continue");
-								peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+								if(!peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr)){
+									log(lyramilk::log::error,"sync_continue") << D("从redis继续同步数据时发生错误") << std::endl;
+									status = st_stop;
+								}
 							}
 							log(lyramilk::log::debug,"psync") << D("继续同步:masterid=%s,offset=%llu",psync_replid.c_str(),psync_offset) << std::endl;
 						}
@@ -426,4 +433,15 @@ namespace lyramilk{ namespace cave
 		}
 		return 0;
 	}
+
+
+
+
+
+
+	slave_redis::st_status slave_redis::get_sync_status()
+	{
+		return status;
+	}
+
 }}

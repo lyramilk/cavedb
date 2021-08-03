@@ -148,7 +148,11 @@ namespace lyramilk{ namespace cave
 				s->zset.member = redis_pack_get_str(p,&n);
 				return true;
 			}break;
+			case s_eof:{
+				return true;
+			}break;
 		}
+COUT << "解EOF包失败" << s->type << std::endl;
 		return false;
 	}
 
@@ -199,6 +203,9 @@ namespace lyramilk{ namespace cave
 				if(!redis_pack_put_str(&r,s->zset.member)) throw string_too_large();
 				return r;
 			}break;
+			case s_eof:{
+				return r;
+			}break;
 		}
 
 		throw type_error();
@@ -214,6 +221,17 @@ namespace lyramilk{ namespace cave
 		return r;
 	}
 
+	std::string redis_pack::make_key_eof(leveldb::Slice key)
+	{
+		cavedb::Slice cskey(key.data(),key.size());
+		std::string r;
+		r.push_back(magic);
+		redis_pack_put_str(&r,cskey);
+		r.push_back(magic);
+		r.push_back(s_eof%0x100);
+		return r;
+	}
+
 	std::string redis_pack::make_hashmap_prefix(leveldb::Slice key,leveldb::Slice field)
 	{
 		cavedb::Slice cskey(key.data(),key.size());
@@ -221,7 +239,7 @@ namespace lyramilk{ namespace cave
 		r.push_back(magic);
 		redis_pack_put_str(&r,cskey);
 		r.push_back(magic);
-		r.push_back(s_hash%0xff);
+		r.push_back(s_hash%0x100);
 		return r;
 	}
 
