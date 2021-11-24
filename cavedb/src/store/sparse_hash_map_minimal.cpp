@@ -13,7 +13,7 @@ typedef google::sparse_hash_map<std::string,datamap_type > table_type;
 
 namespace lyramilk{ namespace cave
 {
-	bool sparse_hash_map_minimal::notify_psync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	bool sparse_hash_map_minimal::notify_psync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
 		return true;
 	}

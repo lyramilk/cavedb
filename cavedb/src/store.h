@@ -118,7 +118,6 @@ namespace lyramilk{ namespace cave
 
 		virtual bool add_monitor(int fd);
 		virtual bool monitor_lookup(const lyramilk::data::string& masterid,const lyramilk::data::array& args);
-
 		virtual ~store();
 	};
 }}

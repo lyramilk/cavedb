@@ -27,3 +27,34 @@
     cd [cavedb目录]/pkg
     rpmbuild -bb cavedb.spec
 
+#pycavedb示例，创建对象继承于cavedb.cavedb。调用其 slaveof_redis/slaveof_ssdb方法，从redis/ssdb同步数据，其中last_replid和last_offset表示同步进度，从覆盖的notify_psync/notify_command/notify_idle方法中可以获取同步进度
+
+    #! /usr/bin/python
+    #coding:utf-8
+    
+    
+    import cavedb
+    import time
+    
+    
+    times = 0;
+    
+    class cavedb_impl(cavedb.cavedb):
+    	def notify_command(self,replid,offset,args):
+    		global times
+    		print args
+    		return True;
+    
+    cavedb_instance = cavedb_impl();
+    
+    
+    last_offset = 0;
+    last_replid = "";
+    
+    cavedb_instance.slaveof_redis("127.0.0.1",6379,"",last_replid,last_offset);
+    
+    
+    while True:
+    	time.sleep(1);
+    	print("cavedb speed %u/sec"%times);
+    	times = 0;

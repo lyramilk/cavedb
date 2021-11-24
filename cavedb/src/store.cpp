@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <map>
 #include <sys/socket.h>
+#include <errno.h>
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
@@ -784,11 +785,15 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
+
 	bool store::notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{
 		return true;
 	}
 }}
+
+int main(){ return 0;}
+
 
 /*
 append

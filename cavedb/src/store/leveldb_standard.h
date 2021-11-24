@@ -4,6 +4,7 @@
 #include <libmilk/var.h>
 #include <libmilk/iterator.h>
 #include <libmilk/atom.h>
+#include <libmilk/netmonitor.h>
 
 #include "../store.h"
 #include "../store_reader.h"
@@ -49,6 +50,9 @@ namespace lyramilk{ namespace cave
 		// zset
 		virtual bool notify_zadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_zrem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
+		// set
+		virtual bool notify_sadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
+		virtual bool notify_srem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 
 	  public:
 		const static std::string cfver;
@@ -68,6 +72,10 @@ namespace lyramilk{ namespace cave
 		virtual lyramilk::data::string zscan(const lyramilk::data::string& key,const lyramilk::data::string& current,lyramilk::data::uint64 count,lyramilk::data::strings* result) const;
 		virtual lyramilk::data::uint64 zcard(const lyramilk::data::string& key) const;
 
+		virtual lyramilk::data::string sscan(const lyramilk::data::string& key,const lyramilk::data::string& current,lyramilk::data::uint64 count,lyramilk::data::strings* result) const;
+		virtual bool spop(const lyramilk::data::string& key,lyramilk::data::string* result) const;
+		virtual lyramilk::data::uint64 scard(const lyramilk::data::string& key) const;
+
 		virtual bool get(const lyramilk::data::string& key,lyramilk::data::string* value) const;
 
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
@@ -78,6 +86,15 @@ namespace lyramilk{ namespace cave
 
 		virtual lyramilk::data::string scan(const lyramilk::data::string& current,lyramilk::data::uint64 count,lyramilk::data::strings* result) const;
 		virtual lyramilk::data::string type(const lyramilk::data::string& key) const;
+	  protected:
+		std::map<lyramilk::data::string,lyramilk::netio::aiomonitor* > amons;
+/*
+		std::map<lyramilk::data::string,std::list<int> > oblist;
+		std::map<lyramilk::data::string,lyramilk::data::uint64> channel_seq;
+		lyramilk::threading::mutex_rw channel_seq_lock;*/
+	  public:
+		virtual bool subscribe(int fd,const lyramilk::data::string& channel,unsigned long long seq);
+		virtual bool publish(const lyramilk::data::string& channel,const lyramilk::data::string& message);
 	};
 }}
 
