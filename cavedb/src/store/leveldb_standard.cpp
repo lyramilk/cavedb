@@ -1714,12 +1714,6 @@ namespace lyramilk{ namespace cave
 	}
 
 
-
-
-
-
-	std::map<lyramilk::data::uint64,lyramilk::data::string> rainbow_table;
-
 	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_scan(const lyramilk::data::array& cmd, std::ostream& os)
 	{
 		lyramilk::data::uint64 current_hash = cmd[1].conv(0ull);

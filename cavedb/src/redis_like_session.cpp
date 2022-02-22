@@ -9,14 +9,14 @@ namespace lyramilk{ namespace cave
 	void redislike_session::static_init_dispatch()
 	{
 		regist_command("cavedb_sync",&redislike_session::notify_cavedb_sync,1,redis_cmd_spec::readonly|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
-		regist_command("command",&redislike_session::notify_command,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		regist_command("command",&redislike_session::notify_command,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript|redis_cmd_spec::noauth,0,0,0);
 
 		regist_command("auth",&redislike_session::notify_auth,2,redis_cmd_spec::readonly|redis_cmd_spec::loading|redis_cmd_spec::noauth|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
 		regist_command("del",&redislike_session::notify_del,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 		regist_command("ping",&redislike_session::notify_ping,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
 		regist_command("monitor",&redislike_session::notify_monitor,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
 
-		regist_command("hgetall",&redislike_session::notify_hgetall,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command("hgetall",&redislike_session::notify_hgetall,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
 		regist_command("hget",&redislike_session::notify_hget,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 		regist_command("hexist",&redislike_session::notify_hexist,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 		regist_command("hset",&redislike_session::notify_hset,4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
@@ -31,6 +31,8 @@ namespace lyramilk{ namespace cave
 		regist_command("set",&redislike_session::notify_set,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 
 
+		regist_command("allowslowcommand",&redislike_session::notify_allowslowcommand,2,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
+
 		/*
 		regist_command("multi",&redislike_session::notify_multi,1,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
 		regist_command("exec",&redislike_session::notify_exec,1,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
@@ -40,6 +42,7 @@ namespace lyramilk{ namespace cave
 	redislike_session::redislike_session()
 	{
 		readonly = false;
+		allowslowcommand = false;
 		store = nullptr;
 		reader = nullptr;
 	}
@@ -87,6 +90,11 @@ namespace lyramilk{ namespace cave
 			}
 			if(readonly && it->second.f&redis_cmd_spec::readonly){
 				os << "+READONLY You can't write against a read only replica.\r\n";
+				return rs_ok;
+			}
+
+			if((!allowslowcommand) && it->second.f&redis_cmd_spec::slow){
+				os << "-ERR This command maybe very slow. Please use command 'allowslowcommand 1' to enable slow command if you understand that.\r\n";
 				return rs_ok;
 			}
 
@@ -145,7 +153,8 @@ namespace lyramilk{ namespace cave
 			check_flag(skip_monitor);
 			check_flag(asking);
 			check_flag(fast);
-			//check_flag(noauth);	这个不是redis状态，而是cavedb特有的，故不在command命令中返回。
+			//check_flag(noauth);	//	这个不是redis状态，而是cavedb特有的，故不在command命令中返回。
+			check_flag(slow);	//	非redis状态，而是cavedb特有的，表示这个命令与redis不同，它运行非常慢。
 			#undef check_flag
 			os << "*" << flags.size() << "\r\n";
 			for(lyramilk::data::strings::iterator fit = flags.begin();fit!=flags.end();++fit){
@@ -294,8 +303,17 @@ namespace lyramilk{ namespace cave
 	}
 
 
-
-
+	lyramilk::cave::redis_session::result_status redislike_session::notify_allowslowcommand(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		int c = cmd[1].conv(0);
+		if(1 == c){
+			allowslowcommand = true;
+		}else if( 0 == c){
+			allowslowcommand = false;
+		}
+		os << "+OK\r\n";
+		return rs_ok;
+	}
 
 	bool redislike_session::oninit(lyramilk::data::ostream& os)
 	{

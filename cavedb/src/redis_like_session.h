@@ -31,6 +31,7 @@ namespace lyramilk{ namespace cave
 		const static int asking = 0x800;// - cluster related - accept even if importing
 		const static int fast = 0x1000;// - command operates in constant or log(N) time. Used for latency monitoring.
 		const static int noauth = 0x2000;// 非redis状态，而是cavedb特有的，允许在非登录状态下可用这个，该命令不在command命令中返回。
+		const static int slow = 0x4000;// 非redis状态，而是cavedb特有的，表示这个命令与redis不同，它运行非常慢。
 
 		redis_cmd_callback c;
 
@@ -47,6 +48,7 @@ namespace lyramilk{ namespace cave
 		static std::map<lyramilk::data::string,redis_cmd_spec> dispatch;
 	  protected:
 		bool readonly;
+		bool allowslowcommand;
 		lyramilk::data::string requirepass;
 		lyramilk::data::string pass;
 		lyramilk::data::string masterid;
@@ -102,6 +104,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::cave::redis_session::result_status notify_zrem(const lyramilk::data::array& cmd, std::ostream& os);
 
 		lyramilk::cave::redis_session::result_status notify_set(const lyramilk::data::array& cmd, std::ostream& os);
+		lyramilk::cave::redis_session::result_status notify_allowslowcommand(const lyramilk::data::array& cmd, std::ostream& os);
 	};
 
 }}
