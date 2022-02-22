@@ -10,6 +10,8 @@
 #include "../store_reader.h"
 #include "../slice.h"
 #include "../redis_pack.h"
+#include "../redis_like_session.h"
+#include "leveldb_minimal_adapter.h"
 
 namespace leveldb{class DB;};
 
@@ -18,7 +20,7 @@ namespace lyramilk{ namespace cave
 {
 
 
-	class leveldb_standard : public lyramilk::cave::store , public lyramilk::cave::store_reader
+	class leveldb_standard : /*public lyramilk::cave::store , public lyramilk::cave::store_reader,*/public minimal_interface
 	{
 	  protected:
 		leveldb::DB* ldb;
@@ -59,6 +61,8 @@ namespace lyramilk{ namespace cave
 
 		leveldb_standard();
 		virtual ~leveldb_standard();
+
+		static minimal_interface* open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing);
 		bool open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing = false);
 	  public:
 		virtual bool compact();
@@ -88,14 +92,82 @@ namespace lyramilk{ namespace cave
 		virtual lyramilk::data::string type(const lyramilk::data::string& key) const;
 	  protected:
 		std::map<lyramilk::data::string,lyramilk::netio::aiomonitor* > amons;
-/*
-		std::map<lyramilk::data::string,std::list<int> > oblist;
-		std::map<lyramilk::data::string,lyramilk::data::uint64> channel_seq;
-		lyramilk::threading::mutex_rw channel_seq_lock;*/
+		lyramilk::threading::mutex_rw channel_amons_lock;
 	  public:
-		virtual bool subscribe(int fd,const lyramilk::data::string& channel,unsigned long long seq);
+		virtual bool subscribe(int fd,const lyramilk::data::string& channel);
 		virtual bool publish(const lyramilk::data::string& channel,const lyramilk::data::string& message);
 	};
+
+
+
+
+
+	class leveldb_standard_redislike_session : public redislike_session
+	{
+		std::map<lyramilk::data::uint64,lyramilk::data::string> rainbow_table;
+
+		lyramilk::cave::leveldb_standard* dbins;
+	  public:
+		static void static_init_dispatch()
+		{
+			redislike_session::static_init_dispatch();
+			// def_cmd(命令,参数最少数量(如果是变长参数则为负数),标记,第一个key参数的序号,最后一个key参数的序号,重复参数的步长);
+			//	  dispatch[#cmd].c = &TeapoyDBServer_session::notify_##cmd,dispatch[#cmd].f = (fg),dispatch[#cmd].firstkey = fk,dispatch[#cmd].lastkey = lk,dispatch[#cmd].keystepcount = kc,dispatch[#cmd].n = ac;
+			#define def_cmd(cmd,ac,fg,fk,lk,kc)  regist_command(#cmd,(redis_cmd_callback)&leveldb_standard_redislike_session::notify_##cmd,ac,fg,fk,lk,kc)
+			def_cmd(hscan,3,redis_cmd_spec::readonly|redis_cmd_spec::noscript,0,0,0);
+			def_cmd(hlen,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+			def_cmd(info,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+			def_cmd(scan,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,0,0,0);
+			def_cmd(type,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+			def_cmd(get,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+
+			def_cmd(spop,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+			def_cmd(sscan,3,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+			def_cmd(scard,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+
+			def_cmd(zscan,3,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+			def_cmd(zrange,-4,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+			def_cmd(zcard,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+
+			def_cmd(del,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+
+			def_cmd(subscribe,2,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::pubsub|redis_cmd_spec::noscript,0,0,0);
+			def_cmd(publish,3,redis_cmd_spec::write|redis_cmd_spec::skip_monitor|redis_cmd_spec::pubsub|redis_cmd_spec::noscript,0,0,0);
+			def_cmd(compact,1,redis_cmd_spec::write|redis_cmd_spec::noscript,0,0,0);
+
+			#undef def_cmd
+		}
+		virtual void init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::leveldb_standard* dbins,bool readonly);
+
+		virtual result_status notify_hscan(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_hlen(const lyramilk::data::array& cmd, std::ostream& os);
+
+		virtual result_status notify_sscan(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_scard(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_spop(const lyramilk::data::array& cmd, std::ostream& os);
+
+		virtual result_status notify_zscan(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_zcard(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_zrange(const lyramilk::data::array& cmd, std::ostream& os);
+
+		virtual result_status notify_get(const lyramilk::data::array& cmd, std::ostream& os);
+
+		virtual result_status notify_subscribe(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_publish(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_compact(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_info(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_scan(const lyramilk::data::array& cmd, std::ostream& os);
+		virtual result_status notify_type(const lyramilk::data::array& cmd, std::ostream& os);
+	};
+
 }}
+
+
+
+
+
+
+
+
 
 #endif

@@ -1,8 +1,9 @@
 #ifndef _cavedb_store_reader_h_
 #define _cavedb_store_reader_h_
 
-#include <libmilk/var.h>
-#include <libmilk/thread.h>
+#include <time.h>
+#include <libmilk/def.h>
+//#include <libmilk/thread.h>
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
@@ -23,6 +24,8 @@ namespace lyramilk{ namespace cave
 		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
 			///	[hashmap]	判断key是否存在
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const = 0;
+			///	[hashmap]	根据key和field取得一个value
+		virtual bool hget(const lyramilk::data::string& key,const lyramilk::data::string& field,lyramilk::data::string* value) const;
 			///	[hashmap]	根据key和field取得一个value
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const = 0;
 			///	[hashmap]	取得一个key的所有value

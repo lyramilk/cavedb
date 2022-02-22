@@ -1,7 +1,8 @@
 #include "leveldb_minimal_adapter.h"
 #include "leveldb_minimal.h"
 #include "leveldb_minimal2.h"
-#include "rocksdb_minimal.h"
+#include "leveldb_standard.h"
+//#include "rocksdb_minimal.h"
 #include <libmilk/log.h>
 #include <libmilk/dict.h>
 
@@ -109,8 +110,10 @@ namespace lyramilk{ namespace cave
 	{
 		leveldb_version_map[leveldb_minimal::cfver].open_instance = leveldb_minimal::open;
 		leveldb_version_map[leveldb_minimal2::cfver].open_instance = leveldb_minimal2::open;
+		leveldb_version_map[leveldb_standard::cfver].open_instance = leveldb_standard::open;
 
-		leveldb_default_version = leveldb_minimal2::cfver;
+		// leveldb_default_version = leveldb_minimal2::cfver;
+		leveldb_default_version = leveldb_standard::cfver;
 		adapter = nullptr;
 	}
 

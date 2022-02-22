@@ -23,7 +23,7 @@ namespace lyramilk{ namespace cave
 	extern leveldb::ReadOptions ropt;
 	extern leveldb::WriteOptions wopt;
 
-	void inline save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	static void save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
 	{
 		if(offset == 0 && replid.empty()) return;
 
@@ -416,6 +416,17 @@ namespace lyramilk{ namespace cave
 	void* leveldb_minimal2::thread_auto_compact(leveldb::DB* ldb)
 	{
 		lyramilk::data::string cursor;
+		lyramilk::data::string lastcur;
+		const std::string lkey = ".sync.last_auto_compact";
+		{
+			leveldb::Status ldbs = ldb->Get(ropt,lkey,&cursor);
+
+			if(ldbs.ok()){
+				log(lyramilk::log::trace,__FUNCTION__) << D("加载 key:%s",cursor.c_str()) << std::endl;
+			}else{
+				log(lyramilk::log::error,__FUNCTION__) << D("加载key出错:%s",ldbs.ToString().c_str()) << std::endl;
+			}
+		}
 		int skip_day = 0;
 		long long compact_total = 0;
 		long long compact_count = 0;
@@ -433,7 +444,10 @@ namespace lyramilk{ namespace cave
 			int h = t->tm_hour;
 			int d = t->tm_mday;
 
-			if(h >= 2 && h < 6 && d != skip_day){
+
+
+
+			if(h > 2 && h < 6 && d != skip_day){
 				leveldb::Iterator* it = nullptr;
 				{
 					it = ldb->NewIterator(ropt);
@@ -448,9 +462,9 @@ namespace lyramilk{ namespace cave
 						}
 						if(it->Valid()){
 							int result = 0;
-							for(;it->Valid() && result <= 300000;it->Next()){
+							for(;it->Valid() && result < 300000;it->Next()){
 								++result;
-								if(lastti != ti && result >= 200) break;
+								if(lastti != ti && result > 200) break;
 							}
 							compact_total += result;
 							compact_count += result;
@@ -484,9 +498,20 @@ namespace lyramilk{ namespace cave
 				}
 				usleep(10000);
 			}else{
+				if (lastcur != cursor){
+					leveldb::Status ldbs = ldb->Put(wopt,lkey,cursor);
+					if(ldbs.ok()){
+						log(lyramilk::log::trace,__FUNCTION__) << D("写入 key:%s",cursor.c_str()) << std::endl;
+					}else{
+						log(lyramilk::log::error,__FUNCTION__) << D("加载key出错:%s",ldbs.ToString().c_str()) << std::endl;
+					}
+					lastcur = cursor;
+				}
 				sleep(60 - t->tm_sec);
 				//log(lyramilk::log::debug,__FUNCTION__) << D("不满足自动整理条件") << std::endl;
 			}
+
+
 		}
 
 		return nullptr;

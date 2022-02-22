@@ -22,7 +22,7 @@ namespace lyramilk{ namespace cave
 	leveldb::ReadOptions ropt;
 	leveldb::WriteOptions wopt;
 
-	void inline save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	static void save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
 	{
 		if(offset == 0 && replid.empty()) return;
 

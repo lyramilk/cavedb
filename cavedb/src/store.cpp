@@ -108,6 +108,14 @@ namespace lyramilk{ namespace cave
 		return rspeed_speed;
 	}
 
+	bool store_reader::hget(const lyramilk::data::string& key,const lyramilk::data::string& field,lyramilk::data::string* value) const
+	{
+		lyramilk::data::string v = hget(key,field);
+		if(v.empty()) return false;
+		if(value) *value = v;
+		return true;
+	}
+
 	lyramilk::data::map store_reader::hgetallv(const lyramilk::data::string& key) const
 	{
 		lyramilk::data::stringdict smap = hgetall(key);
@@ -728,8 +736,7 @@ namespace lyramilk{ namespace cave
 
 	bool store::monitor_lookup(const lyramilk::data::string& masterid,const lyramilk::data::array& args)
 	{
-		if(monitor_list.empty()) return true;
-
+		if(amon.empty()) return true;
 		lyramilk::data::stringstream ss;
 
 		if(masterid.empty()){
@@ -739,50 +746,29 @@ namespace lyramilk{ namespace cave
 		}
 		for(lyramilk::data::array::const_iterator it = args.begin();it!=args.end();++it){
 			lyramilk::data::string tmp = it->str();
-			std::size_t p = tmp.find_first_of('\"');
-			if(p != tmp.npos){
-				lyramilk::data::string tmp = *it;
-				do{
-					tmp = tmp.replace(p,0,"\"");
-					p = tmp.find_first_of('\"');
-				}while(p != tmp.npos);
 
-				ss << " \"" << tmp << "\"";
-			}else{
-				ss << " \"" << tmp << "\"";
+			lyramilk::data::string tmp1;
+			tmp1.reserve(tmp.size());
+
+			for(lyramilk::data::string::iterator it2 = tmp.begin();it2!=tmp.end();++it2){
+				if(*it2 == '"'){
+					tmp1.push_back('\\');
+					tmp1.push_back(*it2);
+				}else{
+					tmp1.push_back(*it2);
+				}
 			}
+			ss << " \"" << tmp1 << "\"";
 		}
-
 		ss << "\r\n";
 
 		lyramilk::data::string msg = ss.str();
-		std::list<int>::iterator it = monitor_list.begin();
-		for(;it!=monitor_list.end();){
-			int r = ::send(*it,msg.c_str(),msg.size(),MSG_DONTWAIT);
-			if(r == 0){
-				::close(r);
-				it = monitor_list.erase(it);
-				continue;
-			}else if(r == -1 && errno != EAGAIN && errno != EINTR){
-				::close(r);
-				it = monitor_list.erase(it);
-				continue;
-			}
-
-			++it;
-		}
-
-		return true;
+		return amon.send(msg);
 	}
 
 	bool store::add_monitor(int fd)
 	{
-		std::list<int>::iterator it = monitor_list.begin();
-		for(;it!=monitor_list.end();++it){
-			if(fd == *it) return false;
-		}
-		monitor_list.push_back(fd);
-		return true;
+		return amon.add(fd);
 	}
 
 
@@ -792,7 +778,7 @@ namespace lyramilk{ namespace cave
 	}
 }}
 
-int main(){ return 0;}
+//int main(){ return 0;}
 
 
 /*

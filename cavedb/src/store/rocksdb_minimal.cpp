@@ -21,7 +21,7 @@ namespace lyramilk{ namespace cave
 	rocksdb::ReadOptions rocksdb_ropt;
 	rocksdb::WriteOptions rocksdb_wopt;
 
-	void inline save_process(rocksdb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	static void save_process(rocksdb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
 	{
 		if(offset == 0 && replid.empty()) return;
 

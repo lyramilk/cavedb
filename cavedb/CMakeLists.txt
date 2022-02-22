@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.31)
+set(version 2.0.32)
 set(soversion 2.0)
 
 
@@ -200,7 +200,7 @@ foreach(v ${CONFIG_MACROS})
 endforeach()
 
 #修改配置文件
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/config.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pkg/cavedb.spec.in ${CMAKE_CURRENT_SOURCE_DIR}/pkg/cavedb.spec)
 
 

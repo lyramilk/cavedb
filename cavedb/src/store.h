@@ -4,6 +4,7 @@
 #include <libmilk/var.h>
 #include <libmilk/iterator.h>
 #include <libmilk/atom.h>
+#include <libmilk/netmonitor.h>
 #include <pthread.h>
 #include "slave.h"
 
@@ -22,7 +23,7 @@ namespace lyramilk{ namespace cave
 		virtual bool notify_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata);
 
-		std::list<int> monitor_list;
+		lyramilk::netio::aiomonitor amon;
 	  protected:
 		store();
 		lyramilk::data::int64 mstime();

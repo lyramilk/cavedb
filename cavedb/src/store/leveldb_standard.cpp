@@ -4,7 +4,7 @@
 #include <libmilk/testing.h>
 #include <libmilk/codes.h>
 #include <libmilk/hash.h>
-#include <libmilk/json.h>
+#include <libmilk/stringutil.h>
 
 #include <leveldb/db.h>
 #include <leveldb/filter_policy.h>
@@ -58,7 +58,7 @@ namespace lyramilk{ namespace cave
 
 	};
 
-	void inline save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
+	static void save_process(leveldb::WriteBatch& batch,const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset)
 	{
 		if(offset == 0 && replid.empty()) return;
 		redis_pack pk;
@@ -149,6 +149,10 @@ namespace lyramilk{ namespace cave
 		save_process(batch,masterid,replid,offset);
 
 
+		std::string start;
+		std::string end;
+
+
 		lyramilk::data::string result_cursor;
 		leveldb::Iterator* it = nullptr;
 		{
@@ -156,11 +160,17 @@ namespace lyramilk{ namespace cave
 			if(it == nullptr){
 				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
 			}else{
+
 				lyramilk::data::string keep_prefix = redis_pack::make_key_prefix(key);
+				start = keep_prefix;
+
 				it->Seek(keep_prefix);
 				if(it->Valid()){
 					for(;it->Valid();it->Next()){
-						if(!it->key().starts_with(keep_prefix)) break;
+						if(!it->key().starts_with(keep_prefix)){
+							end = keep_prefix;
+							break;
+						}
 						batch.Delete(it->key());
 					}
 				}
@@ -174,6 +184,12 @@ namespace lyramilk{ namespace cave
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
 			return false;
+		}else{
+			leveldb::Slice a(start);
+			leveldb::Slice b(end);
+			ldb->CompactRange(&a,&b);
+//COUT << "整理" << start << "," << end << std::endl;
+
 		}
 		return true;
 	}
@@ -502,7 +518,6 @@ namespace lyramilk{ namespace cave
 	{
 		if(replid == nullptr || offset == nullptr) return false;
 
-
 		lyramilk::data::string repkey;
 		if(masterid.empty()){
 			repkey = ".sync.key";
@@ -515,7 +530,6 @@ namespace lyramilk{ namespace cave
 		pk.type = redis_pack::s_native;
 		pk.key = repkey;
 		std::string lkey = redis_pack::pack(&pk);
-
 
 		std::string stlsync_info;
 		leveldb::Status ldbs = ldb->Get(ropt,lkey,&stlsync_info);
@@ -1029,17 +1043,32 @@ namespace lyramilk{ namespace cave
 					skip_prefix.push_back(redis_pack::magiceof);
 
 					redis_pack spack;
-					for(lyramilk::data::uint64 i=0;it->Valid() && i<count;it->Next()){
+					for(lyramilk::data::uint64 i=0;it->Valid() && i<count;){
 						if(it->key().starts_with(skip_prefix)) continue;
 						if(redis_pack::unpack(&spack,it->key()) && spack.type != redis_pack::s_native){
 							skip_prefix = redis_pack::make_key_prefix(spack.key);
+
 							result->push_back(spack.key.ToString());
 							++i;
 
 							if(i == count){
 								result_cursor = it->key().ToString();
+
+								if(spack.type == redis_pack::s_string){
+									it->Next();
+								}else{
+									it->Seek(redis_pack::make_key_eof(spack.key));
+								}
 								break;
 							}
+
+							if(spack.type == redis_pack::s_string){
+								it->Next();
+							}else{
+								it->Seek(redis_pack::make_key_eof(spack.key));
+							}
+						}else{
+							it->Next();
 						}
 					}
 				}
@@ -1198,288 +1227,44 @@ namespace lyramilk{ namespace cave
 		return key_type;
 	}
 
-
-	class leveldb_standard_monitor_data:public lyramilk::netio::aiomonitor
+	bool leveldb_standard::subscribe(int fd,const lyramilk::data::string& channel)
 	{
-		leveldb::DB* ldb;
-		lyramilk::data::string channel;
-		lyramilk::data::string channelkey;
-	  public:
-		leveldb_standard_monitor_data(const lyramilk::data::string& channel,leveldb::DB* ldb)
+		lyramilk::netio::aiomonitor* amon = nullptr;
 		{
-			this->channel = channel;
-			this->ldb = ldb;
-			channelkey = ".ch." + channel;
-		}
-
-		virtual ~leveldb_standard_monitor_data()
-		{}
-
-		virtual unsigned long long get_first_seq()
-		{
-			leveldb::Iterator* it = nullptr;
-			{
-				it = ldb->NewIterator(ropt);
-				if(it == nullptr){
-					return 0;
-				}else{
-					lyramilk::data::string keep_prefix = redis_pack::make_key_prefix(channelkey);
-					it->Seek(keep_prefix);
-
-					redis_pack spack;
-					for(;it->Valid();it->Next()){
-						if(!it->key().starts_with(keep_prefix)) break;
-						if(redis_pack::unpack(&spack,it->key()) && spack.type == redis_pack::s_list){
-							unsigned long long result = spack.list.seq;
-							delete it;
-							return result;
-						}else{
-							break;
-						}
-					}
-					if (it) delete it;
-				}
+			lyramilk::threading::mutex_sync _(channel_amons_lock.w());
+			std::map<lyramilk::data::string,lyramilk::netio::aiomonitor* >::iterator it = amons.find(channel);
+			if(it == amons.end()){
+				amon = new lyramilk::netio::aiomonitor();
+				amons[channel] = amon;
+			}else{
+				amon = it->second;
 			}
-
-			return 0;
 		}
 
-		virtual unsigned long long get_last_seq()
-		{
-			leveldb::Iterator* it = nullptr;
-			{
-				it = ldb->NewIterator(ropt);
-				if(it == nullptr){
-					return 0;
-				}else{
-					lyramilk::data::string keep_prefix = redis_pack::make_key_prefix(channelkey);
-					lyramilk::data::string key_eof = redis_pack::make_key_eof(channelkey);
-					it->Seek(key_eof);
-
-					if(!it->Valid()){
-						it->SeekToLast();
-					}else{
-						it->Prev();
-					}
-
-					if(it->Valid()){
-						redis_pack spack;
-						for(;it->Valid();it->Prev()){
-							if(!it->key().starts_with(keep_prefix)) break;
-							if(redis_pack::unpack(&spack,it->key()) && spack.type == redis_pack::s_list){
-								unsigned long long result = spack.list.seq;
-								delete it;
-								return result;
-							}else{
-								break;
-							}
-						}
-					}
-					if (it) delete it;
-				}
-			}
-
-			return 0;
-		}
-
-		virtual bool save(unsigned long long seq,const lyramilk::data::string& msg)
-		{
-			redis_pack pk;
-			pk.type = redis_pack::s_list;
-			pk.key = channelkey;
-			pk.list.seq = seq;
-
-			std::string lkey = redis_pack::pack(&pk);
-			leveldb::Status ldbs = ldb->Put(wopt,lkey,msg);
-			if(ldbs.ok()){
-				std::string result = lyramilk::data::str(seq);
-				leveldb::Status ldbs = ldb->Put(wopt,lkey,result);
-				if(!ldbs.ok()){
-					return false;
-				}
-				return true;
-			}
-			return false;
-		}
-
-		unsigned long long scan(int fd,unsigned long long seq)
-		{
-			leveldb::Iterator* it = nullptr;
-			{
-				it = ldb->NewIterator(ropt);
-				if(it == nullptr){
-					return 0;
-				}else{
-					redis_pack pk;
-					pk.type = redis_pack::s_list;
-					pk.key = channelkey;
-					pk.list.seq = seq;
-					std::string lkey = redis_pack::pack(&pk);
-
-					lyramilk::data::string keep_prefix = redis_pack::make_key_prefix(channelkey);
-					it->Seek(lkey);
-
-					redis_pack spack;
-					for(;it->Valid();it->Next()){
-						if(!it->key().starts_with(keep_prefix)) break;
-						if(redis_pack::unpack(&spack,it->key()) && spack.type == redis_pack::s_list){
-							unsigned long long msgseq = spack.list.seq;
-							lyramilk::data::string msg = lyramilk::data::str(it->value().ToString());
-							if(!scan_callback(fd,msgseq,msg)){
-								if (it) delete it;
-								return spack.list.seq;
-							}
-							bool scan_callback(int fd,const lyramilk::data::string& msg);
-						}else{
-							break;
-						}
-					}
-					if (it) delete it;
-				}
-			}
-			return 0;
-		}
-
-	};
-
-
-
-
-
-
-	bool leveldb_standard::subscribe(int fd,const lyramilk::data::string& channel,unsigned long long seq)
-	{
-		lyramilk::netio::aiomonitor* amon = amons[channel];
-		if(amon == nullptr){
-			amon = new leveldb_standard_monitor_data(channel,ldb);
-			amons[channel] = amon;
-		}
-		amon->add(fd,seq);
-COUT << __FILE__ << ":" << __LINE__ << "-->" << __FUNCTION__ << std::endl;
+		amon->add(fd);
 		return true;
 	}
 
 	bool leveldb_standard::publish(const lyramilk::data::string& channel,const lyramilk::data::string& message)
 	{
-COUT << __FILE__ << ":" << __LINE__ << "-->" << __FUNCTION__ << std::endl;
-
-		lyramilk::netio::aiomonitor* amon = amons[channel];
-		if(amon == nullptr){
-			amon = new leveldb_standard_monitor_data(channel,ldb);
-			amons[channel] = amon;
-		}
-
-
-		return amon->send(message);
-
-
-#if 0
-		std::string lkey;
+		lyramilk::netio::aiomonitor* amon = nullptr;
 		{
-			redis_pack pk;
-			lyramilk::data::string seqkey = ".channel.seq." + channel;
-			pk.type = redis_pack::s_native;
+			lyramilk::threading::mutex_sync _(channel_amons_lock.r());
 
-			pk.key = seqkey;
-			lkey = redis_pack::pack(&pk);
-		}
-
-
-		lyramilk::data::uint64 seq = 0;
-
-		{
-			bool insert = false;
-			std::map<lyramilk::data::string,lyramilk::data::uint64>::iterator it;
-			{
-				lyramilk::threading::mutex_sync _(channel_seq_lock.r());
-				it = channel_seq.find(channel);
-				insert = true;
+			std::map<lyramilk::data::string,lyramilk::netio::aiomonitor* >::iterator it = amons.find(channel);
+			if(it == amons.end()){
+				return false;
 			}
-
-			if(it==channel_seq.end()){
-				//读leveldb
-				std::string result;
-				leveldb::Status ldbs = ldb->Get(ropt,lkey,&result);
-				if(ldbs.ok()){
-					char* p;
-					seq = strtoull(result.c_str(),&p,10) + 1;
-
-					lyramilk::threading::mutex_sync _(channel_seq_lock.w());
-					channel_seq[channel] = seq;
-				}else if(ldbs.IsNotFound()){
-					seq = 1;
-				}else{
-					return false;
-				}
-			}else{
-				lyramilk::threading::mutex_sync _(channel_seq_lock.w());
-				seq = ++it->second;
-			}
-		}
-
-
-		{
-			redis_pack pk;
-			lyramilk::data::string seqkey = ".ch." + channel;
-			pk.type = redis_pack::s_list;
-			pk.list.seq = seq;
-			std::string lkey = redis_pack::pack(&pk);
-			leveldb::Status ldbs = ldb->Put(wopt,lkey,message);
-			if(ldbs.ok()){
-				std::string result = lyramilk::data::str(seq);
-				leveldb::Status ldbs = ldb->Put(wopt,lkey,result);
-				if(!ldbs.ok()){
-					return false;
-				}
-			}else{
+			amon = it->second;
+			if(amon == nullptr){
 				return false;
 			}
 		}
 
-
-
-
-/*
-		std::map<lyramilk::data::string,lyramilk::data::uint64> channel_seq;
-		lyramilk::threading::mutex_rw channel_seq_lock;
-*/
-
-		std::list<int>& l = oblist[channel];
-
 		lyramilk::data::stringstream ss;
-
 		ss << "*3\r\n$7\r\nmessage\r\n$" << channel.size() << "\r\n" << channel << "\r\n";
-
-		lyramilk::data::string jsonstr;
-		lyramilk::data::var v;
-		v.type(lyramilk::data::var::t_map);
-		lyramilk::data::map& m = v;
-		m["data"] = message;
-		m["seq"] = seq;
-
-		lyramilk::data::json::stringify(m,&jsonstr);
-
-		ss << "$" << jsonstr.size() << "\r\n" << jsonstr << "\r\n";
-
-		lyramilk::data::string msg = ss.str();
-		std::list<int>::iterator it = l.begin();
-		for(;it!=l.end();){
-COUT << "fd=" << *it << std::endl;
-			int r = ::send(*it,msg.c_str(),msg.size(),MSG_DONTWAIT);
-			if(r == 0){
-				::close(r);
-				it = l.erase(it);
-				continue;
-			}else if(r == -1 && errno != EAGAIN && errno != EINTR){
-				::close(r);
-				it = l.erase(it);
-				continue;
-			}
-
-			++it;
-		}
-#endif
-		return true;
+		ss << "$" << message.size() << "\r\n" << message << "\r\n";
+		return amon->send(ss.str());
 	}
 
 	bool leveldb_standard::is_on_full_sync()
@@ -1499,6 +1284,17 @@ COUT << "fd=" << *it << std::endl;
 	void* leveldb_standard::thread_auto_compact(leveldb::DB* ldb)
 	{
 		lyramilk::data::string cursor;
+		lyramilk::data::string lastcur;
+		const std::string lkey = ".sync.last_auto_compact";
+		{
+			leveldb::Status ldbs = ldb->Get(ropt,lkey,&cursor);
+
+			if(ldbs.ok()){
+				log(lyramilk::log::trace,__FUNCTION__) << D("加载 key:%s",cursor.c_str()) << std::endl;
+			}else{
+				log(lyramilk::log::error,__FUNCTION__) << D("加载key出错:%s",ldbs.ToString().c_str()) << std::endl;
+			}
+		}
 		int skip_day = 0;
 		long long compact_total = 0;
 		long long compact_count = 0;
@@ -1515,6 +1311,9 @@ COUT << "fd=" << *it << std::endl;
 #endif
 			int h = t->tm_hour;
 			int d = t->tm_mday;
+
+
+
 
 			if(h > 2 && h < 6 && d != skip_day){
 				leveldb::Iterator* it = nullptr;
@@ -1567,9 +1366,20 @@ COUT << "fd=" << *it << std::endl;
 				}
 				usleep(10000);
 			}else{
+				if (lastcur != cursor){
+					leveldb::Status ldbs = ldb->Put(wopt,lkey,cursor);
+					if(ldbs.ok()){
+						log(lyramilk::log::trace,__FUNCTION__) << D("写入 key:%s",cursor.c_str()) << std::endl;
+					}else{
+						log(lyramilk::log::error,__FUNCTION__) << D("加载key出错:%s",ldbs.ToString().c_str()) << std::endl;
+					}
+					lastcur = cursor;
+				}
 				sleep(60 - t->tm_sec);
 				//log(lyramilk::log::debug,__FUNCTION__) << D("不满足自动整理条件") << std::endl;
 			}
+
+
 		}
 
 		return nullptr;
@@ -1675,4 +1485,333 @@ COUT << "fd=" << *it << std::endl;
 		return false;
 	}
 
+
+
+
+	minimal_interface* leveldb_standard::open(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing)
+	{
+		leveldb_standard* ins = new leveldb_standard();
+		if(ins){
+			if(ins->open_leveldb(leveldbpath,cache_size_MB,create_if_missing)){
+				return ins;
+			}
+			delete ins;
+		}
+		return nullptr;
+	}
+
+
+
+
+
+
+
+
+	void leveldb_standard_redislike_session::init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::leveldb_standard* dbins,bool readonly)
+	{
+		this->dbins = dbins;
+		redislike_session::init_cavedb(masterid,requirepass,dbins,dbins,readonly);
+	}
+
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_sscan(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::uint64 current_hash = cmd[2].conv(0ull);
+		lyramilk::data::string cursor;
+		if(current_hash != 0){
+			std::map<lyramilk::data::uint64,lyramilk::data::string>::const_iterator it = rainbow_table.find(current_hash);
+			if(it!=rainbow_table.end()){
+				cursor = it->second;
+			}else{
+				os << "-ERR invalid cursor\r\n";
+				return rs_ok;
+			}
+		}
+
+		lyramilk::data::strings results;
+		lyramilk::data::string next_cursor = dbins->sscan(cmd[1].str(),cursor,50,&results);
+
+		os << "*2\r\n";
+		if(next_cursor.empty()){
+			os << "$1\r\n0\r\n";
+		}else{
+			lyramilk::data::uint64 nexthash = lyramilk::cryptology::hash64::fnv(next_cursor.data(),next_cursor.size());
+			rainbow_table[nexthash] = next_cursor;
+
+			lyramilk::data::string nexthashstr = lyramilk::data::str(nexthash);
+			os << "$" << nexthashstr.size() << "\r\n";
+			os << nexthashstr << "\r\n";
+		}
+
+		{
+			os << "*" << results.size() << "\r\n";
+			for(lyramilk::data::strings::iterator it = results.begin();it!=results.end();++it){
+				os << "$" << it->size() << "\r\n";
+				os << *it << "\r\n";
+			}
+		}
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_scard(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::string key = cmd[1].str();
+		lyramilk::data::uint64 len = dbins->scard(key);
+
+		os << ":" << len << "\r\n";
+		return rs_ok;
+	}
+
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_spop(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::string key = cmd[1].str();
+
+		lyramilk::data::string r;
+		if(dbins->spop(key,&r)){
+			os << "$" << r.size() << "\r\n" << r << "\r\n";
+			return rs_ok;
+		}
+		os << "$-1\r\n";
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_zscan(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::uint64 current_hash = cmd[2].conv(0ull);
+		lyramilk::data::string cursor;
+		if(current_hash != 0){
+			std::map<lyramilk::data::uint64,lyramilk::data::string>::const_iterator it = rainbow_table.find(current_hash);
+			if(it!=rainbow_table.end()){
+				cursor = it->second;
+			}else{
+				os << "-ERR invalid cursor\r\n";
+				return rs_ok;
+			}
+		}
+
+		lyramilk::data::strings results;
+		lyramilk::data::string next_cursor = dbins->zscan(cmd[1].str(),cursor,50,&results);
+
+		os << "*2\r\n";
+		if(next_cursor.empty()){
+			os << "$1\r\n0\r\n";
+		}else{
+			lyramilk::data::uint64 nexthash = lyramilk::cryptology::hash64::fnv(next_cursor.data(),next_cursor.size());
+			rainbow_table[nexthash] = next_cursor;
+
+			lyramilk::data::string nexthashstr = lyramilk::data::str(nexthash);
+			os << "$" << nexthashstr.size() << "\r\n";
+			os << nexthashstr << "\r\n";
+		}
+
+		{
+			os << "*" << results.size() << "\r\n";
+			for(lyramilk::data::strings::iterator it = results.begin();it!=results.end();++it){
+				os << "$" << it->size() << "\r\n";
+				os << *it << "\r\n";
+			}
+		}
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_zcard(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::string key = cmd[1].str();
+		lyramilk::data::uint64 len = dbins->zcard(key);
+
+		os << ":" << len << "\r\n";
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_zrange(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+
+		lyramilk::data::string sstart = cmd[2].str();
+		lyramilk::data::string sstop = cmd[3].str();
+		if(sstart.find_first_not_of("0123456789") != lyramilk::data::string::npos || sstop.find_first_not_of("0123456789") != lyramilk::data::string::npos){
+			os << "-ERR value is not an integer or out of range\r\n";
+			return rs_ok;
+		}
+
+		lyramilk::data::int64 start = cmd[2].conv(0ll);
+		lyramilk::data::int64 stop = cmd[3].conv(0ll);
+		bool withscores = false;
+		if(cmd.size() > 4 && lyramilk::data::lower_case(cmd[4].str()) == "withscores"){
+			withscores = true;
+		}
+		lyramilk::data::strings results;
+		if(!dbins->zrange(cmd[1].str(),start,stop,withscores,&results)){
+			os << "$-1\r\n";
+			return rs_ok;
+		}
+
+		{
+			os << "*" << results.size() << "\r\n";
+			for(lyramilk::data::strings::iterator it = results.begin();it!=results.end();++it){
+				os << "$" << it->size() << "\r\n";
+				os << *it << "\r\n";
+			}
+		}
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_get(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::string key = cmd[1].str();
+
+		lyramilk::data::string value;
+		if(!dbins->get(key,&value)){
+			os << "$-1\r\n";
+		}else{
+			os << "$" << value.size() << "\r\n";
+			os << value << "\r\n";
+		}
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_subscribe(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::strings channel_info = lyramilk::data::split(cmd[1].str()," ");
+		lyramilk::data::string channel = channel_info[0];
+
+		os << "*3\r\n$9\r\nsubscribe\r\n$" << channel.size() << "\r\n" << channel << "\r\n:1\r\n";
+
+		dbins->subscribe(fd(),channel);
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_publish(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::string channel = cmd[1].str();
+		//os << "*3\r\n$9\r\nsubscribe\r\n$" << channel.size() << "\r\n" << channel << "\r\n:1\r\n\r\n";
+		dbins->publish(channel,cmd[2]);
+		os << ":1\r\n";
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_compact(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		dbins->compact();
+		os << "+OK\r\n";
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_info(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::strings sinfo;
+		sinfo.push_back("# Server");
+		sinfo.push_back("  " "cavedb: " CAVEDB_VERSION);
+		sinfo.push_back("\r\n");
+		{
+			os << "*" << sinfo.size() << "\r\n";
+			for(lyramilk::data::strings::iterator it = sinfo.begin();it!=sinfo.end();++it){
+				os << "$" << it->size() << "\r\n";
+				os << *it << "\r\n";
+			}
+		}
+		return rs_ok;
+	}
+
+
+
+
+
+
+	std::map<lyramilk::data::uint64,lyramilk::data::string> rainbow_table;
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_scan(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::uint64 current_hash = cmd[1].conv(0ull);
+		lyramilk::data::string cursor;
+
+		if(current_hash != 0){
+			std::map<lyramilk::data::uint64,lyramilk::data::string>::const_iterator it = rainbow_table.find(current_hash);
+			if(it!=rainbow_table.end()){
+				cursor = it->second;
+			}else{
+				os << "-ERR invalid cursor\r\n";
+				return rs_ok;
+			}
+		}
+
+		lyramilk::data::strings results;
+		lyramilk::data::string next_cursor = dbins->scan(cursor,50,&results);
+
+		os << "*2\r\n";
+		if(next_cursor.empty()){
+			os << "$1\r\n0\r\n";
+		}else{
+			lyramilk::data::uint64 nexthash = lyramilk::cryptology::hash64::fnv(next_cursor.data(),next_cursor.size());
+			//lyramilk::data::uint64 nexthash = current_hash + results.size();
+
+			rainbow_table[nexthash] = next_cursor;
+
+			lyramilk::data::string nexthashstr = lyramilk::data::str(nexthash);
+			os << "$" << nexthashstr.size() << "\r\n";
+			os << nexthashstr << "\r\n";
+		}
+
+		{
+			os << "*" << results.size() << "\r\n";
+			for(lyramilk::data::strings::iterator it = results.begin();it!=results.end();++it){
+				os << "$" << it->size() << "\r\n";
+				os << *it << "\r\n";
+			}
+		}
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_hscan(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::uint64 current_hash = cmd[2].conv(0ull);
+		lyramilk::data::string cursor;
+		if(current_hash != 0){
+			std::map<lyramilk::data::uint64,lyramilk::data::string>::const_iterator it = rainbow_table.find(current_hash);
+			if(it!=rainbow_table.end()){
+				cursor = it->second;
+			}else{
+				os << "-ERR invalid cursor\r\n";
+				return rs_ok;
+			}
+		}
+
+		lyramilk::data::strings results;
+		lyramilk::data::string next_cursor = dbins->hscan(cmd[1].str(),cursor,50,&results);
+
+		os << "*2\r\n";
+		if(next_cursor.empty()){
+			os << "$1\r\n0\r\n";
+		}else{
+			lyramilk::data::uint64 nexthash = lyramilk::cryptology::hash64::fnv(next_cursor.data(),next_cursor.size());
+
+			rainbow_table[nexthash] = next_cursor;
+
+			lyramilk::data::string nexthashstr = lyramilk::data::str(nexthash);
+			os << "$" << nexthashstr.size() << "\r\n";
+			os << nexthashstr << "\r\n";
+		}
+
+		{
+			os << "*" << results.size() << "\r\n";
+			for(lyramilk::data::strings::iterator it = results.begin();it!=results.end();++it){
+				os << "$" << it->size() << "\r\n";
+				os << *it << "\r\n";
+			}
+		}
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_hlen(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::uint64 result = dbins->hlen(cmd[1].str());
+		os << ":" << result << "\r\n";
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_type(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		os << "+" << dbins->type(cmd[1].str()) << "\r\n";
+		return rs_ok;
+	}
 }}
