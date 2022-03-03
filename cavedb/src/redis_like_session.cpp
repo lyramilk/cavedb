@@ -30,8 +30,8 @@ namespace lyramilk{ namespace cave
 		regist_command("zrem",&redislike_session::notify_zrem,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 		regist_command("set",&redislike_session::notify_set,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 
-
-		regist_command("allowslowcommand",&redislike_session::notify_allowslowcommand,2,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
+		regist_command("config",&redislike_session::notify_config,-2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
+		regist_command("client",&redislike_session::notify_client,-2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
 
 		/*
 		regist_command("multi",&redislike_session::notify_multi,1,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
@@ -45,11 +45,14 @@ namespace lyramilk{ namespace cave
 		allowslowcommand = false;
 		store = nullptr;
 		reader = nullptr;
+		session_with_monitor = false;
 	}
 
 	redislike_session::~redislike_session()
 	{
-		
+		if(session_with_monitor){
+			store->remove_monitor(fd());
+		}
 	}
 
 	void redislike_session::init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::store* store,lyramilk::cave::store_reader* reader,bool readonly)
@@ -94,7 +97,7 @@ namespace lyramilk{ namespace cave
 			}
 
 			if((!allowslowcommand) && it->second.f&redis_cmd_spec::slow){
-				os << "-ERR This command maybe very slow. Please use command 'allowslowcommand 1' to enable slow command if you understand that.\r\n";
+				os << "-ERR This command maybe very slow. Please use command 'client allowslowcommand 1' to enable slow command if you understand that.\r\n";
 				return rs_ok;
 			}
 
@@ -184,8 +187,9 @@ namespace lyramilk{ namespace cave
 	lyramilk::cave::redis_session::result_status redislike_session::notify_monitor(const lyramilk::data::array& cmd, std::ostream& os)
 	{
 		os << "+OK\r\n";
-
-		store->add_monitor(fd());
+		if(store->add_monitor(fd())){
+			session_with_monitor = true;
+		}
 		return rs_ok;
 	}
 
@@ -302,16 +306,28 @@ namespace lyramilk{ namespace cave
 		return rs_ok;
 	}
 
-
-	lyramilk::cave::redis_session::result_status redislike_session::notify_allowslowcommand(const lyramilk::data::array& cmd, std::ostream& os)
+	lyramilk::cave::redis_session::result_status redislike_session::notify_config(const lyramilk::data::array& cmd, std::ostream& os)
 	{
-		int c = cmd[1].conv(0);
-		if(1 == c){
-			allowslowcommand = true;
-		}else if( 0 == c){
-			allowslowcommand = false;
+		os << "-ERR Command will implement future\r\n";
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status redislike_session::notify_client(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::string subcmd = cmd[1].str();
+
+		if(subcmd == "allowslowcommand"){
+			int c = cmd[2].conv(0);
+			if(1 == c){
+				allowslowcommand = true;
+			}else if( 0 == c){
+				allowslowcommand = false;
+			}
+			os << "+OK\r\n";
+			return rs_ok;
 		}
-		os << "+OK\r\n";
+
+		os << "-ERR Unknown subcommand or wrong number of arguments for '" << subcmd << "'\r\n";
 		return rs_ok;
 	}
 

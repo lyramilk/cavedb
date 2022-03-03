@@ -771,6 +771,10 @@ namespace lyramilk{ namespace cave
 		return amon.add(fd);
 	}
 
+	bool store::remove_monitor(int fd)
+	{
+		return amon.remove(fd);
+	}
 
 	bool store::notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata)
 	{

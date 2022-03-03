@@ -141,17 +141,12 @@ namespace lyramilk{ namespace cave
 
 	bool leveldb_standard::notify_del(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		//log(lyramilk::log::error,__FUNCTION__) << D("未实现%s函数，这在ssdb中不应该出现","del") << std::endl;
-		//return false;
 		lyramilk::data::string key = args[1].str();
-
 		leveldb::WriteBatch batch;
 		save_process(batch,masterid,replid,offset);
 
-
 		std::string start;
 		std::string end;
-
 
 		lyramilk::data::string result_cursor;
 		leveldb::Iterator* it = nullptr;
@@ -168,7 +163,7 @@ namespace lyramilk{ namespace cave
 				if(it->Valid()){
 					for(;it->Valid();it->Next()){
 						if(!it->key().starts_with(keep_prefix)){
-							end = keep_prefix;
+							end = it->key().ToString();
 							break;
 						}
 						batch.Delete(it->key());
@@ -185,11 +180,11 @@ namespace lyramilk{ namespace cave
 			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
 			return false;
 		}else{
+			/*
 			leveldb::Slice a(start);
 			leveldb::Slice b(end);
 			ldb->CompactRange(&a,&b);
-//COUT << "整理" << start << "," << end << std::endl;
-
+			*/
 		}
 		return true;
 	}
@@ -1245,6 +1240,24 @@ namespace lyramilk{ namespace cave
 		return true;
 	}
 
+	bool leveldb_standard::unsubscribe(int fd,const lyramilk::data::string& channel)
+	{
+		lyramilk::netio::aiomonitor* amon = nullptr;
+		{
+			lyramilk::threading::mutex_sync _(channel_amons_lock.w());
+			std::map<lyramilk::data::string,lyramilk::netio::aiomonitor* >::iterator it = amons.find(channel);
+			if(it == amons.end()){
+				amon = new lyramilk::netio::aiomonitor();
+				amons[channel] = amon;
+			}else{
+				amon = it->second;
+			}
+		}
+
+		amon->remove(fd);
+		return true;
+	}
+
 	bool leveldb_standard::publish(const lyramilk::data::string& channel,const lyramilk::data::string& message)
 	{
 		lyramilk::netio::aiomonitor* amon = nullptr;
@@ -1503,8 +1516,46 @@ namespace lyramilk{ namespace cave
 
 
 
+	leveldb_standard_redislike_session::leveldb_standard_redislike_session()
+	{
+		session_with_monitor = false;
+	}
 
+	leveldb_standard_redislike_session::~leveldb_standard_redislike_session()
+	{
+		if(session_with_monitor){
+			dbins->unsubscribe(fd(),subscribe_channel);
+		}
+	}
 
+	void leveldb_standard_redislike_session::static_init_dispatch()
+	{
+		redislike_session::static_init_dispatch();
+		// def_cmd(命令,参数最少数量(如果是变长参数则为负数),标记,第一个key参数的序号,最后一个key参数的序号,重复参数的步长);
+		#define def_cmd(cmd,ac,fg,fk,lk,kc)  regist_command(#cmd,(redis_cmd_callback)&leveldb_standard_redislike_session::notify_##cmd,ac,fg,fk,lk,kc)
+		def_cmd(hscan,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		def_cmd(hlen,2,redis_cmd_spec::readonly|redis_cmd_spec::slow|redis_cmd_spec::noscript,1,1,1);
+		def_cmd(info,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		def_cmd(scan,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		def_cmd(type,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		def_cmd(get,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+
+		def_cmd(spop,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		def_cmd(sscan,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		def_cmd(scard,2,redis_cmd_spec::readonly|redis_cmd_spec::slow|redis_cmd_spec::noscript,1,1,1);
+
+		def_cmd(zscan,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		def_cmd(zrange,-4,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+		def_cmd(zcard,2,redis_cmd_spec::readonly|redis_cmd_spec::slow|redis_cmd_spec::noscript,1,1,1);
+
+		def_cmd(del,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+
+		def_cmd(subscribe,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::pubsub|redis_cmd_spec::noscript,0,0,0);
+		def_cmd(publish,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::pubsub|redis_cmd_spec::noscript,0,0,0);
+		def_cmd(compact,1,redis_cmd_spec::write|redis_cmd_spec::noscript,0,0,0);
+
+		#undef def_cmd
+	}
 
 
 	void leveldb_standard_redislike_session::init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::leveldb_standard* dbins,bool readonly)
@@ -1629,7 +1680,7 @@ namespace lyramilk{ namespace cave
 
 		lyramilk::data::string sstart = cmd[2].str();
 		lyramilk::data::string sstop = cmd[3].str();
-		if(sstart.find_first_not_of("0123456789") != lyramilk::data::string::npos || sstop.find_first_not_of("0123456789") != lyramilk::data::string::npos){
+		if(sstart.find_first_not_of("-0123456789") != lyramilk::data::string::npos || sstop.find_first_not_of("-0123456789") != lyramilk::data::string::npos){
 			os << "-ERR value is not an integer or out of range\r\n";
 			return rs_ok;
 		}
@@ -1672,12 +1723,20 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::cave::redis_session::result_status leveldb_standard_redislike_session::notify_subscribe(const lyramilk::data::array& cmd, std::ostream& os)
 	{
+		if(session_with_monitor){
+			os << "-ERR resubscribe is forbidden\r\n";
+			return rs_ok;
+		}
+
 		lyramilk::data::strings channel_info = lyramilk::data::split(cmd[1].str()," ");
 		lyramilk::data::string channel = channel_info[0];
 
 		os << "*3\r\n$9\r\nsubscribe\r\n$" << channel.size() << "\r\n" << channel << "\r\n:1\r\n";
 
-		dbins->subscribe(fd(),channel);
+		if(dbins->subscribe(fd(),channel)){
+			session_with_monitor = true;
+			subscribe_channel = channel;
+		}
 		return rs_ok;
 	}
 
@@ -1737,8 +1796,6 @@ namespace lyramilk{ namespace cave
 			os << "$1\r\n0\r\n";
 		}else{
 			lyramilk::data::uint64 nexthash = lyramilk::cryptology::hash64::fnv(next_cursor.data(),next_cursor.size());
-			//lyramilk::data::uint64 nexthash = current_hash + results.size();
-
 			rainbow_table[nexthash] = next_cursor;
 
 			lyramilk::data::string nexthashstr = lyramilk::data::str(nexthash);
@@ -1778,7 +1835,6 @@ namespace lyramilk{ namespace cave
 			os << "$1\r\n0\r\n";
 		}else{
 			lyramilk::data::uint64 nexthash = lyramilk::cryptology::hash64::fnv(next_cursor.data(),next_cursor.size());
-
 			rainbow_table[nexthash] = next_cursor;
 
 			lyramilk::data::string nexthashstr = lyramilk::data::str(nexthash);

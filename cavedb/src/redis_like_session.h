@@ -46,6 +46,7 @@ namespace lyramilk{ namespace cave
 	{
 	  private:
 		static std::map<lyramilk::data::string,redis_cmd_spec> dispatch;
+	  	bool session_with_monitor;
 	  protected:
 		bool readonly;
 		bool allowslowcommand;
@@ -104,7 +105,8 @@ namespace lyramilk{ namespace cave
 		lyramilk::cave::redis_session::result_status notify_zrem(const lyramilk::data::array& cmd, std::ostream& os);
 
 		lyramilk::cave::redis_session::result_status notify_set(const lyramilk::data::array& cmd, std::ostream& os);
-		lyramilk::cave::redis_session::result_status notify_allowslowcommand(const lyramilk::data::array& cmd, std::ostream& os);
+		lyramilk::cave::redis_session::result_status notify_config(const lyramilk::data::array& cmd, std::ostream& os);
+		lyramilk::cave::redis_session::result_status notify_client(const lyramilk::data::array& cmd, std::ostream& os);
 	};
 
 }}

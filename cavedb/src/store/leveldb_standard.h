@@ -95,6 +95,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::threading::mutex_rw channel_amons_lock;
 	  public:
 		virtual bool subscribe(int fd,const lyramilk::data::string& channel);
+		virtual bool unsubscribe(int fd,const lyramilk::data::string& channel);
 		virtual bool publish(const lyramilk::data::string& channel,const lyramilk::data::string& message);
 	};
 
@@ -106,36 +107,13 @@ namespace lyramilk{ namespace cave
 	{
 		std::map<lyramilk::data::uint64,lyramilk::data::string> rainbow_table;
 
+	  	bool session_with_monitor;
+		lyramilk::data::string subscribe_channel;
 		lyramilk::cave::leveldb_standard* dbins;
 	  public:
-		static void static_init_dispatch()
-		{
-			redislike_session::static_init_dispatch();
-			// def_cmd(命令,参数最少数量(如果是变长参数则为负数),标记,第一个key参数的序号,最后一个key参数的序号,重复参数的步长);
-			#define def_cmd(cmd,ac,fg,fk,lk,kc)  regist_command(#cmd,(redis_cmd_callback)&leveldb_standard_redislike_session::notify_##cmd,ac,fg,fk,lk,kc)
-			def_cmd(hscan,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
-			def_cmd(hlen,2,redis_cmd_spec::readonly|redis_cmd_spec::slow|redis_cmd_spec::noscript,1,1,1);
-			def_cmd(info,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
-			def_cmd(scan,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
-			def_cmd(type,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-			def_cmd(get,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-
-			def_cmd(spop,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-			def_cmd(sscan,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-			def_cmd(scard,2,redis_cmd_spec::readonly|redis_cmd_spec::slow|redis_cmd_spec::noscript,1,1,1);
-
-			def_cmd(zscan,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-			def_cmd(zrange,-4,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
-			def_cmd(zcard,2,redis_cmd_spec::readonly|redis_cmd_spec::slow|redis_cmd_spec::noscript,1,1,1);
-
-			def_cmd(del,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-
-			def_cmd(subscribe,2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::pubsub|redis_cmd_spec::noscript,0,0,0);
-			def_cmd(publish,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::pubsub|redis_cmd_spec::noscript,0,0,0);
-			def_cmd(compact,1,redis_cmd_spec::write|redis_cmd_spec::noscript,0,0,0);
-
-			#undef def_cmd
-		}
+		leveldb_standard_redislike_session();
+		virtual ~leveldb_standard_redislike_session();
+		static void static_init_dispatch();
 		virtual void init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::leveldb_standard* dbins,bool readonly);
 
 		virtual result_status notify_hscan(const lyramilk::data::array& cmd, std::ostream& os);
