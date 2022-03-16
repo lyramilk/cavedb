@@ -110,6 +110,7 @@ namespace lyramilk{ namespace cave
 	  	bool session_with_monitor;
 		lyramilk::data::string subscribe_channel;
 		lyramilk::cave::leveldb_standard* dbins;
+		static redislike_dispatch_type dispatch;
 	  public:
 		leveldb_standard_redislike_session();
 		virtual ~leveldb_standard_redislike_session();

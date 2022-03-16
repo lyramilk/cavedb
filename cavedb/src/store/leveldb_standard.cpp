@@ -1514,11 +1514,12 @@ namespace lyramilk{ namespace cave
 	}
 
 
-
+	redislike_dispatch_type leveldb_standard_redislike_session::dispatch;
 
 	leveldb_standard_redislike_session::leveldb_standard_redislike_session()
 	{
 		session_with_monitor = false;
+		dbins = nullptr;
 	}
 
 	leveldb_standard_redislike_session::~leveldb_standard_redislike_session()
@@ -1532,7 +1533,7 @@ namespace lyramilk{ namespace cave
 	{
 		redislike_session::static_init_dispatch();
 		// def_cmd(命令,参数最少数量(如果是变长参数则为负数),标记,第一个key参数的序号,最后一个key参数的序号,重复参数的步长);
-		#define def_cmd(cmd,ac,fg,fk,lk,kc)  regist_command(#cmd,(redis_cmd_callback)&leveldb_standard_redislike_session::notify_##cmd,ac,fg,fk,lk,kc)
+		#define def_cmd(cmd,ac,fg,fk,lk,kc)  regist_command(&dispatch,#cmd,(redis_cmd_callback)&leveldb_standard_redislike_session::notify_##cmd,ac,fg,fk,lk,kc)
 		def_cmd(hscan,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
 		def_cmd(hlen,2,redis_cmd_spec::readonly|redis_cmd_spec::slow|redis_cmd_spec::noscript,1,1,1);
 		def_cmd(info,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
@@ -1561,6 +1562,7 @@ namespace lyramilk{ namespace cave
 	void leveldb_standard_redislike_session::init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::leveldb_standard* dbins,bool readonly)
 	{
 		this->dbins = dbins;
+		dispatch_child.push_back(&dispatch);
 		redislike_session::init_cavedb(masterid,requirepass,dbins,dbins,readonly);
 	}
 
@@ -1761,6 +1763,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::strings sinfo;
 		sinfo.push_back("# Server");
 		sinfo.push_back("  " "cavedb: " CAVEDB_VERSION);
+		sinfo.push_back("  " "store: leveldb_minimal");
 		sinfo.push_back("\r\n");
 		{
 			os << "*" << sinfo.size() << "\r\n";

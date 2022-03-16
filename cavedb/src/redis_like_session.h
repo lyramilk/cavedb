@@ -42,12 +42,17 @@ namespace lyramilk{ namespace cave
 		int keystepcount;
 	};
 
+	typedef std::map<lyramilk::data::string,redis_cmd_spec> redislike_dispatch_type;
+
 	class redislike_session:public lyramilk::netio::aiosession_sync,public lyramilk::cave::redis_session
 	{
 	  private:
-		static std::map<lyramilk::data::string,redis_cmd_spec> dispatch;
+		static redislike_dispatch_type dispatch;
+
 	  	bool session_with_monitor;
 	  protected:
+		std::vector<redislike_dispatch_type*> dispatch_child;
+
 		bool readonly;
 		bool allowslowcommand;
 		lyramilk::data::string requirepass;
@@ -57,15 +62,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::cave::store_reader* reader;
 		lyramilk::cave::store* store;
 
-		static void inline regist_command(const lyramilk::data::string& cmd,redis_cmd_callback callback,int argcount,int flag,int firstkey_offset,int lastkey_offset,int keystepcount)
-		{
-			redislike_session::dispatch[cmd].c = callback;
-			redislike_session::dispatch[cmd].f = flag;
-			redislike_session::dispatch[cmd].firstkey = firstkey_offset;
-			redislike_session::dispatch[cmd].lastkey = lastkey_offset;
-			redislike_session::dispatch[cmd].keystepcount = keystepcount;
-			redislike_session::dispatch[cmd].n = argcount;
-		}
+		static void inline regist_command(redislike_dispatch_type *dispatch,const lyramilk::data::string& cmd,redis_cmd_callback callback,int argcount,int flag,int firstkey_offset,int lastkey_offset,int keystepcount);
 		static void static_init_dispatch();
 	  public:
 		redislike_session();
@@ -86,11 +83,7 @@ namespace lyramilk{ namespace cave
 
 		lyramilk::cave::redis_session::result_status notify_ping(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_monitor(const lyramilk::data::array& cmd, std::ostream& os);
-		lyramilk::cave::redis_session::result_status notify_sample(const lyramilk::data::array& cmd, std::ostream& os)
-		{
-			return rs_ok;
-		}
-
+		lyramilk::cave::redis_session::result_status notify_sample(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hgetall(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hget(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hexist(const lyramilk::data::array& cmd, std::ostream& os);

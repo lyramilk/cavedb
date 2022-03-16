@@ -5,6 +5,7 @@
 #include <libmilk/thread.h>
 #include "../store.h"
 #include "../store_reader.h"
+#include "../redis_like_session.h"
 
 /*
 	由于打算支持多种容器， 1_mininal 的键构造对多种容器时leveldb缓存不友好，故增加 2_mininal 版本，这一版本对leveldb排键时会把同种容器排在一起。
@@ -88,6 +89,20 @@ namespace lyramilk{ namespace cave
 		virtual bool hexist(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::string hget(const lyramilk::data::string& key,const lyramilk::data::string& field) const;
 		virtual lyramilk::data::stringdict hgetall(const lyramilk::data::string& key) const;
+	};
+
+	class leveldb_minimal_redislike_session : public redislike_session
+	{
+	  	bool session_with_monitor;
+		lyramilk::data::string subscribe_channel;
+		lyramilk::cave::leveldb_minimal_adapter* dbins;
+		static redislike_dispatch_type dispatch;
+	  public:
+		leveldb_minimal_redislike_session();
+		virtual ~leveldb_minimal_redislike_session();
+		static void static_init_dispatch();
+		virtual void init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::leveldb_minimal_adapter* dbins,bool readonly);
+		virtual result_status notify_info(const lyramilk::data::array& cmd, std::ostream& os);
 	};
 
 }}

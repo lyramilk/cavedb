@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.34)
+set(version 2.0.35)
 set(soversion 2.0)
 
 
@@ -83,7 +83,7 @@ if(NOT minimal)
 	#pkg_check_modules(LMDB lmdb)
 
 	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
-	check_include_file_cxx(rocksdb/db.h Z_HAVE_ROCKSDB)
+	#check_include_file_cxx(rocksdb/db.h Z_HAVE_ROCKSDB)
 	check_include_file_cxx(/usr/include/google/sparsehash/sparsehashtable.h Z_HAVE_SPARSEHASH)
 	check_include_file_cxx("/etc/alternatives/java_sdk/include/jni.h" Z_HAVE_JDK)
 endif()

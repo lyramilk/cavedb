@@ -4,38 +4,54 @@
 
 namespace lyramilk{ namespace cave
 {
-	std::map<lyramilk::data::string,redis_cmd_spec> redislike_session::dispatch;
+	redislike_dispatch_type redislike_session::dispatch;
+
+
+
+
+
+
+
+	void redislike_session::regist_command(redislike_dispatch_type *dispatch,const lyramilk::data::string& cmd,redis_cmd_callback callback,int argcount,int flag,int firstkey_offset,int lastkey_offset,int keystepcount)
+	{
+		dispatch->operator[](cmd).c = callback;
+		dispatch->operator[](cmd).f = flag;
+		dispatch->operator[](cmd).firstkey = firstkey_offset;
+		dispatch->operator[](cmd).lastkey = lastkey_offset;
+		dispatch->operator[](cmd).keystepcount = keystepcount;
+		dispatch->operator[](cmd).n = argcount;
+	}
 
 	void redislike_session::static_init_dispatch()
 	{
-		regist_command("cavedb_sync",&redislike_session::notify_cavedb_sync,1,redis_cmd_spec::readonly|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
-		regist_command("command",&redislike_session::notify_command,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript|redis_cmd_spec::noauth,0,0,0);
+		regist_command(&redislike_session::dispatch,"cavedb_sync",&redislike_session::notify_cavedb_sync,1,redis_cmd_spec::readonly|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"command",&redislike_session::notify_command,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript|redis_cmd_spec::noauth,0,0,0);
 
-		regist_command("auth",&redislike_session::notify_auth,2,redis_cmd_spec::readonly|redis_cmd_spec::loading|redis_cmd_spec::noauth|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
-		regist_command("del",&redislike_session::notify_del,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("ping",&redislike_session::notify_ping,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
-		regist_command("monitor",&redislike_session::notify_monitor,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"auth",&redislike_session::notify_auth,2,redis_cmd_spec::readonly|redis_cmd_spec::loading|redis_cmd_spec::noauth|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"del",&redislike_session::notify_del,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"ping",&redislike_session::notify_ping,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"monitor",&redislike_session::notify_monitor,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
 
-		regist_command("hgetall",&redislike_session::notify_hgetall,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
-		regist_command("hget",&redislike_session::notify_hget,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("hexist",&redislike_session::notify_hexist,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("hset",&redislike_session::notify_hset,4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("hmset",&redislike_session::notify_hmset,-4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("hdel",&redislike_session::notify_hdel,-3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"hgetall",&redislike_session::notify_hgetall,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"hget",&redislike_session::notify_hget,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"hexist",&redislike_session::notify_hexist,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"hset",&redislike_session::notify_hset,4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"hmset",&redislike_session::notify_hmset,-4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"hdel",&redislike_session::notify_hdel,-3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 
-		regist_command("sadd",&redislike_session::notify_sadd,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("srem",&redislike_session::notify_srem,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"sadd",&redislike_session::notify_sadd,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"srem",&redislike_session::notify_srem,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 
-		regist_command("zadd",&redislike_session::notify_zadd,4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("zrem",&redislike_session::notify_zrem,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
-		regist_command("set",&redislike_session::notify_set,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"zadd",&redislike_session::notify_zadd,4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"zrem",&redislike_session::notify_zrem,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"set",&redislike_session::notify_set,3,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 
-		regist_command("config",&redislike_session::notify_config,-2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
-		regist_command("client",&redislike_session::notify_client,-2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"config",&redislike_session::notify_config,-2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"client",&redislike_session::notify_client,-2,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
 
 		/*
-		regist_command("multi",&redislike_session::notify_multi,1,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
-		regist_command("exec",&redislike_session::notify_exec,1,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"multi",&redislike_session::notify_multi,1,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		regist_command(&redislike_session::dispatch,"exec",&redislike_session::notify_exec,1,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
 		*/
 	}
 
@@ -72,43 +88,61 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string rcmd = cmd[0].str();
 		transform(rcmd.begin(), rcmd.end(), rcmd.begin(), tolower);
 
-		std::map<lyramilk::data::string,redis_cmd_spec>::const_iterator it = dispatch.find(rcmd);
-		if(it!=dispatch.end()){
-			if(requirepass != pass && !(it->second.f&redis_cmd_spec::noauth)){
-				os << "-NOAUTH authentication required.\r\n";
-				return rs_ok;
-			}
+		const redis_cmd_spec* spec = nullptr;
 
-			if(it->second.n >= 0){
-				if(cmd.size() != (unsigned long long)it->second.n){
-					os << "-ERR wrong number of arguments for '" << cmd[0].str() << "' command\r\n";
-					return rs_ok;
-				}
-			}else{
-				unsigned long long nessary = (unsigned long long)(0 - it->second.n);
-				if(cmd.size() < nessary){
-					os << "-ERR wrong number of arguments for '" << cmd[0].str() << "' command\r\n";
-					return rs_ok;
+		redislike_dispatch_type::const_iterator it = dispatch.find(rcmd);
+		if(it == dispatch.end()){
+			for(std::vector<redislike_dispatch_type*>::iterator ait = dispatch_child.begin();ait != dispatch_child.end(); ++ait){
+				redislike_dispatch_type* p = *ait;
+				if(p != nullptr){
+					it = p->find(rcmd);
+					if(it != p->end()){
+						spec = &it->second;
+						break;
+					}
 				}
 			}
-			if(readonly && it->second.f&redis_cmd_spec::readonly){
-				os << "+READONLY You can't write against a read only replica.\r\n";
-				return rs_ok;
-			}
-
-			if((!allowslowcommand) && it->second.f&redis_cmd_spec::slow){
-				os << "-ERR This command maybe very slow. Please use command 'client allowslowcommand 1' to enable slow command if you understand that.\r\n";
-				return rs_ok;
-			}
-
-			if((it->second.f&redis_cmd_spec::skip_monitor) == 0){
-				store->monitor_lookup(masterid,cmd);
-			}
-			return (this->*it->second.c)(cmd,os);
+		}else{
+			spec = &it->second;
 		}
 
-		os << "-ERR unknown command '" << rcmd << "'\r\n";
-		return rs_ok;
+
+		if(spec == nullptr){
+			os << "-ERR unknown command '" << rcmd << "'\r\n";
+			return rs_ok;
+		}
+
+		if(requirepass != pass && !(it->second.f&redis_cmd_spec::noauth)){
+			os << "-NOAUTH authentication required.\r\n";
+			return rs_ok;
+		}
+
+		if(it->second.n >= 0){
+			if(cmd.size() != (unsigned long long)it->second.n){
+				os << "-ERR wrong number of arguments for '" << cmd[0].str() << "' command\r\n";
+				return rs_ok;
+			}
+		}else{
+			unsigned long long nessary = (unsigned long long)(0 - it->second.n);
+			if(cmd.size() < nessary){
+				os << "-ERR wrong number of arguments for '" << cmd[0].str() << "' command\r\n";
+				return rs_ok;
+			}
+		}
+		if(readonly && it->second.f&redis_cmd_spec::readonly){
+			os << "+READONLY You can't write against a read only replica.\r\n";
+			return rs_ok;
+		}
+
+		if((!allowslowcommand) && it->second.f&redis_cmd_spec::slow){
+			os << "-ERR This command maybe very slow. Please use command 'client allowslowcommand 1' to enable slow command if you understand that.\r\n";
+			return rs_ok;
+		}
+
+		if((it->second.f&redis_cmd_spec::skip_monitor) == 0){
+			store->monitor_lookup(masterid,cmd);
+		}
+		return (this->*it->second.c)(cmd,os);
 	}
 
 
@@ -132,7 +166,7 @@ namespace lyramilk{ namespace cave
 	lyramilk::cave::redis_session::result_status redislike_session::notify_command(const lyramilk::data::array& cmd, std::ostream& os)
 	{
 		os << "*" << dispatch.size() << "\r\n";
-		std::map<lyramilk::data::string,redis_cmd_spec>::const_iterator it = dispatch.begin();
+		redislike_dispatch_type::const_iterator it = dispatch.begin();
 		for(;it!=dispatch.end();++it){
 			os << "*6\r\n";
 
@@ -142,6 +176,7 @@ namespace lyramilk{ namespace cave
 			os << ":" << it->second.n << "\r\n";
 
 			lyramilk::data::strings flags;
+			flags.reserve(4);
 			#define check_flag(w) if(it->second.f & redis_cmd_spec::w) flags.push_back(#w)
 			check_flag(write);
 			check_flag(readonly);
@@ -194,6 +229,12 @@ namespace lyramilk{ namespace cave
 	}
 
 
+
+	lyramilk::cave::redis_session::result_status redislike_session::notify_sample(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		os << "-ERR Sample!!!.\r\n";
+		return rs_ok;
+	}
 
 	//	hashmap
 	lyramilk::cave::redis_session::result_status redislike_session::notify_hgetall(const lyramilk::data::array& cmd, std::ostream& os)

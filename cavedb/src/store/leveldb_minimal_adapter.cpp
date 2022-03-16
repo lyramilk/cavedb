@@ -196,6 +196,57 @@ namespace lyramilk{ namespace cave
 		}
 		return lyramilk::data::stringdict();
 	}
+
+
+
+
+	//	leveldb_minimal_redislike_session
+	redislike_dispatch_type leveldb_minimal_redislike_session::dispatch;
+
+	leveldb_minimal_redislike_session::leveldb_minimal_redislike_session()
+	{
+		dbins = nullptr;
+	}
+
+	leveldb_minimal_redislike_session::~leveldb_minimal_redislike_session()
+	{
+		
+	}
+
+	void leveldb_minimal_redislike_session::static_init_dispatch()
+	{
+		redislike_session::static_init_dispatch();
+		// def_cmd(命令,参数最少数量(如果是变长参数则为负数),标记,第一个key参数的序号,最后一个key参数的序号,重复参数的步长);
+		#define def_cmd(cmd,ac,fg,fk,lk,kc)  regist_command(&dispatch,#cmd,(redis_cmd_callback)&leveldb_minimal_redislike_session::notify_##cmd,ac,fg,fk,lk,kc)
+		def_cmd(info,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
+		#undef def_cmd
+	}
+
+	void leveldb_minimal_redislike_session::init_cavedb(const lyramilk::data::string& masterid,const lyramilk::data::string& requirepass,lyramilk::cave::leveldb_minimal_adapter* dbins,bool readonly)
+	{
+		this->dbins = dbins;
+		dispatch_child.push_back(&dispatch);
+		redislike_session::init_cavedb(masterid,requirepass,dbins,dbins,readonly);
+	}
+
+
+	lyramilk::cave::redis_session::result_status leveldb_minimal_redislike_session::notify_info(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::strings sinfo;
+		sinfo.push_back("# Server");
+		sinfo.push_back("  " "cavedb: " CAVEDB_VERSION);
+		sinfo.push_back("  " "store: leveldb_minimal");
+		sinfo.push_back("\r\n");
+		{
+			os << "*" << sinfo.size() << "\r\n";
+			for(lyramilk::data::strings::iterator it = sinfo.begin();it!=sinfo.end();++it){
+				os << "$" << it->size() << "\r\n";
+				os << *it << "\r\n";
+			}
+		}
+		return rs_ok;
+	}
+
 }}
 
 
