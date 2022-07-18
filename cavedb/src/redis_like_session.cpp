@@ -34,6 +34,7 @@ namespace lyramilk{ namespace cave
 
 		regist_command(&redislike_session::dispatch,"hgetall",&redislike_session::notify_hgetall,2,redis_cmd_spec::readonly|redis_cmd_spec::noscript,1,1,1);
 		regist_command(&redislike_session::dispatch,"hget",&redislike_session::notify_hget,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"hmget",&redislike_session::notify_hmget,-3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 		regist_command(&redislike_session::dispatch,"hexist",&redislike_session::notify_hexist,3,redis_cmd_spec::readonly|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 		regist_command(&redislike_session::dispatch,"hset",&redislike_session::notify_hset,4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
 		regist_command(&redislike_session::dispatch,"hmset",&redislike_session::notify_hmset,-4,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
@@ -129,7 +130,10 @@ namespace lyramilk{ namespace cave
 				return rs_ok;
 			}
 		}
-		if(readonly && it->second.f&redis_cmd_spec::readonly){
+
+		bool is_readonly_cmd = (it->second.f&redis_cmd_spec::readonly) != 0;
+
+		if(readonly && !is_readonly_cmd){
 			os << "+READONLY You can't write against a read only replica.\r\n";
 			return rs_ok;
 		}
@@ -243,7 +247,7 @@ namespace lyramilk{ namespace cave
 
 		lyramilk::data::stringdict result = reader->hgetall(key);
 		if(result.empty()){
-			os << "$-1\r\n";
+			os << "*0\r\n\r\n";
 		}else{
 			os << "*" << result.size() * 2 << "\r\n";
 			for(lyramilk::data::stringdict::iterator it = result.begin();it!=result.end();++it){
@@ -267,6 +271,25 @@ namespace lyramilk{ namespace cave
 		}else{
 			os << "$" << value.size() << "\r\n";
 			os << value << "\r\n";
+		}
+		return rs_ok;
+	}
+
+	lyramilk::cave::redis_session::result_status redislike_session::notify_hmget(const lyramilk::data::array& cmd, std::ostream& os)
+	{
+		lyramilk::data::string key = cmd[1].str();
+
+		os << "*" << cmd.size() - 2 << "\r\n";
+
+		for(unsigned int i=2;i<cmd.size();++i){
+			lyramilk::data::string value;
+			lyramilk::data::string field = cmd[i].str();
+			if(!reader->hget(key,field,&value)){
+				os << "$-1\r\n";
+			}else{
+				os << "$" << value.size() << "\r\n";
+				os << value << "\r\n";
+			}
 		}
 		return rs_ok;
 	}

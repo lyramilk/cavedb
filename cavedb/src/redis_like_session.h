@@ -86,6 +86,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::cave::redis_session::result_status notify_sample(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hgetall(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hget(const lyramilk::data::array& cmd, std::ostream& os);
+		lyramilk::cave::redis_session::result_status notify_hmget(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hexist(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hset(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_hmset(const lyramilk::data::array& cmd, std::ostream& os);

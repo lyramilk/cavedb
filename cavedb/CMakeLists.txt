@@ -1,6 +1,6 @@
 ﻿#定义工程名及版本
 project(cavedb)
-set(version 2.0.35)
+set(version 2.0.36)
 set(soversion 2.0)
 
 
@@ -89,8 +89,6 @@ if(NOT minimal)
 endif()
 
 
-
-
 if(minimal)
 	list(REMOVE_ITEM src_hs src/store/leveldb_minimal.h)
 	list(REMOVE_ITEM src_hs src/store/leveldb_minimal2.h)
@@ -99,7 +97,6 @@ if(minimal)
 	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal2.cpp)
 	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal_adapter.cpp)
 endif()
-
 
 
 if(Z_HAVE_ROCKSDB AND NOT minimal)
@@ -113,19 +110,6 @@ else()
 endif()
 
 
-
-if(LMDB_FOUND AND NOT minimal)
-	list(APPEND BUILD_DEPENDS lmdb-devel)
-	list(APPEND RUN_DEPENDS lmdb-libs)
-	list(APPEND LIBS_DEPENDS ${LMDB_LDFLAGS})
-	list(APPEND INCS_DEPENDS ${LMDB_CFLAGS})
-	list(APPEND CONFIG_MACROS LMDB_FOUND)
-else()
-	list(REMOVE_ITEM src_hs src/store/lmdb_minimal.h)
-	list(REMOVE_ITEM src_cpps src/store/lmdb_minimal.cpp)
-endif()
-
-
 if(LIBMILK_FOUND)
 	list(APPEND BUILD_DEPENDS libmilk-devel)
 	list(APPEND RUN_DEPENDS libmilk)
@@ -133,6 +117,7 @@ if(LIBMILK_FOUND)
 	list(APPEND INCS_DEPENDS ${LIBMILK_CFLAGS})
 	list(APPEND CONFIG_MACROS LIBMILK_FOUND)
 endif()
+
 
 if(NOT minimal)
 	if(LEVELDB_FOUND)
@@ -158,6 +143,7 @@ else()
 	list(REMOVE_ITEM src_cpps src/store/dense_hash_map_minimal.cpp)
 	list(REMOVE_ITEM src_cpps src/store/sparse_hash_map_minimal.cpp)
 endif()
+
 
 if(Z_HAVE_SNAPPY)
 	list(APPEND BUILD_DEPENDS snappy-devel)
