@@ -247,7 +247,7 @@ namespace lyramilk{ namespace cave
 
 		lyramilk::data::stringdict result = reader->hgetall(key);
 		if(result.empty()){
-			os << "*0\r\n\r\n";
+			os << "*0\r\n";
 		}else{
 			os << "*" << result.size() * 2 << "\r\n";
 			for(lyramilk::data::stringdict::iterator it = result.begin();it!=result.end();++it){
