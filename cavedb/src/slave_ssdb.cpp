@@ -7,6 +7,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <endian.h>
+#include <unistd.h>
 
 
 const uint64_t QFRONT_SEQ = 2;
@@ -168,6 +169,8 @@ label_bodys:
 				return false;
 			}
 			return true;
+		}else{
+			sleep(2);
 		}
 		return false;
 	}
@@ -214,7 +217,7 @@ label_bodys:
 		while(status != st_stop){
 			try{
 				if(!(is.good() && c.isalive())){
-					reconnect();
+					if(!reconnect()) continue;
 					lyramilk::data::array ar;
 					ar.push_back("sync140");
 					ar.push_back(psync_offset);
