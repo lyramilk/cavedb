@@ -28,7 +28,7 @@ namespace lyramilk{ namespace cave
 		regist_command(&redislike_session::dispatch,"command",&redislike_session::notify_command,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript|redis_cmd_spec::noauth,0,0,0);
 
 		regist_command(&redislike_session::dispatch,"auth",&redislike_session::notify_auth,2,redis_cmd_spec::readonly|redis_cmd_spec::loading|redis_cmd_spec::noauth|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
-		regist_command(&redislike_session::dispatch,"del",&redislike_session::notify_del,2,redis_cmd_spec::write|redis_cmd_spec::fast|redis_cmd_spec::noscript,1,1,1);
+		regist_command(&redislike_session::dispatch,"del",&redislike_session::notify_del,2,redis_cmd_spec::write|redis_cmd_spec::noscript,1,1,1);
 		regist_command(&redislike_session::dispatch,"ping",&redislike_session::notify_ping,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::fast|redis_cmd_spec::noscript,0,0,0);
 		regist_command(&redislike_session::dispatch,"monitor",&redislike_session::notify_monitor,1,redis_cmd_spec::readonly|redis_cmd_spec::skip_monitor|redis_cmd_spec::admin|redis_cmd_spec::noscript,0,0,0);
 
