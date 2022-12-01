@@ -1,10 +1,7 @@
-/* String -> String Map data structure optimized for size.
+/* Listpack -- A lists of strings serialization format
+ * https://github.com/antirez/listpack
  *
- * See zipmap.c for more info.
- *
- * --------------------------------------------------------------------------
- *
- * Copyright (c) 2009-2010, Salvatore Sanfilippo <antirez at gmail dot com>
+ * Copyright (c) 2017, Salvatore Sanfilippo <antirez at gmail dot com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,23 +29,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _ZIPMAP_H
-#define _ZIPMAP_H
+/* Allocator selection.
+ *
+ * This file is used in order to change the Rax allocator at compile time.
+ * Just define the following defines to what you want to use. Also add
+ * the include of your alternate allocator if needed (not needed in order
+ * to use the default libc allocator). */
 
-unsigned char *zipmapNew(void);
-unsigned char *zipmapSet(unsigned char *zm, unsigned char *key, unsigned int klen, unsigned char *val, unsigned int vlen, int *update);
-unsigned char *zipmapDel(unsigned char *zm, unsigned char *key, unsigned int klen, int *deleted);
-unsigned char *zipmapRewind(unsigned char *zm);
-unsigned char *zipmapNext(unsigned char *zm, unsigned char **key, unsigned int *klen, unsigned char **value, unsigned int *vlen);
-int zipmapGet(unsigned char *zm, unsigned char *key, unsigned int klen, unsigned char **value, unsigned int *vlen);
-int zipmapExists(unsigned char *zm, unsigned char *key, unsigned int klen);
-unsigned int zipmapLen(unsigned char *zm);
-size_t zipmapBlobLen(unsigned char *zm);
-void zipmapRepr(unsigned char *p);
-int zipmapValidateIntegrity(unsigned char *zm, size_t size, int deep);
-
-#ifdef REDIS_TEST
-int zipmapTest(int argc, char *argv[], int flags);
-#endif
-
+#ifndef LISTPACK_ALLOC_H
+#define LISTPACK_ALLOC_H
+#include "zmalloc.h"
+#define lp_malloc zmalloc
+#define lp_realloc zrealloc
+#define lp_free zfree
+#define lp_malloc_size zmalloc_usable_size
 #endif

@@ -287,6 +287,7 @@ namespace lyramilk{ namespace cave
 				}
 				return;
 			}break;
+		  case RDB_TYPE_LIST_QUICKLIST_2://		2022/12/1没有经过测试
 		  case RDB_TYPE_LIST_QUICKLIST:{
 				lyramilk::data::uint64 len = load_length(is,nullptr);
 				quicklist *l = quicklistCreate();
@@ -298,7 +299,7 @@ namespace lyramilk{ namespace cave
 					if(zl == nullptr){
 						log(lyramilk::log::error,"init") << D("redis 文件格式错误") << std::endl;
 					}
-					quicklistAppendZiplist(l,zl);
+					quicklistAppendListpack(l,zl);
 				}
 
 				quicklistIter* iter = quicklistGetIterator(l,AL_START_HEAD);
