@@ -402,7 +402,6 @@ namespace lyramilk{ namespace cave
 
 	bool redislike_session::onrequest(const char* cache, int size, lyramilk::data::ostream& os)
 	{
-
 		int bytesusedtotal = 0;
 		while(bytesusedtotal < size){
 			int bytesused = 0;

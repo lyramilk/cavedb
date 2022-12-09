@@ -9,6 +9,7 @@
 #include "config.h"
 #include "store/leveldb_standard.h"
 #include "slave_ssdb.h"
+#include "slave_redis.h"
 #include "redis_session.h"
 #include <signal.h>
 #include <fstream>
@@ -216,17 +217,34 @@ int main(int argc,char* argv[])
 			if(type == "ssdb"){
 				lyramilk::cave::slave_ssdb* datasource = new lyramilk::cave::slave_ssdb;
 
-				lyramilk::data::string ssdb_host = m["host"].str();
-				lyramilk::data::int32 ssdb_port = m["port"].conv(-1);
-				lyramilk::data::string ssdb_password = m["password"].str();
+				lyramilk::data::string host = m["host"].str();
+				lyramilk::data::int32 port = m["port"].conv(-1);
+				lyramilk::data::string password = m["password"].str();
 				lyramilk::data::string masterid = m["masterid"].str();
 
 				lyramilk::data::string replid = "";
 				lyramilk::data::uint64 offset = 0;
 				mstore->get_sync_info(masterid,&replid,&offset);
 
-				datasource->slaveof(ssdb_host,ssdb_port,ssdb_password,masterid,replid,offset,mstore);
-				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于ssdb:" << ssdb_host  << ":" << ssdb_port << std::endl;
+				datasource->slaveof(host,port,password,masterid,replid,offset,mstore);
+				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于ssdb:" << host  << ":" << port << ",replid=" << replid << ",offset=" << offset << std::endl;
+			}else if(type == "redis"){
+				lyramilk::cave::slave_redis* datasource = new lyramilk::cave::slave_redis;
+
+				lyramilk::data::string host = m["host"].str();
+				lyramilk::data::int32 port = m["port"].conv(-1);
+				lyramilk::data::string password = m["password"].str();
+				lyramilk::data::string masterid = m["masterid"].str();
+
+				lyramilk::data::string replid = "";
+				lyramilk::data::uint64 offset = 0;
+				mstore->get_sync_info(masterid,&replid,&offset);
+#ifdef _DEBUG
+				replid = "";
+				offset = 0;
+#endif
+				datasource->slaveof(host,port,password,masterid,replid,offset,mstore);
+				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于redis:" << host  << ":" << port << ",replid=" << replid << ",offset=" << offset << std::endl;
 			}else{
 				lyramilk::klog(lyramilk::log::error,"cavedb") << "不支持的source类型：" << type << std::endl;
 			}

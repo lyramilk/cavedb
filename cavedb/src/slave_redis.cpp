@@ -225,7 +225,7 @@ namespace lyramilk{ namespace cave
 			lyramilk::data::array ar;
 			ar.push_back("select");
 			ar.push_back(dbid);
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_aux(const lyramilk::data::string& key,const lyramilk::data::var& value)
@@ -240,7 +240,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back(key);
 			ar.push_back(field);
 			ar.push_back(value);
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 		virtual bool notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
 		{
@@ -249,7 +249,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back(key);
 			ar.push_back(score);
 			ar.push_back(value);
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 		virtual bool notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
 		{
@@ -257,7 +257,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("set");
 			ar.push_back(key);
 			ar.push_back(value);
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
@@ -266,7 +266,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("rpush");
 			ar.push_back(key);
 			ar.push_back(item);
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
@@ -275,7 +275,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("sadd");
 			ar.push_back(key);
 			ar.push_back(value);
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_pexpireat(const lyramilk::data::string& key,lyramilk::data::uint64 expiretime)
@@ -284,7 +284,7 @@ namespace lyramilk{ namespace cave
 			ar.push_back("pexpireat");
 			ar.push_back(key);
 			ar.push_back(expiretime);
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 	};
 
@@ -361,7 +361,7 @@ namespace lyramilk{ namespace cave
 							{
 								lyramilk::data::array ar;
 								ar.push_back("sync_start");
-								if(peventhandler->notify_command(masterid,"?",0,ar,nullptr)){
+								if(!peventhandler->dispatch_command(masterid,"?",0,ar,nullptr)){
 									log(lyramilk::log::error,"sync_start") << D("从redis开始同步数据时发生错误") << std::endl;
 									status = st_stop;
 								}
@@ -381,7 +381,7 @@ namespace lyramilk{ namespace cave
 							{
 								lyramilk::data::array ar;
 								ar.push_back("sync_continue");
-								if(!peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr)){
+								if(!peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr)){
 									log(lyramilk::log::error,"sync_continue") << D("从redis继续同步数据时发生错误") << std::endl;
 									status = st_stop;
 								}
@@ -414,7 +414,7 @@ namespace lyramilk{ namespace cave
 							std::transform(cmd.begin(),cmd.end(),cmd.begin(),::tolower);
 							ar[0] = cmd;
 							psync_offset = is.rseq() + psync_rseq_diff;
-							peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+							peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 						}
 					}else{
 						if(ret.type() == lyramilk::data::var::t_str && ret.str() != "PONG"){

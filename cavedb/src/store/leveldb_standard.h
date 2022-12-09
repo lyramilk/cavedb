@@ -136,6 +136,8 @@ namespace lyramilk{ namespace cave
 		virtual result_status notify_info(const lyramilk::data::array& cmd, std::ostream& os);
 		virtual result_status notify_scan(const lyramilk::data::array& cmd, std::ostream& os);
 		virtual result_status notify_type(const lyramilk::data::array& cmd, std::ostream& os);
+
+		virtual bool binlog(const lyramilk::data::array& cmd);
 	};
 
 }}

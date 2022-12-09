@@ -20,7 +20,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::uint64 wspeed_counter;
 		lyramilk::data::uint64 wspeed_speed;
 		time_t wspeed_tm;
-		virtual bool notify_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
+		virtual bool dispatch_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata);
 		virtual bool notify_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,void* userdata);
 
 		lyramilk::netio::aiomonitor amon;

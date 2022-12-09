@@ -226,6 +226,10 @@ namespace lyramilk{ namespace cave
 		leveldb::WriteBatch batch;
 		save_process(batch,masterid,replid,offset);
 		batch.Put(lkey,lyramilk::data::str(args[3].str()));
+
+
+
+
 		leveldb::Status ldbs = ldb->Write(wopt,&batch);
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
@@ -1867,4 +1871,11 @@ namespace lyramilk{ namespace cave
 		os << "+" << dbins->type(cmd[1].str()) << "\r\n";
 		return rs_ok;
 	}
+
+	bool leveldb_standard_redislike_session::binlog(const lyramilk::data::array& cmd)
+	{
+		//COUT << cmd << std::endl;
+		return true;
+	}
+
 }}

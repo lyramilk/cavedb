@@ -287,7 +287,6 @@ namespace lyramilk{ namespace cave
 				}
 				return;
 			}break;
-		  case RDB_TYPE_LIST_QUICKLIST_2://		2022/12/1没有经过测试
 		  case RDB_TYPE_LIST_QUICKLIST:{
 				lyramilk::data::uint64 len = load_length(is,nullptr);
 				quicklist *l = quicklistCreate();

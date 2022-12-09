@@ -246,7 +246,7 @@ label_bodys:
 								log(lyramilk::log::error,"psync") << D("[%s]同步错误:%s",masterid.c_str(),"OUT_OF_SYNC") << std::endl;
 								lyramilk::data::array ar;
 								ar.push_back("sync_overflow");
-								if(!peventhandler->notify_command(masterid,psync_replid,0,ar,nullptr)){
+								if(!peventhandler->dispatch_command(masterid,psync_replid,0,ar,nullptr)){
 									status = st_stop;
 								}
 								psync_offset = 0;
@@ -302,7 +302,7 @@ label_bodys:
 			{
 				lyramilk::data::array ar;
 				ar.push_back("sync_start");
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::END:
@@ -313,7 +313,7 @@ label_bodys:
 				peventhandler->is_in_full_sync = false;
 				lyramilk::data::array ar;
 				ar.push_back("sync_continue");
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			log(lyramilk::log::error,"proc_copy") << D("[%s]拷贝出错",masterid.c_str()) << std::endl;
 			return false;
@@ -341,7 +341,7 @@ label_bodys:
 				ar.push_back("set");
 				ar.push_back(tab);
 				ar.push_back(args[1]);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::KDEL:
@@ -352,7 +352,7 @@ label_bodys:
 				ar.reserve(3);
 				ar.push_back("ssdb_del");
 				ar.push_back(tab);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::HSET:
@@ -371,7 +371,7 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(key);
 				ar.push_back(args[1]);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::HDEL:
@@ -385,7 +385,7 @@ label_bodys:
 				ar.push_back("hdel");
 				ar.push_back(tab);
 				ar.push_back(key);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::ZSET:
@@ -411,7 +411,7 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(score);
 				ar.push_back(key);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::ZDEL:
@@ -426,7 +426,7 @@ label_bodys:
 				ar.push_back("zrem");
 				ar.push_back(tab);
 				ar.push_back(key);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::QPUSH_BACK:
@@ -452,7 +452,7 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(qseq);
 				ar.push_back(args[1]);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::QPUSH_FRONT:
@@ -478,7 +478,7 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(qseq);
 				ar.push_back(args[1]);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::QPOP_BACK:
@@ -488,7 +488,7 @@ label_bodys:
 				ar.reserve(2);
 				ar.push_back("rpop");
 				ar.push_back(tab);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::QPOP_FRONT:
@@ -498,7 +498,7 @@ label_bodys:
 				ar.reserve(2);
 				ar.push_back("lpop");
 				ar.push_back(tab);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  case BinlogCommand::QSET:
@@ -524,7 +524,7 @@ label_bodys:
 				ar.push_back(tab);
 				ar.push_back(qseq);
 				ar.push_back(args[1]);
-				return peventhandler->notify_command(masterid,psync_replid,psync_offset,ar,nullptr);
+				return peventhandler->dispatch_command(masterid,psync_replid,psync_offset,ar,nullptr);
 			}
 			break;
 		  default:

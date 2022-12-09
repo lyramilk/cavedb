@@ -34,7 +34,7 @@ namespace lyramilk{ namespace cave
 			ar[1] = key;
 			ar[2] = field;
 			ar[3] = value;
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_zadd(const lyramilk::data::string& key,const lyramilk::data::var& value,double score)
@@ -44,7 +44,7 @@ namespace lyramilk{ namespace cave
 			ar[1] = key;
 			ar[2] = score;
 			ar[3] = value;
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_set(const lyramilk::data::string& key,const lyramilk::data::string& value)
@@ -53,7 +53,7 @@ namespace lyramilk{ namespace cave
 			ar[0] = "set";
 			ar[1] = key;
 			ar[2] = value;
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_rpush(const lyramilk::data::string& key,const lyramilk::data::string& item)
@@ -62,7 +62,7 @@ namespace lyramilk{ namespace cave
 			ar[0] = "rpush";
 			ar[1] = key;
 			ar[2] = item;
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 
 		virtual bool notify_sadd(const lyramilk::data::string& key,const lyramilk::data::string& value)
@@ -71,7 +71,7 @@ namespace lyramilk{ namespace cave
 			ar[0] = "sadd";
 			ar[1] = key;
 			ar[2] = value;
-			return ps->notify_command(masterid,"?",0,ar,nullptr);
+			return ps->dispatch_command(masterid,"?",0,ar,nullptr);
 		}
 	};
 
@@ -168,7 +168,7 @@ namespace lyramilk{ namespace cave
 
 	bool store::notify_ping(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
-		log(lyramilk::log::debug) << "ping" << std::endl;
+		//log(lyramilk::log::debug) << "ping" << std::endl;
 		return true;
 	}
 
@@ -683,7 +683,7 @@ namespace lyramilk{ namespace cave
 	}
 	cmd_dispatch_map dispatch_map = init_dispatcher();
 
-	bool store::notify_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
+	bool store::dispatch_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::array& args,void* userdata)
 	{
 		++wspeed_counter;
 		time_t tm_now = time(0);
@@ -718,7 +718,6 @@ namespace lyramilk{ namespace cave
 			wspeed_speed = wspeed_counter;
 			wspeed_counter = 0;
 		}
-
 
 		lyramilk::data::string cmd = args[0];
 		cmd_dispatch_map::const_iterator it = dispatch_map.find(cmd);

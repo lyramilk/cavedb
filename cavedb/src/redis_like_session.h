@@ -101,6 +101,8 @@ namespace lyramilk{ namespace cave
 		lyramilk::cave::redis_session::result_status notify_set(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_config(const lyramilk::data::array& cmd, std::ostream& os);
 		lyramilk::cave::redis_session::result_status notify_client(const lyramilk::data::array& cmd, std::ostream& os);
+
+		virtual bool binlog(const lyramilk::data::array& cmd) = 0;
 	};
 
 }}
