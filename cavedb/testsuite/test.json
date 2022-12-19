@@ -1,0 +1,29 @@
+{
+	"logfile":"/data/cave-7008/log/cavedb7008.?.log"
+	"store":{
+			"path":"/data/cave-7008/db",
+			"cache":10000,
+	},
+	"source":[	
+			/*{
+					"type":"redis",
+					"host":"127.0.0.1",
+					"port":6379,
+					//"password":"test",
+					"masterid":"redis6379",
+			},*/
+	],
+	"server":[
+			{
+					"type":"network",
+					"port":7008,
+					"password":"test",
+					"readonly":false,
+			},
+			{
+					"type":"unixsocket",
+					"unix":"/data/cave-7008/cavedb-7008.sock",
+					"readonly":false,
+			},
+	],
+}
