@@ -1,5 +1,5 @@
-#ifndef _cavedb_cmdlistener_h_
-#define _cavedb_cmdlistener_h_
+#ifndef _cavedb_cmd_accepter_h_
+#define _cavedb_cmd_accepter_h_
 
 #include <libmilk/var.h>
 #include "command.h"
@@ -7,7 +7,7 @@
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
-	class cmdlistener;
+	class cmd_accepter;
 
 	template <typename T,cmdstatus (T::*Q)(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const>
 	static cmdstatus command_method_2_function(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,void* userptr)
@@ -16,7 +16,7 @@ namespace lyramilk{ namespace cave
 		return (self->*(Q))(masterid,replid,offset,args,ret,sen);
 	}
 
-	class cmdlistener
+	class cmd_accepter
 	{
 		typedef std::map<lyramilk::data::string,command_sepc,lyramilk::data::case_insensitive_less> cmd_map_type;
 		cmd_map_type dispatch;
@@ -30,8 +30,8 @@ namespace lyramilk{ namespace cave
 		int loginseq;
 		bool isreadonly;
 	  public:
-		cmdlistener();
-		virtual ~cmdlistener();
+		cmd_accepter();
+		virtual ~cmd_accepter();
 		void regist(const lyramilk::data::string& cmd,command_callback callback,int argc,int flag,int firstkey_offset,int lastkey_offset,int keystepcount);
 		cmdstatus call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen);
 		cmdstatus call(const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen);

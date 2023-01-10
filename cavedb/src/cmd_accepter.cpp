@@ -1,11 +1,11 @@
-#include "cmdlistener.h"
+#include "cmd_accepter.h"
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
 
 
 
-	cmdstatus cmdlistener::on_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
 	{
 		ret->type(lyramilk::data::var::t_array);
 
@@ -47,7 +47,7 @@ namespace lyramilk{ namespace cave
 		}
 		return cs_data;
 	}
-	cmdstatus cmdlistener::on_auth(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_auth(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
 	{
 		if(requirepass != args[1].str()){
 			*ret = "ERR invalid password";
@@ -59,34 +59,34 @@ namespace lyramilk{ namespace cave
 		}
 	}
 
-	cmdstatus cmdlistener::on_ping(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_ping(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
 	{
 		*ret = "PONG";
 		return cs_ok;
 	}
 
-	cmdstatus cmdlistener::on_hello(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_hello(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
 	{
 		*ret = "OK";
 		return cs_ok;
 	}
 
-	cmdlistener::cmdlistener()
+	cmd_accepter::cmd_accepter()
 	{
 		isreadonly = true;
 		srand(time(nullptr) + (int)(long)(void*)this);
 		loginseq = 0;
-		regist("command",command_method_2_function<cmdlistener,&cmdlistener::on_command>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::noauth,0,0,0);
-		regist("auth",command_method_2_function<cmdlistener,&cmdlistener::on_auth>,2,command_sepc::readonly|command_sepc::loading|command_sepc::noauth|command_sepc::fast|command_sepc::noscript,0,0,0);
-		regist("ping",command_method_2_function<cmdlistener,&cmdlistener::on_ping>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
-		//regist("hello",command_method_2_function<cmdlistener,&cmdlistener::on_hello>,-2,command_sepc::readonly|command_sepc::stale|command_sepc::skip_monitor|command_sepc::fast|command_sepc::loading|command_sepc::noscript|command_sepc::noauth,0,0,0);
+		regist("command",command_method_2_function<cmd_accepter,&cmd_accepter::on_command>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::noauth,0,0,0);
+		regist("auth",command_method_2_function<cmd_accepter,&cmd_accepter::on_auth>,2,command_sepc::readonly|command_sepc::loading|command_sepc::noauth|command_sepc::fast|command_sepc::noscript,0,0,0);
+		regist("ping",command_method_2_function<cmd_accepter,&cmd_accepter::on_ping>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
+		//regist("hello",command_method_2_function<cmd_accepter,&cmd_accepter::on_hello>,-2,command_sepc::readonly|command_sepc::stale|command_sepc::skip_monitor|command_sepc::fast|command_sepc::loading|command_sepc::noscript|command_sepc::noauth,0,0,0);
 	}
-	cmdlistener::~cmdlistener()
+	cmd_accepter::~cmd_accepter()
 	{
 		
 	}
 
-	void cmdlistener::regist(const lyramilk::data::string& cmd,command_callback callback,int argc,int flag,int firstkey_offset,int lastkey_offset,int keystepcount)
+	void cmd_accepter::regist(const lyramilk::data::string& cmd,command_callback callback,int argc,int flag,int firstkey_offset,int lastkey_offset,int keystepcount)
 	{
 		command_sepc& spec = dispatch[cmd];
 		spec.invoke = callback;
@@ -97,7 +97,7 @@ namespace lyramilk{ namespace cave
 		spec.argc = argc;
 	}
 
-	cmdstatus cmdlistener::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
+	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
 	{
 		lyramilk::data::string cmd = args[0].str();
 		cmd_map_type::iterator it = dispatch.find(cmd);
@@ -150,7 +150,7 @@ namespace lyramilk{ namespace cave
 		return cs_error;
 	}
 
-	cmdstatus cmdlistener::call(const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
+	cmdstatus cmd_accepter::call(const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
 	{
 		return call("","",0,args,ret,sen);
 	}
@@ -158,14 +158,14 @@ namespace lyramilk{ namespace cave
 
 
 
-	void cmdlistener::set_requirepass(const lyramilk::data::string& requirepass)
+	void cmd_accepter::set_requirepass(const lyramilk::data::string& requirepass)
 	{
 		this->requirepass = requirepass;
 		srand(time(nullptr));
 		this->loginseq = rand();
 	}
 
-	void cmdlistener::set_readonly(bool isreadonly)
+	void cmd_accepter::set_readonly(bool isreadonly)
 	{
 		this->isreadonly =isreadonly;
 	}

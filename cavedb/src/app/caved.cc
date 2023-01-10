@@ -1,4 +1,4 @@
-#include "cmdlistener.h"
+#include "cmd_accepter.h"
 #include "command.h"
 #include "resp.h"
 #include <unistd.h>
@@ -15,7 +15,7 @@
 class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 {
   public:
-	lyramilk::cave::cmdlistener* cmdr;
+	lyramilk::cave::cmd_accepter* cmdr;
 	lyramilk::cave::cmdsessiondata sen;
 
 	CaveDBServerSession()
@@ -41,7 +41,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 {
   public:
-	lyramilk::cave::cmdlistener cmdr;
+	lyramilk::cave::cmd_accepter cmdr;
 
 	//lyramilk::cave::leveldb_standard* store;
 	lyramilk::data::string requirepass;
