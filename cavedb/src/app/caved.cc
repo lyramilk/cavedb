@@ -1,53 +1,71 @@
+#include "cmdlistener.h"
+#include "command.h"
+#include "resp.h"
 #include <unistd.h>
+#include <getopt.h>
+#include <signal.h>
+#include <fstream>
 #include <libmilk/json.h>
 #include <libmilk/log.h>
 #include <libmilk/dict.h>
 #include <libmilk/aio.h>
-#include <libmilk/hash.h>
-#include <libmilk/stringutil.h>
-#include <getopt.h>
-#include "config.h"
-#include "store/leveldb_standard.h"
-#include "slave_ssdb.h"
-#include "redis_session.h"
-#include <signal.h>
-#include <fstream>
-#include <algorithm>
-#include <errno.h>
+#include <libmilk/netio.h>
 
-#include <sys/wait.h>
 
-class CaveDBServer_impl:public lyramilk::netio::aioserver<lyramilk::cave::leveldb_standard_redislike_session>
+class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 {
   public:
-	lyramilk::cave::leveldb_standard* store;
+	lyramilk::cave::cmdlistener* cmdr;
+	lyramilk::cave::cmdsessiondata sen;
+
+	CaveDBServerSession()
+	{
+		sen.loginseq = 0;
+	}
+
+	virtual ~CaveDBServerSession()
+	{
+		
+	}
+
+	virtual bool notify_cmd(const lyramilk::data::array& cmd, lyramilk::data::ostream& os)
+	{
+		lyramilk::data::var ret;
+		lyramilk::cave::cmdstatus rs = cmdr->call(cmd,&ret,&sen);
+		return output_redis_result(rs,ret,os);
+	}
+};
+
+
+
+class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
+{
+  public:
+	lyramilk::cave::cmdlistener cmdr;
+
+	//lyramilk::cave::leveldb_standard* store;
 	lyramilk::data::string requirepass;
 	bool readonly;
 
-	CaveDBServer_impl()
+	CaveDBServer()
 	{
-		store = nullptr;
+		//store = nullptr;
+		//cmdr.init();
 	}
 
-	virtual ~CaveDBServer_impl()
+	virtual ~CaveDBServer()
 	{
 	
 	}
 	virtual lyramilk::netio::aiosession* create()
 	{
-		lyramilk::cave::leveldb_standard_redislike_session *p = lyramilk::netio::aiosession::__tbuilder<lyramilk::cave::leveldb_standard_redislike_session>();
-
-		p->init_cavedb("cavedb",requirepass,store,false);
+		CaveDBServerSession *p = lyramilk::netio::aiosession::__tbuilder<CaveDBServerSession>();
+		p->cmdr = &cmdr;
+		//p->init_cavedb("cavedb",requirepass,store,false);
 		return p;
 	}
 };
 
-/*
-1605600138.465654 [0 unix:/dev/shm/testredis.sock] "AUTH" "test123abc"
-1605600153.989455 [0 unix:/dev/shm/testredis.sock] "AUTH" "test123abc"
-1605600153.989573 [0 unix:/dev/shm/testredis.sock] "get" "abc"
-
-*/
 
 
 void useage(lyramilk::data::string selfname)
@@ -91,6 +109,12 @@ int main(int argc,char* argv[])
 		useage(selfname);
 		return 0;
 	}
+
+	if(isdaemon){
+		daemon(0,0);
+	}
+
+
 
 	lyramilk::data::string logfile;
 	lyramilk::data::map gstore;
@@ -190,9 +214,6 @@ int main(int argc,char* argv[])
 		}
 	}
 
-	if(isdaemon){
-		daemon(0,0);
-	}
 	signal(SIGPIPE, SIG_IGN);
 
 	// 初始化epoll
@@ -200,14 +221,7 @@ int main(int argc,char* argv[])
 	pool.active(10);
 
 
-
-	// 初始化leveldb存储
-	lyramilk::cave::leveldb_standard* mstore = new lyramilk::cave::leveldb_standard;
-	if(!mstore->open_leveldb(gstore["path"].str(),(unsigned int)gstore["cache"].conv(500),true)){
-		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << gstore << std::endl;
-		return -1;
-	}
-
+/*
 	//	初始化主库。
 	for(lyramilk::data::array::iterator it = gsource.begin();it!=gsource.end();++it){
 		if(it->type() == lyramilk::data::var::t_map){
@@ -216,24 +230,48 @@ int main(int argc,char* argv[])
 			if(type == "ssdb"){
 				lyramilk::cave::slave_ssdb* datasource = new lyramilk::cave::slave_ssdb;
 
-				lyramilk::data::string ssdb_host = m["host"].str();
-				lyramilk::data::int32 ssdb_port = m["port"].conv(-1);
-				lyramilk::data::string ssdb_password = m["password"].str();
+				lyramilk::data::string host = m["host"].str();
+				lyramilk::data::int32 port = m["port"].conv(-1);
+				lyramilk::data::string password = m["password"].str();
 				lyramilk::data::string masterid = m["masterid"].str();
 
 				lyramilk::data::string replid = "";
 				lyramilk::data::uint64 offset = 0;
 				mstore->get_sync_info(masterid,&replid,&offset);
 
-				datasource->slaveof(ssdb_host,ssdb_port,ssdb_password,masterid,replid,offset,mstore);
-				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于ssdb:" << ssdb_host  << ":" << ssdb_port << std::endl;
+				datasource->slaveof(host,port,password,masterid,replid,offset,mstore);
+				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于ssdb:" << host  << ":" << port << ",replid=" << replid << ",offset=" << offset << std::endl;
+			}else if(type == "redis"){
+				lyramilk::cave::slave_redis* datasource = new lyramilk::cave::slave_redis;
+
+				lyramilk::data::string host = m["host"].str();
+				lyramilk::data::int32 port = m["port"].conv(-1);
+				lyramilk::data::string password = m["password"].str();
+				lyramilk::data::string masterid = m["masterid"].str();
+
+				lyramilk::data::string replid = "";
+				lyramilk::data::uint64 offset = 0;
+				mstore->get_sync_info(masterid,&replid,&offset);
+#ifdef _DEBUG
+				replid = "";
+				offset = 0;
+#endif
+				datasource->slaveof(host,port,password,masterid,replid,offset,mstore);
+				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于redis:" << host  << ":" << port << ",replid=" << replid << ",offset=" << offset << std::endl;
 			}else{
 				lyramilk::klog(lyramilk::log::error,"cavedb") << "不支持的source类型：" << type << std::endl;
 			}
 		}
-	}
+	}*/
 
-	lyramilk::cave::leveldb_standard_redislike_session::static_init_dispatch();
+
+
+
+
+
+
+
+
 
 	//	初始化对外服务。
 	for(lyramilk::data::array::iterator it = gserver.begin();it!=gserver.end();++it){
@@ -241,8 +279,8 @@ int main(int argc,char* argv[])
 			lyramilk::data::map& m = *it;
 			lyramilk::data::string type = m["type"].str();
 			if(type == "network"){
-				CaveDBServer_impl* p = new CaveDBServer_impl;
-				p->store = mstore;
+				CaveDBServer* p = new CaveDBServer;
+				//p->store = mstore;
 				p->readonly = m["readonly"].conv(false);
 				p->requirepass = m["password"].str();
 				lyramilk::data::string server_host = m["host"].str();
@@ -261,8 +299,8 @@ int main(int argc,char* argv[])
 				}
 				pool.add(p);
 			}else if(type == "unixsocket"){
-				CaveDBServer_impl* p = new CaveDBServer_impl;
-				p->store = mstore;
+				CaveDBServer* p = new CaveDBServer;
+				//p->store = mstore;
 				p->readonly = m["readonly"].conv(false);
 				p->requirepass = m["password"].str();
 				if(!p->open_unixsocket(m["unix"].str())){
@@ -274,14 +312,7 @@ int main(int argc,char* argv[])
 		}
 	}
 
-	while(true){
-		lyramilk::klog(lyramilk::log::debug,"cavedb") << D("wspeed:% 7lu ,rspeed:% 7lu",mstore->wspeed(),mstore->rspeed()) << std::endl;
+	pool.svc();
 
-		/*
-		if(!mstore->on_full_sync()){
-			lyramilk::klog(lyramilk::log::debug,"cavedb") << D("兔子耳朵很长哦") << std::endl;
-		}*/
-		sleep(1);
-	}
 	return 0;
 }

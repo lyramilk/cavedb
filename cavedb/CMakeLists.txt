@@ -1,10 +1,12 @@
-﻿#定义工程名及版本
+﻿# cmake -D release=1 -D CMAKE_INSTALL_PREFIX=~/.local ..
+
+#定义工程名及版本
 project(cavedb)
-set(version 2.0.38)
-set(soversion 2.0)
+set(version 3.0.0)
+set(soversion 3.0)
 
 
-cmake_minimum_required (VERSION 2.8.11) 
+cmake_minimum_required (VERSION 3.0.0) 
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 set(CMAKE_USE_RELATIVE_PATHS ON)
 set(CMAKE_INCLUDE_DIRECTORIES_BEFORE ON)
@@ -30,7 +32,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 set(CMAKE_LD_FLAGS "${CMAKE_LD_FLAGS} -Wall -fPIC -Bsymbolic")
 
-option(release "Build with release" 0)
 if(release)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -DNDEBUG ")
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -std=c99 -O2 -DNDEBUG ")
@@ -44,11 +45,8 @@ else()
 endif()
 
 #定义安装目录
-if(NOT install_dir)
-	set(install_dir ${CMAKE_CURRENT_SOURCE_DIR}/output)
-endif()
+set(CMAKE_INSTALL_PREFIX $ENV{HOME}/.local)
 
-option(share_type "Build with release" SHARED)
 if(NOT share_type)
 	set(share_type SHARED)
 endif()
@@ -234,15 +232,17 @@ foreach(var ${src_app})
 	add_executable(${var2} ${var})
 	target_link_libraries(${var2} ${PROJECT_NAME})
 	#target_link_libraries(${var2} -L/usr/lib64/mysql -lmysqlclient)
-	install(TARGETS ${PROJECT_NAME} DESTINATION ${install_dir})
+	#install(TARGETS ${PROJECT_NAME} DESTINATION ${install_dir})
 endforeach()
 
 #定义安装目标
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pkg/${PROJECT_NAME}.pc DESTINATION ${install_dir})
-install(FILES ${src_hs} DESTINATION ${install_dir})
-install(FILES ${src_hs_store} DESTINATION ${install_dir}/store/)
-install(TARGETS ${PROJECT_NAME} DESTINATION ${install_dir})
-install(TARGETS caved DESTINATION ${install_dir})
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pkg/${PROJECT_NAME}.pc DESTINATION lib64/pkgconfig)
+install(FILES ${src_hs} DESTINATION include/cavedb)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/config.h DESTINATION include/cavedb)
+install(FILES ${src_hs_store} DESTINATION include/cavedb/store/)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION lib64)
+install(TARGETS caved DESTINATION bin)
 
 #单元测试，是否开启内存泄露测试
 if(MEMLEAKTEST)
