@@ -91,6 +91,9 @@ namespace lyramilk{ namespace cave
 				if(!output_redis_data(it->second,os)) return false;
 			}
 			return true;
+		}else if(ret.type() == lyramilk::data::var::t_invalid){
+			os << "$-1\r\n";
+			return true;
 		}else{
 			return false;
 		}

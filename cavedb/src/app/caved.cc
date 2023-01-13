@@ -1,4 +1,6 @@
 #include "cmd_accepter.h"
+#include "leveldb_store.h"
+#include "binlog_store.h"
 #include "command.h"
 #include "resp.h"
 #include <unistd.h>
@@ -41,7 +43,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 {
   public:
-	lyramilk::cave::cmd_accepter cmdr;
+	lyramilk::cave::cmd_accepter* cmdr;
 
 	//lyramilk::cave::leveldb_standard* store;
 	lyramilk::data::string requirepass;
@@ -60,7 +62,7 @@ class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 	virtual lyramilk::netio::aiosession* create()
 	{
 		CaveDBServerSession *p = lyramilk::netio::aiosession::__tbuilder<CaveDBServerSession>();
-		p->cmdr = &cmdr;
+		p->cmdr = cmdr;
 		//p->init_cavedb("cavedb",requirepass,store,false);
 		return p;
 	}
@@ -218,7 +220,7 @@ int main(int argc,char* argv[])
 
 	// 初始化epoll
 	lyramilk::io::aiopoll pool;
-	pool.active(10);
+	pool.active(4);
 
 
 /*
@@ -267,10 +269,16 @@ int main(int argc,char* argv[])
 
 
 
+	lyramilk::cave::binlog blog;
 
 
+	lyramilk::cave::leveldb_store cmdr;
+	if(!cmdr.open_leveldb(gstore["path"].str(),(unsigned int)gstore["cache"].conv(500),true)){
+		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << gstore << std::endl;
+		return -1;
+	}
 
-
+	cmdr.set_binlog(&blog);
 
 
 	//	初始化对外服务。
@@ -280,7 +288,7 @@ int main(int argc,char* argv[])
 			lyramilk::data::string type = m["type"].str();
 			if(type == "network"){
 				CaveDBServer* p = new CaveDBServer;
-				//p->store = mstore;
+				p->cmdr = &cmdr;
 				p->readonly = m["readonly"].conv(false);
 				p->requirepass = m["password"].str();
 				lyramilk::data::string server_host = m["host"].str();
@@ -300,7 +308,7 @@ int main(int argc,char* argv[])
 				pool.add(p);
 			}else if(type == "unixsocket"){
 				CaveDBServer* p = new CaveDBServer;
-				//p->store = mstore;
+				p->cmdr = &cmdr;
 				p->readonly = m["readonly"].conv(false);
 				p->requirepass = m["password"].str();
 				if(!p->open_unixsocket(m["unix"].str())){
@@ -312,7 +320,11 @@ int main(int argc,char* argv[])
 		}
 	}
 
-	pool.svc();
+	while(true){
+		lyramilk::klog(lyramilk::log::debug,"cavedb") << "读取速度:" << cmdr.rspeed << ",写入取速度:" << cmdr.wspeed << std::endl;
+		sleep(1);
+		//cmdr
+	}
 
 	return 0;
 }

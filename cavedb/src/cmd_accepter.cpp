@@ -143,7 +143,16 @@ namespace lyramilk{ namespace cave
 				}
 			}
 
-			return it->second.invoke(masterid,replid,offset,args,ret,sen,this);
+			if(!check_command(masterid,replid,offset,args,ret,sen,it->second)){
+				*ret = "ERR '" + cmd + "' execute fail";
+				return cs_error;
+			}
+
+			cmdstatus cs = it->second.invoke(masterid,replid,offset,args,ret,sen,this);
+			if(cs == cmdstatus::cs_ok || cs == cmdstatus::cs_data){
+				after_command(masterid,replid,offset,args,ret,sen,it->second,cs);
+			}
+			return cs;
 		}
 
 		*ret = "ERR unknown command '" + cmd + "'";
@@ -156,7 +165,14 @@ namespace lyramilk{ namespace cave
 	}
 
 
+	bool cmd_accepter::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec)
+	{
+		return true;
+	}
 
+	void cmd_accepter::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
+	{
+	}
 
 	void cmd_accepter::set_requirepass(const lyramilk::data::string& requirepass)
 	{

@@ -26,6 +26,7 @@ namespace lyramilk{ namespace cave
 		cmdstatus on_ping(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const;
 		cmdstatus on_hello(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const;
 
+	  protected:
 		lyramilk::data::string requirepass;
 		int loginseq;
 		bool isreadonly;
@@ -35,6 +36,9 @@ namespace lyramilk{ namespace cave
 		void regist(const lyramilk::data::string& cmd,command_callback callback,int argc,int flag,int firstkey_offset,int lastkey_offset,int keystepcount);
 		cmdstatus call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen);
 		cmdstatus call(const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen);
+
+		virtual bool check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec);
+		virtual void after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs);
 
 		void set_requirepass(const lyramilk::data::string& requirepass);
 		void set_readonly(bool isreadonly);
