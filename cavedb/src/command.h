@@ -20,6 +20,7 @@ namespace lyramilk{ namespace cave
 		cs_ok,
 		cs_error,
 		cs_data,
+		cs_data_not_found,
 	};
 
 	typedef cmdstatus (*command_callback)(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,void* userptr);

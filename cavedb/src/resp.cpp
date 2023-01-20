@@ -104,6 +104,9 @@ namespace lyramilk{ namespace cave
 	{
 		if(rs == lyramilk::cave::cs_data){
 			return output_redis_data(ret,os);
+		}else if(rs == lyramilk::cave::cs_data_not_found){
+			os << "$-1\r\n";
+			return true;
 		}else if(rs == lyramilk::cave::cs_error){
 			if(ret.type_like(lyramilk::data::var::t_str)){
 				os << "-" <<  ret.str() << "\r\n";
