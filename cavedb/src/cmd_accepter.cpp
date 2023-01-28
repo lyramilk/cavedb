@@ -71,6 +71,31 @@ namespace lyramilk{ namespace cave
 		return cs_ok;
 	}
 
+	cmdstatus cmd_accepter::on_sync_start(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	{
+		//*ret = "OK";
+		return cs_ok;
+	}
+
+	cmdstatus cmd_accepter::on_sync_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	{
+		//*ret = "OK";
+		return cs_ok;
+	}
+
+	cmdstatus cmd_accepter::on_sync_continue(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	{
+		//*ret = "OK";
+		return cs_ok;
+	}
+
+	cmdstatus cmd_accepter::on_sync_overflow(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	{
+		//*ret = "OK";
+		return cs_ok;
+	}
+
+
 	cmd_accepter::cmd_accepter()
 	{
 		isreadonly = true;
@@ -80,6 +105,10 @@ namespace lyramilk{ namespace cave
 		regist("auth",command_method_2_function<cmd_accepter,&cmd_accepter::on_auth>,2,command_sepc::readonly|command_sepc::loading|command_sepc::noauth|command_sepc::fast|command_sepc::noscript,0,0,0);
 		regist("ping",command_method_2_function<cmd_accepter,&cmd_accepter::on_ping>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
 		//regist("hello",command_method_2_function<cmd_accepter,&cmd_accepter::on_hello>,-2,command_sepc::readonly|command_sepc::stale|command_sepc::skip_monitor|command_sepc::fast|command_sepc::loading|command_sepc::noscript|command_sepc::noauth,0,0,0);
+		regist("sync_start",command_method_2_function<cmd_accepter,&cmd_accepter::on_sync_start>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
+		regist("sync_idle",command_method_2_function<cmd_accepter,&cmd_accepter::on_sync_idle>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
+		regist("sync_continue",command_method_2_function<cmd_accepter,&cmd_accepter::on_sync_continue>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
+		regist("sync_overflow",command_method_2_function<cmd_accepter,&cmd_accepter::on_sync_overflow>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
 	}
 	cmd_accepter::~cmd_accepter()
 	{
@@ -164,6 +193,11 @@ namespace lyramilk{ namespace cave
 		return call("","",0,args,ret,sen);
 	}
 
+	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,cmdsessiondata* sen)
+	{
+		lyramilk::data::var ret;
+		return call(masterid,replid,offset,args,&ret,sen);
+	}
 
 	bool cmd_accepter::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec)
 	{
@@ -184,6 +218,11 @@ namespace lyramilk{ namespace cave
 	void cmd_accepter::set_readonly(bool isreadonly)
 	{
 		this->isreadonly =isreadonly;
+	}
+
+	void cmd_accepter::set_full_sync_completed(bool iscompleted)
+	{
+		this->is_in_full_sync = iscompleted;
 	}
 
 }}

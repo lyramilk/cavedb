@@ -611,6 +611,37 @@ namespace lyramilk{ namespace cave
 		this->blog = blog;
 	}
 
+	bool leveldb_store::get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const
+	{
+		if(replid == nullptr || offset == nullptr) return false;
+
+		lyramilk::data::string repkey = ".sync.key.";
+		repkey += masterid;
+
+		redis_pack pk;
+		pk.type = redis_pack::s_native;
+		pk.key = repkey;
+		std::string lkey = redis_pack::pack(&pk);
+
+		std::string stlsync_info;
+		leveldb::Status ldbs = ldb->Get(ropt,lkey,&stlsync_info);
+
+		if(ldbs.IsNotFound()){
+			*offset = 0;
+			replid->clear();
+			return true;
+		}
+
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("获取同步位置失败2 %s",ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		*replid = lyramilk::data::str(stlsync_info.substr(sizeof(lyramilk::data::uint64)));
+		stlsync_info.copy((char*)offset,sizeof(lyramilk::data::uint64));
+		return true;
+	}
+
+
 	bool leveldb_store::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec)
 	{
 		if(cmdspec.flag&command_sepc::readonly){
