@@ -20,6 +20,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
   public:
 	lyramilk::cave::cmd_accepter* cmdr;
 	lyramilk::cave::cmdsessiondata sen;
+	lyramilk::data::string masterid;
 
 	CaveDBServerSession()
 	{
@@ -34,7 +35,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 	virtual bool notify_cmd(const lyramilk::data::array& cmd, lyramilk::data::ostream& os)
 	{
 		lyramilk::data::var ret;
-		lyramilk::cave::cmdstatus rs = cmdr->call(cmd,&ret,&sen);
+		lyramilk::cave::cmdstatus rs = cmdr->call(masterid,"",0,cmd,&ret,&sen);
 		return output_redis_result(rs,ret,os);
 	}
 };
@@ -48,6 +49,7 @@ class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 
 	//lyramilk::cave::leveldb_standard* store;
 	lyramilk::data::string requirepass;
+	lyramilk::data::string masterid;
 	bool readonly;
 
 	CaveDBServer()
@@ -64,6 +66,7 @@ class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 	{
 		CaveDBServerSession *p = lyramilk::netio::aiosession::__tbuilder<CaveDBServerSession>();
 		p->cmdr = cmdr;
+		p->masterid = masterid;
 		//p->init_cavedb("cavedb",requirepass,store,false);
 		return p;
 	}
@@ -289,7 +292,7 @@ int main(int argc,char* argv[])
 				p->requirepass = m["requirepass"].str();
 				lyramilk::data::string server_host = m["host"].str();
 				lyramilk::data::int32 server_port = m["port"].conv(-1);
-				lyramilk::data::string masterid = m["masterid"].str();
+				p->masterid = m["masterid"].str();
 
 				if(server_host == "0.0.0.0" || server_host.empty()){
 					if(!p->open(server_port)){
@@ -308,7 +311,7 @@ int main(int argc,char* argv[])
 				p->cmdr = &cmdr;
 				p->readonly = m["readonly"].conv(false);
 				p->requirepass = m["requirepass"].str();
-				lyramilk::data::string masterid = m["masterid"].str();
+				p->masterid = m["masterid"].str();
 
 
 				if(!p->open_unixsocket(m["unix"].str())){
@@ -342,7 +345,6 @@ int main(int argc,char* argv[])
 	while(true){
 		lyramilk::klog(lyramilk::log::debug,"cavedb") << "读取速度:" << cmdr.rspeed << ",写入速度:" << cmdr.wspeed << std::endl;
 		sleep(1);
-		//cmdr
 	}
 
 	return 0;

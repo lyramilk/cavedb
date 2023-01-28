@@ -644,10 +644,12 @@ namespace lyramilk{ namespace cave
 
 	bool leveldb_store::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec)
 	{
-		if(cmdspec.flag&command_sepc::readonly){
-			++rspeed;
-		}else{
-			++wspeed;
+		if(!(cmdspec.flag&command_sepc::skip_monitor)){
+			if(cmdspec.flag&command_sepc::readonly){
+				++rspeed;
+			}else{
+				++wspeed;
+			}
 		}
 
 		if(ldb == nullptr) return false;
