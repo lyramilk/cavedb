@@ -756,12 +756,6 @@ namespace lyramilk{ namespace cave
 	{
 		if(!(cmdspec.flag&command_sepc::readonly)){
 			if(blog) blog->append(args);
-
-			time_t tm_now = time(nullptr);
-			if(last_time != tm_now){
-				last_time = tm_now;
-				save_sync_info(masterid,replid,offset);
-			}
 		}
 	}
 

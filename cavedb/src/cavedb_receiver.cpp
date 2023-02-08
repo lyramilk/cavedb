@@ -167,11 +167,15 @@ namespace lyramilk{ namespace cave
 					c.close();
 					sleep(2);
 				}
+
+				
 			}
 
 			if(cmds.empty()){
 				sleep(1);
+				continue;
 			}
+			cmdr->save_sync_info(masterid,nextreplid,nextseq);
 		}
 		log(lyramilk::log::error,"psync") << D("[%s]同步线程退出",masterid.c_str()) << std::endl;
 		return 0;

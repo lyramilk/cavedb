@@ -264,6 +264,7 @@ label_bodys:
 						status = st_stop;
 					}
 				}
+				//cmdr->save_sync_info(masterid,psync_replid,psync_offset);
 			}catch(lyramilk::exception& e){
 				log(lyramilk::log::error,"psync.catch") << e.what() << std::endl;
 			}

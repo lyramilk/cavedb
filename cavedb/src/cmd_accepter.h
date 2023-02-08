@@ -49,6 +49,9 @@ namespace lyramilk{ namespace cave
 		void set_requirepass(const lyramilk::data::string& requirepass);
 		void set_readonly(bool isreadonly);
 		void set_full_sync_completed(bool iscompleted);
+
+		virtual bool save_sync_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset) const = 0;
+		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
 	};
 }}
 
