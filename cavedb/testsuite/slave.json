@@ -1,0 +1,29 @@
+{
+	"logfile":"/data/cave-7009/log/cavedb.?.log"
+	"store":{
+		"path":"/data/cave-7009/db",
+		"cache":10000,
+	},
+	"binlog":{
+		"path":"/data/cave-7009/binlog",
+		"cache":10000,
+	},
+	"slaveof":[
+		{
+			"type":"cavedb",
+			"host":"127.0.0.1",
+			"port":7008,
+			"masterauth":"test",
+			"masterid":"cavedb7008",
+		},
+	],
+	"server":[
+		{
+			"type":"network",
+			"port":7009,
+			"requirepass":"test",
+			"readonly":false,
+			"masterid":"cavedb7009",
+		},
+	],
+}

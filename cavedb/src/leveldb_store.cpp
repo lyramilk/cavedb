@@ -384,6 +384,78 @@ namespace lyramilk{ namespace cave
 		return cmdstatus::cs_error;
 	}
 
+
+	cmdstatus leveldb_store::on_cave_sync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	{
+		// cavedb_sync [key] [seq] [count]
+
+
+		lyramilk::data::string key = args[1].str();
+		lyramilk::data::uint64 seq = args[2].conv(0);
+		lyramilk::data::int64 count = args[3].conv(30000);
+
+		ret->type(lyramilk::data::var::t_array);
+		lyramilk::data::array& ar = *ret;
+
+		ar.resize(3);
+		ar[2].type(lyramilk::data::var::t_array);
+		lyramilk::data::array& ardata = ar[2];
+
+		lyramilk::data::string nextkey;
+		lyramilk::data::uint64 nextseq = -1;
+
+
+
+
+
+		// 扫描全数据
+		if( (!key.empty()) || seq == 0){
+			if(seq == 0){
+				seq = blog->find_max();
+			}
+			//如果key不为空，或key为空且seq为0，且扫描本地数据。
+			leveldb::Iterator* it = ldb->NewIterator(ropt);
+			if(it == nullptr){
+				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
+				*ret = "create iterator fail";
+				return cmdstatus::cs_error;
+			}else{
+				it->Seek(key);
+				for(lyramilk::data::int64 i =0;it->Valid() && i < count;it->Next(),++i){
+
+					redis_pack spack;
+					if(redis_pack::unpack(&spack,it->key())){
+						if(spack.type == redis_pack::s_hash){
+							lyramilk::data::var v;
+							ardata.push_back(v);
+							ardata.back().type(lyramilk::data::var::t_array);
+
+							lyramilk::data::array& ar = ardata.back();
+							ar.push_back("hset");
+							ar.push_back(lyramilk::data::str(spack.key.ToString()));
+							ar.push_back(lyramilk::data::str(spack.hash.field.ToString()));
+							ar.push_back(lyramilk::data::str(it->value().ToString()));
+						}
+					}
+				}
+
+				if(it->Valid()){
+					nextkey = lyramilk::data::str(it->key().ToString());
+				}else{
+					nextkey.clear();
+				}
+
+				if (it) delete it;
+			}
+		}
+
+		// 读取binlog
+		blog->read(seq,count,&ardata,&nextseq);
+		ar[0] = nextkey;
+		ar[1] = nextseq;
+		return cmdstatus::cs_data;
+	}
+
 	leveldb_store::leveldb_store()
 	{
 		ldb = nullptr;
@@ -395,8 +467,8 @@ namespace lyramilk{ namespace cave
 		regist("hexist",&command_method_2_function<leveldb_store,&leveldb_store::on_hexist>,3,command_sepc::readonly|command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("hset",&command_method_2_function<leveldb_store,&leveldb_store::on_hset>,-4,command_sepc::write|command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("hmset",&command_method_2_function<leveldb_store,&leveldb_store::on_hset>,-4,command_sepc::write|command_sepc::fast|command_sepc::noscript,1,1,1);
-		//regist("hmset",&command_method_2_function<leveldb_store,&leveldb_store::on_hmset>,-4,command_sepc::write|command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("hdel",&command_method_2_function<leveldb_store,&leveldb_store::on_hdel>,-3,command_sepc::write|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("cave_sync",command_method_2_function<leveldb_store,&leveldb_store::on_cave_sync>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,0,0,0);
 	}
 
 	leveldb_store::~leveldb_store()
@@ -611,6 +683,27 @@ namespace lyramilk{ namespace cave
 		this->blog = blog;
 	}
 
+	bool leveldb_store::save_sync_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset) const
+	{
+		lyramilk::data::string repkey = ".sync.key.";
+		repkey += masterid;
+
+		redis_pack pk;
+		pk.type = redis_pack::s_native;
+		pk.key = repkey;
+		std::string lkey = redis_pack::pack(&pk);
+
+		lyramilk::data::string stlsync_info((const char*)&offset,sizeof(lyramilk::data::uint64));
+		stlsync_info.append(replid);
+
+		leveldb::Status ldbs = ldb->Put(wopt,lkey,stlsync_info);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("保存同步位置失败 %s",ldbs.ToString().c_str()) << std::endl;
+			return false;
+		}
+		return true;
+	}
+
 	bool leveldb_store::get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const
 	{
 		if(replid == nullptr || offset == nullptr) return false;
@@ -633,7 +726,7 @@ namespace lyramilk{ namespace cave
 		}
 
 		if(!ldbs.ok()){
-			log(lyramilk::log::error,__FUNCTION__) << D("获取同步位置失败2 %s",ldbs.ToString().c_str()) << std::endl;
+			log(lyramilk::log::error,__FUNCTION__) << D("获取同步位置失败 %s",ldbs.ToString().c_str()) << std::endl;
 			return false;
 		}
 		*replid = lyramilk::data::str(stlsync_info.substr(sizeof(lyramilk::data::uint64)));
@@ -651,17 +744,24 @@ namespace lyramilk{ namespace cave
 				++wspeed;
 			}
 		}
-
 		if(ldb == nullptr) return false;
 
 		return true;
 	}
+		lyramilk::data::string psync_replid;
+		lyramilk::data::uint64 psync_offset;
 
 
 	void leveldb_store::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
 	{
 		if(!(cmdspec.flag&command_sepc::readonly)){
 			if(blog) blog->append(args);
+
+			time_t tm_now = time(nullptr);
+			if(last_time != tm_now){
+				last_time = tm_now;
+				save_sync_info(masterid,replid,offset);
+			}
 		}
 	}
 

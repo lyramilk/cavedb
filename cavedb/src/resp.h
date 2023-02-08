@@ -4,19 +4,19 @@
 #include <libmilk/var.h>
 #include <libmilk/netaio.h>
 #include "command.h"
+#include <stack>
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
-	class resp3_as_session
-	{
-		virtual bool output_redis_data(const lyramilk::data::var& ret,lyramilk::data::ostream& os);
-		virtual bool output_redis_result(lyramilk::cave::cmdstatus rs,const lyramilk::data::var& ret,lyramilk::data::ostream& os);
-	  public:
-		resp3_as_session();
-		virtual ~resp3_as_session();
-		virtual bool onrequest(const char* cache, int size, lyramilk::data::ostream& os);
+	enum resp_result{
+		resp_data = 1,
+		resp_hidden_data,
+		resp_msg_error,
+		resp_parse_error,
 	};
+
+	resp_result resp23_from_stream(std::istream& is,lyramilk::data::var* ret);
 
 	class resp23_as_session:public lyramilk::netio::aiosession_sync
 	{
@@ -43,8 +43,6 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::int64 array_item_count;
 		lyramilk::data::int64 bulk_bytes_count;
 
-		resp3_as_session* resp3_adapter;
-
 		virtual bool output_redis_data(const lyramilk::data::var& ret,lyramilk::data::ostream& os);
 		virtual bool oninit(lyramilk::data::ostream& os);
 		virtual bool onrequest(const char* cache, int size, lyramilk::data::ostream& os);
@@ -55,9 +53,6 @@ namespace lyramilk{ namespace cave
 		virtual bool output_redis_result(lyramilk::cave::cmdstatus rs,const lyramilk::data::var& ret,lyramilk::data::ostream& os);
 		virtual bool notify_cmd(const lyramilk::data::array& cmd, lyramilk::data::ostream& os) = 0;
 	};
-
-
-
 
 }}
 #endif

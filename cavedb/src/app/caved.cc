@@ -4,6 +4,7 @@
 #include "command.h"
 #include "resp.h"
 #include "ssdb_receiver.h"
+#include "cavedb_receiver.h"
 #include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
@@ -47,8 +48,6 @@ class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
   public:
 	lyramilk::cave::cmd_accepter* cmdr;
 
-	//lyramilk::cave::leveldb_standard* store;
-	lyramilk::data::string requirepass;
 	lyramilk::data::string masterid;
 	bool readonly;
 
@@ -67,7 +66,6 @@ class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 		CaveDBServerSession *p = lyramilk::netio::aiosession::__tbuilder<CaveDBServerSession>();
 		p->cmdr = cmdr;
 		p->masterid = masterid;
-		//p->init_cavedb("cavedb",requirepass,store,false);
 		return p;
 	}
 };
@@ -123,95 +121,102 @@ int main(int argc,char* argv[])
 
 
 	lyramilk::data::string logfile;
-	lyramilk::data::map gstore;
-	lyramilk::data::array gsource;
-	lyramilk::data::array gserver;
 
-	{
-		errno = 0;
-		std::ifstream ifs;
-		ifs.open(configfile);
-		if(!ifs){
-			perror("打开配置文件失败");
-			return -1;
+	errno = 0;
+	std::ifstream ifs;
+	ifs.open(configfile);
+	if(!ifs){
+		perror("打开配置文件失败");
+		return -1;
+	}
+
+	lyramilk::data::string configjson;
+	while(ifs){
+		char buff[1024];
+		ifs.read(buff,sizeof(buff));
+		if(ifs.gcount() > 0){
+			configjson.append(buff,ifs.gcount());
 		}
-
-		lyramilk::data::string configjson;
-		while(ifs){
-			char buff[1024];
-			ifs.read(buff,sizeof(buff));
-			if(ifs.gcount() > 0){
-				configjson.append(buff,ifs.gcount());
-			}
-		}
+	}
 
 
-		lyramilk::data::var v = lyramilk::data::json::parse(configjson);
-		if(v.type() != lyramilk::data::var::t_map){
-			perror("解析配置文件失败");
-			return -1;
-		}
+	lyramilk::data::var v = lyramilk::data::json::parse(configjson);
+	if(v.type() != lyramilk::data::var::t_map){
+		perror("解析配置文件失败");
+		return -1;
+	}
 
-		lyramilk::data::map cfobj = v;
+	lyramilk::data::map cfobj = v;
 
-		if(cfobj["logfile"].type() == lyramilk::data::var::t_str){
-			logfile = cfobj["logfile"].str();
-			if(isdaemon){
-				lyramilk::log::logf* lf = new lyramilk::log::logf(logfile);
-				lyramilk::klog.rebase(lf);
-			}else{
-				lyramilk::log::logfc* lf = new lyramilk::log::logfc(logfile);
-				lyramilk::klog.rebase(lf);
-			}
+	if(cfobj["logfile"].type() == lyramilk::data::var::t_str){
+		logfile = cfobj["logfile"].str();
+		if(isdaemon){
+			lyramilk::log::logf* lf = new lyramilk::log::logf(logfile);
+			lyramilk::klog.rebase(lf);
 		}else{
-			lyramilk::klog(lyramilk::log::warning,"cavedb") << "解析配置文件失败: logfile 类型不对，应该是t_str。日志将通过默认方式输出。" << std::endl;
+			lyramilk::log::logfc* lf = new lyramilk::log::logfc(logfile);
+			lyramilk::klog.rebase(lf);
 		}
+	}else{
+		lyramilk::klog(lyramilk::log::warning,"cavedb") << "解析配置文件失败: logfile 类型不对，应该是t_str。日志将通过默认方式输出。" << std::endl;
+	}
 
-		if(cfobj["store"].type() != lyramilk::data::var::t_map){
-			perror("解析配置文件失败: store 类型不对，应该是t_map");
+	if(cfobj["store"].type() != lyramilk::data::var::t_map){
+		perror("解析配置文件失败: store 类型不对，应该是t_map");
+		return -1;
+	}
+
+	lyramilk::data::map gstore = cfobj["store"];
+
+	if(gstore["type"].type() == lyramilk::data::var::t_str){
+		if(gstore["type"].str() != "leveldb"){
+			perror("解析配置文件失败: store.type仅支持leveldb2");
 			return -1;
 		}
+	}
 
-		gstore = cfobj["store"];
 
-		if(gstore["type"].type() == lyramilk::data::var::t_str){
-			if(gstore["type"].str() != "leveldb2"){
-				perror("解析配置文件失败: store.type仅支持leveldb2");
+	lyramilk::data::map binlog = cfobj["binlog"];
+
+	if(binlog["type"].type() == lyramilk::data::var::t_str){
+		if(binlog["type"].str() != "leveldb"){
+			perror("解析配置文件失败: binlog.type仅支持leveldb2");
+			return -1;
+		}
+	}
+
+	
+	if(cfobj["slaveof"].type() != lyramilk::data::var::t_array){
+		perror("解析配置文件失败: slaveof 类型不对，应该是t_array");
+		return -1;
+	}
+	lyramilk::data::array slaveof;
+	lyramilk::data::array& tslaveof = cfobj["slaveof"];
+	for(lyramilk::data::array::iterator it = tslaveof.begin();it!=tslaveof.end();++it){
+		if(it->type() == lyramilk::data::var::t_map){
+			lyramilk::data::map& m = *it;
+			if(m["type"].type()!= lyramilk::data::var::t_str){
+				perror("解析配置文件失败: slaveof 类型子对象的type类型不对，应该是t_str");
 				return -1;
 			}
+			slaveof.push_back(*it);
 		}
+	}
 
-		/*
-		if(cfobj["source"].type() != lyramilk::data::var::t_array){
-			perror("解析配置文件失败: source 类型不对，应该是t_array");
-			return -1;
-		}
-		lyramilk::data::array& source = cfobj["source"];
-		for(lyramilk::data::array::iterator it = source.begin();it!=source.end();++it){
-			if(it->type() == lyramilk::data::var::t_map){
-				lyramilk::data::map& m = *it;
-				if(m["type"].type()!= lyramilk::data::var::t_str){
-					perror("解析配置文件失败: source 类型子对象的type类型不对，应该是t_str");
-					return -1;
-				}
-				gsource.push_back(*it);
+	if(cfobj["server"].type() != lyramilk::data::var::t_array){
+		perror("解析配置文件失败: server 类型不对，应该是t_array");
+		return -1;
+	}
+	lyramilk::data::array server;
+	lyramilk::data::array& tserver = cfobj["server"];
+	for(lyramilk::data::array::iterator it = tserver.begin();it!=tserver.end();++it){
+		if(it->type() == lyramilk::data::var::t_map){
+			lyramilk::data::map& m = *it;
+			if(m["type"].type()!= lyramilk::data::var::t_str){
+				perror("解析配置文件失败: server 类型子对象的type类型不对，应该是t_str");
+				return -1;
 			}
-		}*/
-
-		if(cfobj["server"].type() != lyramilk::data::var::t_array){
-			perror("解析配置文件失败: server 类型不对，应该是t_array");
-			return -1;
-		}
-		lyramilk::data::array& server = cfobj["server"];
-		for(lyramilk::data::array::iterator it = server.begin();it!=server.end();++it){
-			if(it->type() == lyramilk::data::var::t_map){
-				lyramilk::data::map& m = *it;
-				if(m["type"].type()!= lyramilk::data::var::t_str){
-					perror("解析配置文件失败: server 类型子对象的type类型不对，应该是t_str");
-					return -1;
-				}
-				gserver.push_back(*it);
-			}
+			server.push_back(*it);
 		}
 	}
 
@@ -222,66 +227,72 @@ int main(int argc,char* argv[])
 	pool.active(4);
 
 
-/*
-	//	初始化主库。
-	for(lyramilk::data::array::iterator it = gsource.begin();it!=gsource.end();++it){
-		if(it->type() == lyramilk::data::var::t_map){
-			lyramilk::data::map& m = *it;
-			lyramilk::data::string type = m["type"].str();
-			if(type == "ssdb"){
-				lyramilk::cave::slave_ssdb* datasource = new lyramilk::cave::slave_ssdb;
-
-				lyramilk::data::string host = m["host"].str();
-				lyramilk::data::int32 port = m["port"].conv(-1);
-				lyramilk::data::string password = m["password"].str();
-				lyramilk::data::string masterid = m["masterid"].str();
-
-				lyramilk::data::string replid = "";
-				lyramilk::data::uint64 offset = 0;
-				mstore->get_sync_info(masterid,&replid,&offset);
-
-				datasource->slaveof(host,port,password,masterid,replid,offset,mstore);
-				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于ssdb:" << host  << ":" << port << ",replid=" << replid << ",offset=" << offset << std::endl;
-			}else if(type == "redis"){
-				lyramilk::cave::slave_redis* datasource = new lyramilk::cave::slave_redis;
-
-				lyramilk::data::string host = m["host"].str();
-				lyramilk::data::int32 port = m["port"].conv(-1);
-				lyramilk::data::string password = m["password"].str();
-				lyramilk::data::string masterid = m["masterid"].str();
-
-				lyramilk::data::string replid = "";
-				lyramilk::data::uint64 offset = 0;
-				mstore->get_sync_info(masterid,&replid,&offset);
-#ifdef _DEBUG
-				replid = "";
-				offset = 0;
-#endif
-				datasource->slaveof(host,port,password,masterid,replid,offset,mstore);
-				lyramilk::klog(lyramilk::log::debug,"cavedb") << "同步于redis:" << host  << ":" << port << ",replid=" << replid << ",offset=" << offset << std::endl;
-			}else{
-				lyramilk::klog(lyramilk::log::error,"cavedb") << "不支持的source类型：" << type << std::endl;
-			}
-		}
-	}*/
-
-
-
-
 	lyramilk::cave::binlog blog;
 
 
 	lyramilk::cave::leveldb_store cmdr;
-	if(!cmdr.open_leveldb(gstore["path"].str(),(unsigned int)gstore["cache"].conv(500),true)){
+	if(cmdr.open_leveldb(gstore["path"].str(),(unsigned int)gstore["cache"].conv(500),true)){
+		lyramilk::data::string str = gstore["requirepass"].str();
+		cmdr.set_requirepass(str);
+	}else{
 		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << gstore << std::endl;
+		return -1;
+	}
+
+	if(!blog.open_leveldb(binlog["path"].str(),(unsigned int)binlog["cache"].conv(500),true)){
+		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << binlog << std::endl;
 		return -1;
 	}
 
 	cmdr.set_binlog(&blog);
 
 
+	//	初始化主从同步的主库。
+	for(lyramilk::data::array::iterator it = slaveof.begin();it!=slaveof.end();++it){
+		if(it->type() == lyramilk::data::var::t_map){
+			lyramilk::data::map& m = *it;
+			lyramilk::data::string type = m["type"].str();
+			if(type == "ssdb" && false){
+				lyramilk::cave::ssdb_receiver* p = new lyramilk::cave::ssdb_receiver;
+
+				p->readonly = m["readonly"].conv(false);
+
+				lyramilk::data::string host = m["host"].str();
+				lyramilk::data::int32 port = m["port"].conv(-1);
+				lyramilk::data::string masterauth = m["masterauth"].str();
+				lyramilk::data::string masterid = m["masterid"].str();
+
+				lyramilk::data::string replid = "";
+				lyramilk::data::uint64 offset = 0;
+				cmdr.get_sync_info(masterid,&replid,&offset);
+
+				p->init(host,port,masterauth,masterid,replid,offset,&cmdr);
+				p->active(1);
+			}
+
+			if(type == "cavedb"){
+				lyramilk::cave::cavedb_receiver* p = new lyramilk::cave::cavedb_receiver;
+
+				p->readonly = m["readonly"].conv(false);
+
+				lyramilk::data::string host = m["host"].str();
+				lyramilk::data::int32 port = m["port"].conv(-1);
+				lyramilk::data::string masterauth = m["masterauth"].str();
+				lyramilk::data::string masterid = m["masterid"].str();
+
+				lyramilk::data::string replid = "";
+				lyramilk::data::uint64 offset = 0;
+				cmdr.get_sync_info(masterid,&replid,&offset);
+
+
+				p->init(host,port,masterauth,masterid,replid,offset,&cmdr);
+				p->active(1);
+			}
+		}
+	}
+
 	//	初始化对外服务。
-	for(lyramilk::data::array::iterator it = gserver.begin();it!=gserver.end();++it){
+	for(lyramilk::data::array::iterator it = server.begin();it!=server.end();++it){
 		if(it->type() == lyramilk::data::var::t_map){
 			lyramilk::data::map& m = *it;
 			lyramilk::data::string type = m["type"].str();
@@ -289,7 +300,6 @@ int main(int argc,char* argv[])
 				CaveDBServer* p = new CaveDBServer;
 				p->cmdr = &cmdr;
 				p->readonly = m["readonly"].conv(false);
-				p->requirepass = m["requirepass"].str();
 				lyramilk::data::string server_host = m["host"].str();
 				lyramilk::data::int32 server_port = m["port"].conv(-1);
 				p->masterid = m["masterid"].str();
@@ -310,7 +320,6 @@ int main(int argc,char* argv[])
 				CaveDBServer* p = new CaveDBServer;
 				p->cmdr = &cmdr;
 				p->readonly = m["readonly"].conv(false);
-				p->requirepass = m["requirepass"].str();
 				p->masterid = m["masterid"].str();
 
 
@@ -319,25 +328,6 @@ int main(int argc,char* argv[])
 					return -1;
 				}
 				pool.add(p);
-			}else if(type == "ssdb"){
-				lyramilk::cave::ssdb_receiver* p = new lyramilk::cave::ssdb_receiver;
-
-				p->readonly = m["readonly"].conv(false);
-				p->requirepass = m["requirepass"].str();
-
-				lyramilk::data::string host = m["host"].str();
-				lyramilk::data::int32 port = m["port"].conv(-1);
-				lyramilk::data::string password = m["password"].str();
-				lyramilk::data::string masterid = m["masterid"].str();
-
-
-				lyramilk::data::string replid = "";
-				lyramilk::data::uint64 offset = 0;
-				cmdr.get_sync_info(masterid,&replid,&offset);
-
-
-				p->init(host,port,password,masterid,replid,offset,&cmdr);
-				p->active(1);
 			}
 		}
 	}
@@ -351,3 +341,6 @@ int main(int argc,char* argv[])
 }
 
 
+/*
+nct:1,age
+*/

@@ -1,52 +1,318 @@
 #include "resp.h"
+#include <libmilk/json.h>
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
 
-	// resp3_as_session
 
-	resp3_as_session::resp3_as_session()
+	resp_result resp23_from_stream(std::istream& is,lyramilk::data::var* ret)
 	{
+		char c = is.get();
+		switch(c){
+		case '+':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				stmp.push_back(c);
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+
+			*ret = stmp;
+			return resp_data;
+		}break;
+		case '-':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				stmp.push_back(c);
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+
+			*ret = stmp;
+			return resp_msg_error;
+		}break;
+		case ':':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					stmp.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+
+			char *p;
+			*ret = strtoll(stmp.c_str(),&p,10);
+			return resp_data;
+		}break;
+		case '$':{
+			char c = is.get();
+			lyramilk::data::string slen;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					slen.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+
+			char *p;
+			long long len = strtoll(slen.c_str(),&p,10);
+
+			lyramilk::data::string str;
+			str.reserve(len);
+			for(long long i=0;i<len;++i){
+				str.push_back(is.get());
+				if(!is.good()) {
+				return resp_parse_error;
+			}
+			}
+			if(is.get() != '\r') {
+				return resp_parse_error;
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			*ret = str;
+			return resp_data;
+		}break;
+		case '*':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					stmp.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			ret->type(lyramilk::data::var::t_array);
+			lyramilk::data::array& ar = *ret;
+
+			char *p;
+			long long datacount = strtoll(stmp.c_str(),&p,10);
+			ar.resize(datacount);
+			for(long long i=0;i<datacount;++i){
+				resp_result rr = resp23_from_stream(is,&ar[i]);
+				if(rr != resp_data ){
+					return rr;
+				}
+			}
+			return resp_data;
+		}break;
+		case ',':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					stmp.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+
+			char *p;
+			*ret = strtod(stmp.c_str(),&p);
+			return resp_data;
+		}break;
+		case '_':{
+			if(is.get() != '\r') {
+				return resp_parse_error;
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			ret->clear();
+			return resp_data;
+		}break;
+		case '#':{
+			char c = is.get();
+			if(is.get() != '\r') {
+				return resp_parse_error;
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			if(c == 't'){
+				*ret = true;
+				return resp_data;
+			}
+			if(c == 'f'){
+				*ret = true;
+				return resp_data;
+			}
+			return resp_parse_error;
+		}break;
+		case '!':{
+			char c = is.get();
+			lyramilk::data::string slen;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					slen.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+
+			char *p;
+			long long len = strtoll(slen.c_str(),&p,10);
+
+			lyramilk::data::string str;
+			str.reserve(len);
+			for(long long i=0;i<len;++i){
+				str.push_back(is.get());
+				if(!is.good()) {
+				return resp_parse_error;
+			}
+			}
+			if(is.get() != '\r') {
+				return resp_parse_error;
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			*ret = str;
+			return resp_msg_error;
+		}break;
+		case '(':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					stmp.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+
+			//大整数,不应该识别为str,但是var不支持大整数,就这么用了.
+			*ret = stmp;
+			return resp_data;
+		}break;
+		case '%':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					stmp.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			ret->type(lyramilk::data::var::t_map);
+			lyramilk::data::map& m = *ret;
+
+			char *p;
+			long long datacount = strtoll(stmp.c_str(),&p,10) >> 1;
+			for(long long i=0;i<datacount;++i){
+				lyramilk::data::var key;
+				resp_result rr = resp23_from_stream(is,&key);
+				if(rr != resp_data ){
+					return rr;
+				}
+
+				rr = resp23_from_stream(is,&m[key.str()]);
+				if(rr != resp_data ){
+					return rr;
+				}
+			}
+			return resp_data;
+		}break;
+		case '~':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					stmp.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			ret->type(lyramilk::data::var::t_array);
+			lyramilk::data::array& ar = *ret;
+
+			char *p;
+			long long datacount = strtoll(stmp.c_str(),&p,10);
+			ar.resize(datacount);
+			for(long long i=0;i<datacount;++i){
+				resp_result rr = resp23_from_stream(is,&ar[i]);
+				if(rr != resp_data ){
+					return rr;
+				}
+			}
+			return resp_data;
+		}break;
+		case '|':{
+			char c = is.get();
+			lyramilk::data::string stmp;
+			for(;c != '\r';c = is.get()){
+				if(c <= '9' && c >= '0'){
+					stmp.push_back(c);
+				}else{
+					return resp_parse_error;
+				}
+			}
+			if(is.get() != '\n') {
+				return resp_parse_error;
+			}
+			ret->type(lyramilk::data::var::t_map);
+			lyramilk::data::map& m = *ret;
+
+			char *p;
+			long long datacount = strtoll(stmp.c_str(),&p,10) >> 1;
+			for(long long i=0;i<datacount;++i){
+				lyramilk::data::var key;
+				resp_result rr = resp23_from_stream(is,&key);
+				if(rr != resp_data ){
+					return rr;
+				}
+
+				rr = resp23_from_stream(is,&m[key.str()]);
+				if(rr != resp_data ){
+					return rr;
+				}
+			}
+			return resp_hidden_data;
+		}break;
+		}
+		return resp_parse_error;
 	}
-
-	resp3_as_session::~resp3_as_session()
-	{
-		
-	}
-
-
-	bool resp3_as_session::output_redis_data(const lyramilk::data::var& ret,lyramilk::data::ostream& os)
-	{
-		TODO();
-	}
-
-	bool resp3_as_session::output_redis_result(lyramilk::cave::cmdstatus rs,const lyramilk::data::var& ret,lyramilk::data::ostream& os)
-	{
-		TODO();
-	}
-
-
-	bool resp3_as_session::onrequest(const char* cache, int size, lyramilk::data::ostream& os)
-	{
-		TODO();
-	}
-
-
-
-
-
-
-
-
-
 
 	// resp23_as_session
 
 	resp23_as_session::resp23_as_session()
 	{
 		s = s_0;
-		resp3_adapter = nullptr;
 	}
 
 	resp23_as_session::~resp23_as_session()
@@ -72,6 +338,9 @@ namespace lyramilk{ namespace cave
 			lyramilk::data::string str = ret.str();
 			os << "$" << str.size() << "\r\n";
 			os << str << "\r\n";
+			return true;
+		}else if(ret.type() == lyramilk::data::var::t_uint){
+			os << ":" << (unsigned long long)ret << "\r\n";
 			return true;
 		}else if(ret.type() == lyramilk::data::var::t_int){
 			os << ":" << (long long)ret << "\r\n";
@@ -128,8 +397,6 @@ namespace lyramilk{ namespace cave
 
 	bool resp23_as_session::onrequest(const char* cache, int size, lyramilk::data::ostream& os)
 	{
-		//if(resp3_adapter) return resp3_adapter->onrequest(cache,size,os);
-
 		for(const char *p = cache;p<cache+size;++p){
 			char c = *p;
 			switch(s){

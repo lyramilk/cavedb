@@ -92,7 +92,7 @@ label_bodys:
 	{
 		this->host = host;
 		this->port = port;
-		this->pwd = pwd;
+		this->masterauth = pwd;
 		this->cmdr = cmdr;
 		this->psync_replid = psync_replid;
 		this->psync_offset = psync_offset;
@@ -110,31 +110,30 @@ label_bodys:
 		for(int i=0; i<size; i++){
 			char c = s[i];
 			switch(c){
-				case '\r':
-					ret.append("\\r");
-					break;
-				case '\n':
-					ret.append("\\n");
-					break;
-				case '\t':
-					ret.append("\\t");
-					break;
-				case '\\':
-					ret.append("\\\\");
-					break;
-				case ' ':
+			case '\r':
+				ret.append("\\r");
+				break;
+			case '\n':
+				ret.append("\\n");
+				break;
+			case '\t':
+				ret.append("\\t");
+				break;
+			case '\\':
+				ret.append("\\\\");
+				break;
+			case ' ':
+				ret.push_back(c);
+				break;
+			default:
+				if(c >= '!' && c <= '~'){
 					ret.push_back(c);
-					break;
-				default:
-					if(c >= '!' && c <= '~'){
-						ret.push_back(c);
-					}else{
-						ret.append("\\x");
-						unsigned char d = c;
-						ret.push_back(hex[d >> 4]);
-						ret.push_back(hex[d & 0x0f]);
-					}
-					break;
+				}else{
+					ret.append("\\x");
+					unsigned char d = c;
+					ret.push_back(hex[d >> 4]);
+					ret.push_back(hex[d & 0x0f]);
+				}
 			}
 		}
 		return ret;
@@ -145,10 +144,10 @@ label_bodys:
 		c.close();
 		if(c.open(host,port)){
 			is.init(&c);
-			if(!pwd.empty()){
+			if(!masterauth.empty()){
 				lyramilk::data::array ar;
 				ar.push_back("auth");
-				ar.push_back(pwd);
+				ar.push_back(masterauth);
 				if(push(ar)){
 					lyramilk::data::strings ret;
 					pop(&ret);

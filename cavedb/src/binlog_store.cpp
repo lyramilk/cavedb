@@ -21,17 +21,13 @@ namespace lyramilk{ namespace cave
 	extern leveldb::WriteOptions wopt;
 	lyramilk::log::logss static log(lyramilk::klog,"lyramilk.cave.binlog");
 
-	bool binlog_reader::recv_callback(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args)
-	{
-		return true;
-	}
-
-
 
 	binlog::binlog()
 	{
 		ldb = nullptr;
 		seq = 0;
+		minseq = 0;
+		maxseq = 0;
 	}
 
 	binlog::~binlog()
@@ -41,6 +37,7 @@ namespace lyramilk{ namespace cave
 
 	void* binlog::thread_clear_binlog(binlog* blog)
 	{
+
 		return nullptr;
 	}
 
@@ -90,7 +87,10 @@ namespace lyramilk{ namespace cave
 			log(lyramilk::log::debug,__FUNCTION__) << "leveldb.compression=" << opt.compression << std::endl;
 			this->ldb = ldb;
 
-			seq = find_max();
+			minseq = find_min();
+			maxseq = find_max();
+			seq = maxseq + 1;
+			log(lyramilk::log::debug,__FUNCTION__) << "cavedb.seq=" << minseq << "~" << maxseq << std::endl;
 
 			pthread_t thread;
 			if(pthread_create(&thread,NULL,(void* (*)(void*))thread_clear_binlog,this) == 0){
@@ -115,7 +115,7 @@ namespace lyramilk{ namespace cave
 				it->Seek(keep_prefix);
 
 				if(it->Valid() && it->key().starts_with(keep_prefix)){
-					leveldb::Slice s = it->value();
+					leveldb::Slice s = it->key();
 					s.remove_prefix(2);
 					sbinlog = s.ToString();
 				}
@@ -135,11 +135,12 @@ namespace lyramilk{ namespace cave
 	lyramilk::data::uint64 binlog::find_max()
 	{
 		std::string sbinlog;
-		lyramilk::data::string keep_prefix = "i-";
+		lyramilk::data::string keep_prefix = "i+";
+		lyramilk::data::string keep_prefix_eof = "i-";
 		{
 			leveldb::Iterator* it = ldb->NewIterator(ropt);
 			if(it != nullptr){
-				it->Seek(keep_prefix);
+				it->Seek(keep_prefix_eof);
 				if(!it->Valid()){
 					it->SeekToLast();
 				}else{
@@ -147,7 +148,7 @@ namespace lyramilk{ namespace cave
 				}
 
 				if(it->Valid() && it->key().starts_with(keep_prefix)){
-					leveldb::Slice s = it->value();
+					leveldb::Slice s = it->key();
 					s.remove_prefix(2);
 					sbinlog = s.ToString();
 				}
@@ -178,15 +179,21 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string str = ss.str();
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
-		return ldbs.ok();
+		if(ldbs.ok()){
+			maxseq = seq;
+			__sync_fetch_and_add(&seq,1);
+			return true;
+		}
+		return false;
 	}
 
-	void binlog::read(lyramilk::data::uint64 seq,binlog_reader* reader)
+	void binlog::read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq)
 	{
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
 		skey.append((const char*)&tmp,8);
+		*nextseq = seq;
 
 
 		{
@@ -194,19 +201,23 @@ namespace lyramilk{ namespace cave
 			if(it != nullptr){
 				it->Seek(skey);
 
-				if(it->Valid() && it->key().starts_with("i+")){
+				if(it->Valid()){
+					data->reserve(count);
+				}
+				lyramilk::data::uint64 i = 0;
+
+				for(;it->Valid() && i < count && it->key().starts_with("i+");it->Next(),++i){
+
 					leveldb::Slice s = it->key();
 					s.remove_prefix(2);
 
 					if(s.size() == 8){
-						lyramilk::data::uint64 tmp = *(lyramilk::data::uint64*)s.data();
-
+						*nextseq = be64toh(*(lyramilk::data::uint64*)s.data()) + 1;
 						lyramilk::data::var v2;
 						lyramilk::data::istringstream iss(it->value().ToString());
 						v2.deserialize(iss);
-						lyramilk::data::array& args = v2;
 						if(v2.type() == lyramilk::data::var::t_array){
-							reader->recv_callback("",be64toh(tmp),args);
+							data->push_back(v2);
 						}
 					}
 				}

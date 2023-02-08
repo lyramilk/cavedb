@@ -95,7 +95,6 @@ namespace lyramilk{ namespace cave
 		return cs_ok;
 	}
 
-
 	cmd_accepter::cmd_accepter()
 	{
 		isreadonly = true;

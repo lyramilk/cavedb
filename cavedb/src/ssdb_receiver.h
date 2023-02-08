@@ -15,12 +15,11 @@ namespace lyramilk{ namespace cave
 		unsigned int loadsum;
 		lyramilk::data::string host;
 		lyramilk::data::uint16 port;
-		lyramilk::data::string pwd;
+		lyramilk::data::string masterauth;
 		lyramilk::data::string masterid;
 		cmd_accepter* cmdr;
 		cmdsessiondata sen;
 	  public:
-		lyramilk::data::string requirepass;
 		bool readonly;
 		enum st_status{
 			st_running,
