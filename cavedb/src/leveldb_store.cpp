@@ -402,7 +402,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::array& ardata = ar[2];
 
 		lyramilk::data::string nextkey;
-		lyramilk::data::uint64 nextseq = -1;
+		lyramilk::data::uint64 nextseq = 0;
 
 
 
@@ -411,8 +411,11 @@ namespace lyramilk{ namespace cave
 		// 扫描全数据
 		if( (!key.empty()) || seq == 0){
 			if(seq == 0){
-				seq = blog->find_max();
+				nextseq = blog->find_max();
+			}else{
+				nextseq = seq;
 			}
+
 			//如果key不为空，或key为空且seq为0，且扫描本地数据。
 			leveldb::Iterator* it = ldb->NewIterator(ropt);
 			if(it == nullptr){
@@ -447,8 +450,10 @@ namespace lyramilk{ namespace cave
 
 				if (it) delete it;
 			}
+			ar[0] = nextkey;
+			ar[1] = nextseq;
+			return cmdstatus::cs_data; 
 		}
-
 		// 读取binlog
 		blog->read(seq,count,&ardata,&nextseq);
 		ar[0] = nextkey;
@@ -676,11 +681,6 @@ namespace lyramilk{ namespace cave
 		ldb = nullptr;
 		log(lyramilk::log::error,__FUNCTION__) << D("初始化leveldb失败%s",ldbs.ToString().c_str()) << std::endl;
 		return false;
-	}
-
-	void leveldb_store::set_binlog(binlog* blog)
-	{
-		this->blog = blog;
 	}
 
 	bool leveldb_store::save_sync_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset) const

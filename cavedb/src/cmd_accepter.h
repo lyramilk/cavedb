@@ -3,6 +3,7 @@
 
 #include <libmilk/var.h>
 #include "command.h"
+#include "binlog_store.h"
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
@@ -35,6 +36,7 @@ namespace lyramilk{ namespace cave
 		int loginseq;
 		bool isreadonly;
 		bool is_in_full_sync;
+		binlog* blog;
 	  public:
 		cmd_accepter();
 		virtual ~cmd_accepter();
@@ -50,6 +52,7 @@ namespace lyramilk{ namespace cave
 		void set_readonly(bool isreadonly);
 		void set_full_sync_completed(bool iscompleted);
 
+		virtual void set_binlog(binlog* blog);
 		virtual bool save_sync_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset) const = 0;
 		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
 	};

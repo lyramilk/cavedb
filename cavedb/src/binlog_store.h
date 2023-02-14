@@ -10,14 +10,24 @@ namespace lyramilk{ namespace cave
 {
 	class binlog
 	{
+	  public:
+		virtual lyramilk::data::uint64 find_min() = 0;
+		virtual lyramilk::data::uint64 find_max() = 0;
+		virtual bool append(const lyramilk::data::array& args) = 0;
+		virtual void read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq) = 0;
+	};
+
+
+	class binlog_leveldb:public binlog
+	{
 		leveldb::DB* ldb;
 		lyramilk::data::uint64 seq;
 		lyramilk::data::uint64 minseq;
 		lyramilk::data::uint64 maxseq;
-		static void* thread_clear_binlog(binlog* blog);
+		static void* thread_clear_binlog(binlog_leveldb* blog);
 	  public:
-		binlog();
-		virtual ~binlog();
+		binlog_leveldb();
+		virtual ~binlog_leveldb();
 
 		lyramilk::data::uint64 find_min();
 		lyramilk::data::uint64 find_max();
@@ -26,6 +36,8 @@ namespace lyramilk{ namespace cave
 		virtual bool append(const lyramilk::data::array& args);
 		virtual void read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq);
 	};
+
+
 
 }}
 #endif

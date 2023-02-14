@@ -227,7 +227,7 @@ int main(int argc,char* argv[])
 	pool.active(4);
 
 
-	lyramilk::cave::binlog blog;
+	lyramilk::cave::binlog_leveldb blog;
 
 
 	lyramilk::cave::leveldb_store cmdr;

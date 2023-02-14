@@ -19,10 +19,10 @@ namespace lyramilk{ namespace cave
 
 	extern leveldb::ReadOptions ropt;
 	extern leveldb::WriteOptions wopt;
-	lyramilk::log::logss static log(lyramilk::klog,"lyramilk.cave.binlog");
+	lyramilk::log::logss static log(lyramilk::klog,"lyramilk.cave.binlog_leveldb");
 
 
-	binlog::binlog()
+	binlog_leveldb::binlog_leveldb()
 	{
 		ldb = nullptr;
 		seq = 0;
@@ -30,18 +30,18 @@ namespace lyramilk{ namespace cave
 		maxseq = 0;
 	}
 
-	binlog::~binlog()
+	binlog_leveldb::~binlog_leveldb()
 	{
 		
 	}
 
-	void* binlog::thread_clear_binlog(binlog* blog)
+	void* binlog_leveldb::thread_clear_binlog(binlog_leveldb* blog)
 	{
 
 		return nullptr;
 	}
 
-	bool binlog::open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing)
+	bool binlog_leveldb::open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing)
 	{
 		leveldb::Options opt;
 
@@ -104,7 +104,7 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	lyramilk::data::uint64 binlog::find_min()
+	lyramilk::data::uint64 binlog_leveldb::find_min()
 	{
 		std::string sbinlog;
 
@@ -132,7 +132,7 @@ namespace lyramilk{ namespace cave
 		return 0;
 	}
 
-	lyramilk::data::uint64 binlog::find_max()
+	lyramilk::data::uint64 binlog_leveldb::find_max()
 	{
 		std::string sbinlog;
 		lyramilk::data::string keep_prefix = "i+";
@@ -165,7 +165,7 @@ namespace lyramilk{ namespace cave
 		return 0;
 	}
 
-	bool binlog::append(const lyramilk::data::array& args)
+	bool binlog_leveldb::append(const lyramilk::data::array& args)
 	{
 		if(!ldb) return false;
 		lyramilk::data::uint64 tmp = htobe64(seq);
@@ -187,7 +187,7 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	void binlog::read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq)
+	void binlog_leveldb::read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq)
 	{
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;

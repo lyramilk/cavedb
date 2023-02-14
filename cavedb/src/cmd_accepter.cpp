@@ -207,6 +207,12 @@ namespace lyramilk{ namespace cave
 	{
 	}
 
+
+	void cmd_accepter::set_binlog(binlog* blog)
+	{
+		this->blog = blog;
+	}
+
 	void cmd_accepter::set_requirepass(const lyramilk::data::string& requirepass)
 	{
 		this->requirepass = requirepass;

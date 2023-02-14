@@ -3,7 +3,6 @@
 
 #include <libmilk/var.h>
 #include "cmd_accepter.h"
-#include "binlog_store.h"
 
 namespace leveldb{class DB;};
 
@@ -37,7 +36,6 @@ namespace lyramilk{ namespace cave
 		cmdstatus on_cave_sync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const;
 
 		static void* thread_auto_compact(leveldb::DB* ldb);
-		binlog* blog;
 
 		time_t last_time;
 	  public:
@@ -48,7 +46,6 @@ namespace lyramilk{ namespace cave
 		virtual ~leveldb_store();
 
 		bool open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing);
-		void set_binlog(binlog* blog);
 
 		virtual bool save_sync_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset) const;
 		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const;

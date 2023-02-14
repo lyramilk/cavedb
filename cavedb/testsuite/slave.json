@@ -1,10 +1,12 @@
 {
 	"logfile":"/data/cave-7009/log/cavedb.?.log"
 	"store":{
+		"type":"leveldb",
 		"path":"/data/cave-7009/db",
 		"cache":10000,
 	},
 	"binlog":{
+		"type":"leveldb",
 		"path":"/data/cave-7009/binlog",
 		"cache":10000,
 	},
