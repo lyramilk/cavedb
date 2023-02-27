@@ -357,7 +357,7 @@ namespace lyramilk{ namespace cave
 			pk.hash.field.assign(field.data(),field.size());
 
 			std::string lkey = redis_pack::pack(&pk);
-			batch.Put(lkey,lyramilk::data::str(args[i].str()));
+			batch.Delete(lkey);
 		}
 
 		leveldb::Status ldbs = ldb->Write(wopt,&batch);
