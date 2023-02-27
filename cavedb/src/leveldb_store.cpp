@@ -824,7 +824,7 @@ namespace lyramilk{ namespace cave
 
 		if(ldbs.ok()){
 			*ret = result;
-			return cmdstatus::cs_ok;
+			return cmdstatus::cs_data;
 		}
 		if(ldbs.IsNotFound()){
 			ret->clear();
