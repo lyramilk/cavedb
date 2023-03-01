@@ -131,6 +131,7 @@ namespace lyramilk{ namespace cave
 					return false;
 				}
 				if(rr == resp_data){
+					log(lyramilk::log::debug,"psync") << D("[%s]建立同步关系",masterid.c_str()) << std::endl;
 					return true;
 				}
 				log(lyramilk::log::error,"psync") << D("[%s]同步出错:未知错误",masterid.c_str()) << std::endl;
@@ -161,14 +162,13 @@ namespace lyramilk{ namespace cave
 			for(lyramilk::data::array::const_iterator it = cmds.begin();it!=cmds.end();++it){
 				if(it->type() != lyramilk::data::var::t_array) break;
 				const lyramilk::data::array& ar = *it;
-				if(lyramilk::cave::cmdstatus::cs_error == cmdr->call(masterid,psync_replid,psync_offset,ar,&sen)){
+				lyramilk::data::var ret;
+				if(lyramilk::cave::cmdstatus::cs_error == cmdr->call(masterid,psync_replid,psync_offset,ar,&ret,&sen,true)){
 					lyramilk::data::string s = lyramilk::data::json::stringify(ar);
 					log(lyramilk::log::error,"psync") << D("[%s]同步执行命令出错%.*s，重新链接",masterid.c_str(),s.size(),s.c_str()) << std::endl;
 					c.close();
 					sleep(2);
 				}
-
-				
 			}
 
 			if(cmds.empty()){

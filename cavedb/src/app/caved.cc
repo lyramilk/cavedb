@@ -9,6 +9,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <fstream>
+#include <sys/wait.h>
 #include <libmilk/json.h>
 #include <libmilk/log.h>
 #include <libmilk/dict.h>
@@ -36,7 +37,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 	virtual bool notify_cmd(const lyramilk::data::array& cmd, lyramilk::data::ostream& os)
 	{
 		lyramilk::data::var ret;
-		lyramilk::cave::cmdstatus rs = cmdr->call(masterid,"",0,cmd,&ret,&sen);
+		lyramilk::cave::cmdstatus rs = cmdr->call(masterid,"",0,cmd,&ret,&sen,false);
 		return output_redis_result(rs,ret,os);
 	}
 };
@@ -90,6 +91,7 @@ struct option long_options[] = {
 int main(int argc,char* argv[])
 {
 	bool isdaemon = false;
+	bool ondaemon = false;
 	lyramilk::data::string configfile;
 	lyramilk::data::string selfname = argv[0];
 	if(argc > 1){
@@ -114,55 +116,61 @@ int main(int argc,char* argv[])
 		return 0;
 	}
 
-	if(isdaemon){
-		daemon(0,0);
-	}
 
+	lyramilk::data::var v;
 
+	{
+		//后台模式加载配置文件
+		std::ifstream ifs;
+		ifs.open(configfile);
+		if(!ifs){
+			lyramilk::klog(lyramilk::log::error,"cavedb") << "打开配置文件失败" << std::endl;
+			return -1;
+		}
 
-	lyramilk::data::string logfile;
+		lyramilk::data::string configjson;
+		while(ifs){
+			char buff[1024];
+			ifs.read(buff,sizeof(buff));
+			if(ifs.gcount() > 0){
+				configjson.append(buff,ifs.gcount());
+			}
+		}
 
-	errno = 0;
-	std::ifstream ifs;
-	ifs.open(configfile);
-	if(!ifs){
-		perror("打开配置文件失败");
-		return -1;
-	}
-
-	lyramilk::data::string configjson;
-	while(ifs){
-		char buff[1024];
-		ifs.read(buff,sizeof(buff));
-		if(ifs.gcount() > 0){
-			configjson.append(buff,ifs.gcount());
+		v.clear();
+		v = lyramilk::data::json::parse(configjson);
+		if(v.type() != lyramilk::data::var::t_map){
+			lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败" << std::endl;
+			return -1;
 		}
 	}
-
-
-	lyramilk::data::var v = lyramilk::data::json::parse(configjson);
-	if(v.type() != lyramilk::data::var::t_map){
-		perror("解析配置文件失败");
-		return -1;
+	if(isdaemon){
+		::daemon(1,0);
 	}
 
 	lyramilk::data::map cfobj = v;
 
-	if(cfobj["logfile"].type() == lyramilk::data::var::t_str){
-		logfile = cfobj["logfile"].str();
-		if(isdaemon){
-			lyramilk::log::logf* lf = new lyramilk::log::logf(logfile);
-			lyramilk::klog.rebase(lf);
+
+	{
+		lyramilk::data::string logfile;
+		if(cfobj["logfile"].type() == lyramilk::data::var::t_str){
+			logfile = cfobj["logfile"].str();
+			if(isdaemon){
+				lyramilk::log::logf* lf = new lyramilk::log::logf(logfile);
+				lyramilk::klog.rebase(lf);
+			}else{
+				lyramilk::log::logfc* lf = new lyramilk::log::logfc(logfile);
+				lyramilk::klog.rebase(lf);
+			}
 		}else{
-			lyramilk::log::logfc* lf = new lyramilk::log::logfc(logfile);
-			lyramilk::klog.rebase(lf);
+			lyramilk::klog(lyramilk::log::warning,"cavedb") << "解析配置文件失败: logfile 类型不对，应该是t_str。日志将通过默认方式输出。" << std::endl;
 		}
-	}else{
-		lyramilk::klog(lyramilk::log::warning,"cavedb") << "解析配置文件失败: logfile 类型不对，应该是t_str。日志将通过默认方式输出。" << std::endl;
 	}
 
+
+
 	if(cfobj["store"].type() != lyramilk::data::var::t_map){
-		perror("解析配置文件失败: store 类型不对，应该是t_map");
+		lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: store 类型不对，应该是t_map" << std::endl;
 		return -1;
 	}
 
@@ -170,7 +178,7 @@ int main(int argc,char* argv[])
 
 	if(gstore["type"].type() == lyramilk::data::var::t_str){
 		if(gstore["type"].str() != "leveldb"){
-			perror("解析配置文件失败: store.type仅支持leveldb2");
+			lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: store.type仅支持leveldb2" << std::endl;
 			return -1;
 		}
 	}
@@ -180,14 +188,14 @@ int main(int argc,char* argv[])
 
 	if(binlog["type"].type() == lyramilk::data::var::t_str){
 		if(binlog["type"].str() != "leveldb"){
-			perror("解析配置文件失败: binlog.type仅支持leveldb2");
+			lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: binlog.type仅支持leveldb2" << std::endl;
 			return -1;
 		}
 	}
 
 	
 	if(cfobj["slaveof"].type() != lyramilk::data::var::t_array){
-		perror("解析配置文件失败: slaveof 类型不对，应该是t_array");
+		lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: slaveof 类型不对，应该是t_array" << std::endl;
 		return -1;
 	}
 	lyramilk::data::array slaveof;
@@ -196,7 +204,7 @@ int main(int argc,char* argv[])
 		if(it->type() == lyramilk::data::var::t_map){
 			lyramilk::data::map& m = *it;
 			if(m["type"].type()!= lyramilk::data::var::t_str){
-				perror("解析配置文件失败: slaveof 类型子对象的type类型不对，应该是t_str");
+				lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: slaveof 类型子对象的type类型不对，应该是t_str" << std::endl;
 				return -1;
 			}
 			slaveof.push_back(*it);
@@ -204,7 +212,7 @@ int main(int argc,char* argv[])
 	}
 
 	if(cfobj["server"].type() != lyramilk::data::var::t_array){
-		perror("解析配置文件失败: server 类型不对，应该是t_array");
+		lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: server 类型不对，应该是t_array" << std::endl;
 		return -1;
 	}
 	lyramilk::data::array server;
@@ -213,7 +221,7 @@ int main(int argc,char* argv[])
 		if(it->type() == lyramilk::data::var::t_map){
 			lyramilk::data::map& m = *it;
 			if(m["type"].type()!= lyramilk::data::var::t_str){
-				perror("解析配置文件失败: server 类型子对象的type类型不对，应该是t_str");
+				lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: server 类型子对象的type类型不对，应该是t_str" << std::endl;
 				return -1;
 			}
 			server.push_back(*it);

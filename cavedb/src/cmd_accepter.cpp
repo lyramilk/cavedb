@@ -125,21 +125,24 @@ namespace lyramilk{ namespace cave
 		spec.argc = argc;
 	}
 
-	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
+	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,bool skip_login)
 	{
 		lyramilk::data::string cmd = args[0].str();
+
 		cmd_map_type::iterator it = dispatch.find(cmd);
 		if(it!=dispatch.end()){
 
 			// 检查命令是否需要登录
-			if(sen->loginseq != loginseq){
-				if(sen->pass == requirepass){
-					sen->loginseq = loginseq;
+			if(!skip_login){
+				if(sen->loginseq != loginseq){
+					if(sen->pass == requirepass){
+						sen->loginseq = loginseq;
+					}
 				}
-			}
-			if(sen->loginseq != loginseq && !(it->second.flag&command_sepc::noauth)){
-				*ret = "NOAUTH authentication required.";
-				return cs_error;
+				if(sen->loginseq != loginseq && !(it->second.flag&command_sepc::noauth)){
+					*ret = "NOAUTH authentication required.";
+					return cs_error;
+				}
 			}
 
 			// 检查命令是否只读
@@ -187,16 +190,25 @@ namespace lyramilk{ namespace cave
 		return cs_error;
 	}
 
-	cmdstatus cmd_accepter::call(const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
+
+	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
 	{
-		return call("","",0,args,ret,sen);
+		return call(masterid,replid,offset,args,ret,sen,false);
 	}
+
 
 	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,cmdsessiondata* sen)
 	{
 		lyramilk::data::var ret;
-		return call(masterid,replid,offset,args,&ret,sen);
+		return call(masterid,replid,offset,args,&ret,sen,false);
 	}
+/*
+	cmdstatus cmd_accepter::call(const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
+	{
+		return call("","",0,args,ret,sen,false);
+	}
+
+*/
 
 	bool cmd_accepter::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec)
 	{
