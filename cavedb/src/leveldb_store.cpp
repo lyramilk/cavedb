@@ -63,7 +63,7 @@ namespace lyramilk{ namespace cave
 
 	//leveldb::DB* ldb;
 
-	cmdstatus leveldb_store::on_hgetall(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus leveldb_store::on_hgetall(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		/*
 		lyramilk::debug::nsecdiff nd;
@@ -114,7 +114,7 @@ namespace lyramilk{ namespace cave
 		return r;
 	}
 
-	cmdstatus leveldb_store::on_hget(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus leveldb_store::on_hget(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		/*
 		lyramilk::debug::nsecdiff nd;
@@ -165,7 +165,7 @@ namespace lyramilk{ namespace cave
 		return r;
 	}
 
-	cmdstatus leveldb_store::on_hmget(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus leveldb_store::on_hmget(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		/*
 		lyramilk::debug::nsecdiff nd;
@@ -243,7 +243,7 @@ namespace lyramilk{ namespace cave
 
 	}
 
-	cmdstatus leveldb_store::on_hexist(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus leveldb_store::on_hexist(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		lyramilk::debug::nsecdiff nd;
 		nd.mark();
@@ -281,7 +281,7 @@ namespace lyramilk{ namespace cave
 		return cmdstatus::cs_error;
 	}
 
-	cmdstatus leveldb_store::on_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus leveldb_store::on_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		lyramilk::debug::nsecdiff nd;
 		nd.mark();
@@ -336,7 +336,7 @@ namespace lyramilk{ namespace cave
 		return cmdstatus::cs_error;
 	}
 
-	cmdstatus leveldb_store::on_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus leveldb_store::on_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		lyramilk::debug::nsecdiff nd;
 		nd.mark();
@@ -385,7 +385,7 @@ namespace lyramilk{ namespace cave
 	}
 
 
-	cmdstatus leveldb_store::on_cave_sync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus leveldb_store::on_cave_sync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		// cavedb_sync [key] [seq] [count]
 
@@ -465,7 +465,6 @@ namespace lyramilk{ namespace cave
 	{
 		ldb = nullptr;
 		blog = nullptr;
-		isreadonly = false;
 		regist("hgetall",&command_method_2_function<leveldb_store,&leveldb_store::on_hgetall>,2,command_sepc::readonly|command_sepc::noscript,1,1,1);
 		regist("hget",&command_method_2_function<leveldb_store,&leveldb_store::on_hget>,3,command_sepc::readonly|command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("hmget",&command_method_2_function<leveldb_store,&leveldb_store::on_hmget>,-3,command_sepc::readonly|command_sepc::fast|command_sepc::noscript,1,1,1);
@@ -735,7 +734,7 @@ namespace lyramilk{ namespace cave
 	}
 
 
-	bool leveldb_store::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec)
+	bool leveldb_store::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,const command_sepc& cmdspec)
 	{
 		if(!(cmdspec.flag&command_sepc::skip_monitor)){
 			if(cmdspec.flag&command_sepc::readonly){
@@ -752,7 +751,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::uint64 psync_offset;
 
 
-	void leveldb_store::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
+	void leveldb_store::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
 	{
 		if(!(cmdspec.flag&command_sepc::readonly)){
 			if(blog) blog->append(args);

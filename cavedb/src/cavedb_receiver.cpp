@@ -163,7 +163,7 @@ namespace lyramilk{ namespace cave
 				if(it->type() != lyramilk::data::var::t_array) break;
 				const lyramilk::data::array& ar = *it;
 				lyramilk::data::var ret;
-				if(lyramilk::cave::cmdstatus::cs_error == cmdr->call(masterid,psync_replid,psync_offset,ar,&ret,&sen,true)){
+				if(lyramilk::cave::cmdstatus::cs_error == cmdr->call(masterid,psync_replid,psync_offset,ar,&ret,&chd,&sen)){
 					lyramilk::data::string s = lyramilk::data::json::stringify(ar);
 					log(lyramilk::log::error,"psync") << D("[%s]同步执行命令出错%.*s，重新链接",masterid.c_str(),s.size(),s.c_str()) << std::endl;
 					c.close();

@@ -5,7 +5,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	cmdstatus cmd_accepter::on_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		ret->type(lyramilk::data::var::t_array);
 
@@ -47,9 +47,9 @@ namespace lyramilk{ namespace cave
 		}
 		return cs_data;
 	}
-	cmdstatus cmd_accepter::on_auth(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_auth(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
-		if(requirepass != args[1].str()){
+		if(chd->requirepass != args[1].str()){
 			*ret = "ERR invalid password";
 			return cs_error;
 		}else{
@@ -59,37 +59,37 @@ namespace lyramilk{ namespace cave
 		}
 	}
 
-	cmdstatus cmd_accepter::on_ping(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_ping(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		*ret = "PONG";
 		return cs_ok;
 	}
 
-	cmdstatus cmd_accepter::on_hello(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_hello(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		*ret = "OK";
 		return cs_ok;
 	}
 
-	cmdstatus cmd_accepter::on_sync_start(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_sync_start(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		//*ret = "OK";
 		return cs_ok;
 	}
 
-	cmdstatus cmd_accepter::on_sync_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_sync_idle(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		//*ret = "OK";
 		return cs_ok;
 	}
 
-	cmdstatus cmd_accepter::on_sync_continue(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_sync_continue(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		//*ret = "OK";
 		return cs_ok;
 	}
 
-	cmdstatus cmd_accepter::on_sync_overflow(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen) const
+	cmdstatus cmd_accepter::on_sync_overflow(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		//*ret = "OK";
 		return cs_ok;
@@ -97,9 +97,6 @@ namespace lyramilk{ namespace cave
 
 	cmd_accepter::cmd_accepter()
 	{
-		isreadonly = true;
-		srand(time(nullptr) + (int)(long)(void*)this);
-		loginseq = 0;
 		regist("command",command_method_2_function<cmd_accepter,&cmd_accepter::on_command>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::noauth,0,0,0);
 		regist("auth",command_method_2_function<cmd_accepter,&cmd_accepter::on_auth>,2,command_sepc::readonly|command_sepc::loading|command_sepc::noauth|command_sepc::fast|command_sepc::noscript,0,0,0);
 		regist("ping",command_method_2_function<cmd_accepter,&cmd_accepter::on_ping>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,0,0,0);
@@ -125,30 +122,28 @@ namespace lyramilk{ namespace cave
 		spec.argc = argc;
 	}
 
-	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,bool skip_login)
+	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen)
 	{
+
 		lyramilk::data::string cmd = args[0].str();
 
 		cmd_map_type::iterator it = dispatch.find(cmd);
 		if(it!=dispatch.end()){
 
 			// 检查命令是否需要登录
-			if(!skip_login){
-				if(sen->loginseq != loginseq){
-					if(sen->pass == requirepass){
-						sen->loginseq = loginseq;
-					}
+			if(sen->loginseq != chd->loginseq){
+				if(sen->pass == chd->requirepass){
+					sen->loginseq = chd->loginseq;
 				}
-				if(sen->loginseq != loginseq && !(it->second.flag&command_sepc::noauth)){
-					*ret = "NOAUTH authentication required.";
-					return cs_error;
-				}
+			}
+			if(sen->loginseq != chd->loginseq && !(it->second.flag&command_sepc::noauth)){
+				*ret = "NOAUTH authentication required.";
+				return cs_error;
 			}
 
 			// 检查命令是否只读
 			bool is_readonly_cmd = (it->second.flag&command_sepc::readonly) != 0;
-
-			if(isreadonly && !is_readonly_cmd){
+			if(chd->isreadonly && !is_readonly_cmd){
 				*ret = "READONLY You can't write against a read only replica.";
 				return cs_error;
 			}
@@ -174,14 +169,14 @@ namespace lyramilk{ namespace cave
 				}
 			}
 
-			if(!check_command(masterid,replid,offset,args,ret,sen,it->second)){
+			if(!check_command(masterid,replid,offset,args,ret,chd,sen,it->second)){
 				*ret = "ERR '" + cmd + "' execute fail";
 				return cs_error;
 			}
 
-			cmdstatus cs = it->second.invoke(masterid,replid,offset,args,ret,sen,this);
+			cmdstatus cs = it->second.invoke(masterid,replid,offset,args,ret,chd,sen,this);
 			if(cs == cmdstatus::cs_ok || cs == cmdstatus::cs_data){
-				after_command(masterid,replid,offset,args,ret,sen,it->second,cs);
+				after_command(masterid,replid,offset,args,ret,chd,sen,it->second,cs);
 			}
 			return cs;
 		}
@@ -191,31 +186,18 @@ namespace lyramilk{ namespace cave
 	}
 
 
-	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
-	{
-		return call(masterid,replid,offset,args,ret,sen,false);
-	}
-
-
-	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,cmdsessiondata* sen)
+	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,cmdchanneldata* chd,cmdsessiondata* sen)
 	{
 		lyramilk::data::var ret;
-		return call(masterid,replid,offset,args,&ret,sen,false);
-	}
-/*
-	cmdstatus cmd_accepter::call(const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen)
-	{
-		return call("","",0,args,ret,sen,false);
+		return call(masterid,replid,offset,args,&ret,chd,sen);
 	}
 
-*/
-
-	bool cmd_accepter::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec)
+	bool cmd_accepter::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,const command_sepc& cmdspec)
 	{
 		return true;
 	}
 
-	void cmd_accepter::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
+	void cmd_accepter::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
 	{
 	}
 
@@ -223,18 +205,6 @@ namespace lyramilk{ namespace cave
 	void cmd_accepter::set_binlog(binlog* blog)
 	{
 		this->blog = blog;
-	}
-
-	void cmd_accepter::set_requirepass(const lyramilk::data::string& requirepass)
-	{
-		this->requirepass = requirepass;
-		srand(time(nullptr));
-		this->loginseq = rand();
-	}
-
-	void cmd_accepter::set_readonly(bool isreadonly)
-	{
-		this->isreadonly =isreadonly;
 	}
 
 	void cmd_accepter::set_full_sync_completed(bool iscompleted)

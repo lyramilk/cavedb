@@ -20,7 +20,6 @@ namespace lyramilk{ namespace cave
 		cmd_accepter* cmdr;
 		cmdsessiondata sen;
 	  public:
-		bool readonly;
 		enum st_status{
 			st_running,
 			st_sync,
@@ -33,6 +32,8 @@ namespace lyramilk{ namespace cave
 		bool push(const lyramilk::data::array& cmd);
 		bool pop(lyramilk::data::strings* ret);
 	  public:
+
+		cmdchanneldata chd;
 		ssdb_receiver();
 		virtual ~ssdb_receiver();
 

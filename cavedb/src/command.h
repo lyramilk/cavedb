@@ -15,6 +15,19 @@ namespace lyramilk{ namespace cave
 	};
 
 
+	struct cmdchanneldata
+	{
+		lyramilk::data::string requirepass;
+		bool isreadonly;
+		int loginseq;
+
+		cmdchanneldata();
+		~cmdchanneldata();
+		void set_requirepass(const lyramilk::data::string& requirepass);
+		void set_readonly(bool isreadonly);
+	};
+
+
 
 	enum cmdstatus{
 		cs_ok,
@@ -23,7 +36,7 @@ namespace lyramilk{ namespace cave
 		cs_data_not_found,
 	};
 
-	typedef cmdstatus (*command_callback)(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdsessiondata* sen,void* userptr);
+	typedef cmdstatus (*command_callback)(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,void* userptr);
 
 	struct command_sepc
 	{

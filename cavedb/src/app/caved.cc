@@ -22,6 +22,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
   public:
 	lyramilk::cave::cmd_accepter* cmdr;
 	lyramilk::cave::cmdsessiondata sen;
+	lyramilk::cave::cmdchanneldata* chd;
 	lyramilk::data::string masterid;
 
 	CaveDBServerSession()
@@ -37,7 +38,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 	virtual bool notify_cmd(const lyramilk::data::array& cmd, lyramilk::data::ostream& os)
 	{
 		lyramilk::data::var ret;
-		lyramilk::cave::cmdstatus rs = cmdr->call(masterid,"",0,cmd,&ret,&sen,false);
+		lyramilk::cave::cmdstatus rs = cmdr->call(masterid,"",0,cmd,&ret,chd,&sen);
 		return output_redis_result(rs,ret,os);
 	}
 };
@@ -48,9 +49,9 @@ class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 {
   public:
 	lyramilk::cave::cmd_accepter* cmdr;
+	lyramilk::cave::cmdchanneldata chd;
 
 	lyramilk::data::string masterid;
-	bool readonly;
 
 	CaveDBServer()
 	{
@@ -66,6 +67,8 @@ class CaveDBServer:public lyramilk::netio::aioserver<CaveDBServerSession>
 	{
 		CaveDBServerSession *p = lyramilk::netio::aiosession::__tbuilder<CaveDBServerSession>();
 		p->cmdr = cmdr;
+		p->chd = &chd;
+
 		p->masterid = masterid;
 		return p;
 	}
@@ -145,7 +148,7 @@ int main(int argc,char* argv[])
 		}
 	}
 	if(isdaemon){
-		::daemon(1,0);
+		ondaemon = ::daemon(1,0) == 0;
 	}
 
 	lyramilk::data::map cfobj = v;
@@ -155,7 +158,7 @@ int main(int argc,char* argv[])
 		lyramilk::data::string logfile;
 		if(cfobj["logfile"].type() == lyramilk::data::var::t_str){
 			logfile = cfobj["logfile"].str();
-			if(isdaemon){
+			if(ondaemon){
 				lyramilk::log::logf* lf = new lyramilk::log::logf(logfile);
 				lyramilk::klog.rebase(lf);
 			}else{
@@ -240,8 +243,10 @@ int main(int argc,char* argv[])
 
 	lyramilk::cave::leveldb_store cmdr;
 	if(cmdr.open_leveldb(gstore["path"].str(),(unsigned int)gstore["cache"].conv(500),true)){
+		/*
 		lyramilk::data::string str = gstore["requirepass"].str();
 		cmdr.set_requirepass(str);
+		*/
 	}else{
 		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << gstore << std::endl;
 		return -1;
@@ -262,8 +267,7 @@ int main(int argc,char* argv[])
 			lyramilk::data::string type = m["type"].str();
 			if(type == "ssdb" && false){
 				lyramilk::cave::ssdb_receiver* p = new lyramilk::cave::ssdb_receiver;
-
-				p->readonly = m["readonly"].conv(false);
+				p->chd.isreadonly = false;
 
 				lyramilk::data::string host = m["host"].str();
 				lyramilk::data::int32 port = m["port"].conv(-1);
@@ -280,8 +284,7 @@ int main(int argc,char* argv[])
 
 			if(type == "cavedb"){
 				lyramilk::cave::cavedb_receiver* p = new lyramilk::cave::cavedb_receiver;
-
-				p->readonly = m["readonly"].conv(false);
+				p->chd.isreadonly = false;
 
 				lyramilk::data::string host = m["host"].str();
 				lyramilk::data::int32 port = m["port"].conv(-1);
@@ -307,10 +310,12 @@ int main(int argc,char* argv[])
 			if(type == "network"){
 				CaveDBServer* p = new CaveDBServer;
 				p->cmdr = &cmdr;
-				p->readonly = m["readonly"].conv(false);
+
 				lyramilk::data::string server_host = m["host"].str();
 				lyramilk::data::int32 server_port = m["port"].conv(-1);
 				p->masterid = m["masterid"].str();
+				p->chd.requirepass = m["requirepass"].str();
+				p->chd.isreadonly = m["readonly"].conv(false);
 
 				if(server_host == "0.0.0.0" || server_host.empty()){
 					if(!p->open(server_port)){
@@ -327,9 +332,9 @@ int main(int argc,char* argv[])
 			}else if(type == "unixsocket"){
 				CaveDBServer* p = new CaveDBServer;
 				p->cmdr = &cmdr;
-				p->readonly = m["readonly"].conv(false);
 				p->masterid = m["masterid"].str();
-
+				p->chd.requirepass = m["requirepass"].str();
+				p->chd.isreadonly = m["readonly"].conv(false);
 
 				if(!p->open_unixsocket(m["unix"].str())){
 					lyramilk::klog(lyramilk::log::error,"cavedb") << "unixsocket打开失败：" << m["unix"].str() << std::endl;

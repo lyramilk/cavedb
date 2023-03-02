@@ -36,7 +36,7 @@ namespace lyramilk{ namespace cave
 		bool sync_once(const lyramilk::data::string& replid,lyramilk::data::uint64 offset,lyramilk::data::uint64 count,lyramilk::data::array* cmds,lyramilk::data::string* nextreplid,lyramilk::data::uint64* nextseq);
 		virtual int svc();
 	  public:
-		bool readonly;
+		cmdchanneldata chd;
 
 
 		cavedb_receiver();
