@@ -385,6 +385,67 @@ namespace lyramilk{ namespace cave
 	}
 
 
+	cmdstatus leveldb_store::on_del(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::debug::nsecdiff nd;
+		nd.mark();
+
+
+
+
+		lyramilk::data::string key = args[1].str();
+
+
+
+		long ditems = 0;
+		leveldb::WriteBatch batch;
+
+		std::string start;
+		std::string end;
+
+		lyramilk::data::string result_cursor;
+		leveldb::Iterator* it = nullptr;
+		{
+			it = ldb->NewIterator(ropt);
+			if(it == nullptr){
+				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
+			}else{
+
+				lyramilk::data::string keep_prefix = redis_pack::make_key_prefix(key);
+				start = keep_prefix;
+
+				it->Seek(keep_prefix);
+				if(it->Valid()){
+					for(;it->Valid();it->Next()){
+						if(!it->key().starts_with(keep_prefix)){
+							end = it->key().ToString();
+							break;
+						}
+						batch.Delete(it->key());
+						++ditems;
+					}
+				}
+
+				if (it) delete it;
+			}
+		}
+
+
+		leveldb::Status ldbs = ldb->Write(wopt,&batch);
+		if(!ldbs.ok()){
+			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+			return cmdstatus::cs_error;
+		}else{
+			if(ditems > 1000){
+				leveldb::Slice a(start);
+				leveldb::Slice b(end);
+				ldb->CompactRange(&a,&b);
+			}
+		}
+		return cmdstatus::cs_ok;
+	}
+
+
 	cmdstatus leveldb_store::on_cave_sync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		// cavedb_sync [key] [seq] [count]
@@ -472,6 +533,7 @@ namespace lyramilk{ namespace cave
 		regist("hset",&command_method_2_function<leveldb_store,&leveldb_store::on_hset>,-4,command_sepc::write|command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("hmset",&command_method_2_function<leveldb_store,&leveldb_store::on_hset>,-4,command_sepc::write|command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("hdel",&command_method_2_function<leveldb_store,&leveldb_store::on_hdel>,-3,command_sepc::write|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("del",&command_method_2_function<leveldb_store,&leveldb_store::on_del>,2,command_sepc::write|command_sepc::noscript,1,1,1);
 		regist("cave_sync",command_method_2_function<leveldb_store,&leveldb_store::on_cave_sync>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,0,0,0);
 	}
 
