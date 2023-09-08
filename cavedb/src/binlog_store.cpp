@@ -60,7 +60,6 @@ namespace lyramilk{ namespace cave
 								if(currseq > minseq){
 									break;
 								}
-COUT << "currseq=" << currseq << ",minseql=" << minseq << std::endl;
 								blog->ldb->Delete(wopt,it->key());
 								cc++;
 							}else{
