@@ -12,6 +12,7 @@
 #include <leveldb/slice.h>
 
 #include <endian.h>
+#include <unistd.h>
 
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
@@ -28,6 +29,7 @@ namespace lyramilk{ namespace cave
 		seq = 0;
 		minseq = 0;
 		maxseq = 0;
+		capacity = 20000000;
 	}
 
 	binlog_leveldb::~binlog_leveldb()
@@ -37,11 +39,63 @@ namespace lyramilk{ namespace cave
 
 	void* binlog_leveldb::thread_clear_binlog(binlog_leveldb* blog)
 	{
+		while(true){
+			if(blog->maxseq > blog->capacity){
+				lyramilk::data::uint64 minseq = blog->maxseq - blog->capacity;
+				lyramilk::data::string skey;
+				skey.append("i+");
 
+				long cc = 0;
+
+				{
+					leveldb::Iterator* it = blog->ldb->NewIterator(ropt);
+					if(it != nullptr){
+						it->Seek(skey);
+
+						for(;it->Valid() && it->key().starts_with("i+");it->Next()){
+							leveldb::Slice s = it->key();
+							s.remove_prefix(2);
+							if(s.size() == 8){
+								lyramilk::data::uint64 currseq = be64toh(*(lyramilk::data::uint64*)s.data());
+								if(currseq > minseq){
+									break;
+								}
+COUT << "currseq=" << currseq << ",minseql=" << minseq << std::endl;
+								blog->ldb->Delete(wopt,it->key());
+								cc++;
+							}else{
+								break;
+							}
+						}
+
+						if (it) delete it;
+					}
+
+
+					lyramilk::data::uint64 tmp1 = htobe64(0);
+					lyramilk::data::string skey1;
+					skey1.append("i+");
+					skey1.append((const char*)&tmp1,8);
+					lyramilk::data::uint64 tmp2 = htobe64(minseq);
+					lyramilk::data::string skey2;
+					skey2.append("i+");
+					skey2.append((const char*)&tmp2,8);
+
+					leveldb::Slice s1 = skey1;
+					leveldb::Slice s2 = skey2;
+
+					blog->ldb->CompactRange(&s1,&s2);
+					if(cc > 0){
+						log(lyramilk::log::debug,__FUNCTION__) << "清理过期binlog条数:" << cc << ",capacity=" << blog->capacity << std::endl;
+					}
+				}
+			}
+			sleep(5);
+		}
 		return nullptr;
 	}
 
-	bool binlog_leveldb::open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing)
+	bool binlog_leveldb::open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing,long capacity)
 	{
 		leveldb::Options opt;
 
@@ -91,6 +145,9 @@ namespace lyramilk{ namespace cave
 			maxseq = find_max();
 			seq = maxseq + 1;
 			log(lyramilk::log::debug,__FUNCTION__) << "cavedb.seq=" << minseq << "~" << maxseq << std::endl;
+
+			this->capacity = capacity;
+			log(lyramilk::log::debug,__FUNCTION__) << "binlog.capacity=" << this->capacity << std::endl;
 
 			pthread_t thread;
 			if(pthread_create(&thread,NULL,(void* (*)(void*))thread_clear_binlog,this) == 0){

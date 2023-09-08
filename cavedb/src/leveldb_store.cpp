@@ -65,45 +65,6 @@ namespace lyramilk{ namespace cave
 
 	cmdstatus leveldb_store::on_hgetall(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
-		/*
-		lyramilk::debug::nsecdiff nd;
-		nd.mark();
-
-		lyramilk::data::string key = args[1].str();
-
-		lyramilk::data::map result;
-
-		lyramilk::data::string result_cursor;
-		leveldb::Iterator* it = nullptr;
-		{
-			it = ldb->NewIterator(ropt);
-			if(it == nullptr){
-				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
-			}else{
-				lyramilk::data::string keep_prefix = redis_pack::make_key_prefix(key);
-				it->Seek(keep_prefix);
-				redis_pack spack;
-				for(;it->Valid();it->Next()){
-					if(!it->key().starts_with(keep_prefix)) break;
-					redis_pack spack;
-					if(redis_pack::unpack(&spack,it->key())){
-						if(spack.type != redis_pack::s_hash) continue;
-						result[spack.hash.field.ToString()] = lyramilk::data::str(it->value().ToString());
-					}
-				}
-
-				if (it) delete it;
-			}
-		}
-		long long nsec = nd.diff();
-		if(nsec > 200000000){
-			log(lyramilk::log::warning,__FUNCTION__) << D("命令 hgetall %.*s 耗时%.3f",key.size(),key.c_str(),double(nsec) / 1000000) << std::endl;
-		}
-
-		*ret = result;
-		return cmdstatus::cs_data;
-		*/
-
 		lyramilk::data::stringdict sd;
 		lyramilk::data::string key = args[1].str();
 
@@ -116,44 +77,6 @@ namespace lyramilk{ namespace cave
 
 	cmdstatus leveldb_store::on_hget(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
-		/*
-		lyramilk::debug::nsecdiff nd;
-		nd.mark();
-
-		lyramilk::data::string key = args[1].str();
-		lyramilk::data::string field = args[2].str();
-
-
-		redis_pack pk;
-		pk.type = redis_pack::s_hash;
-
-		pk.key = key;
-		pk.hash.field.assign(field.data(),field.size());
-
-		std::string lkey = redis_pack::pack(&pk);
-
-		std::string result;
-		leveldb::Status ldbs = ldb->Get(ropt,lkey,&result);
-
-		long long nsec = nd.diff();
-		if(nsec > 200000000){
-			log(lyramilk::log::warning,__FUNCTION__) << D("命令 hget %.*s,%.*s 耗时%.3f",key.size(),key.c_str(),field.size(),field.c_str(),double(nsec) / 1000000) << std::endl;
-		}
-
-		if(ldbs.ok()){
-			*ret = result;
-			return cmdstatus::cs_ok;
-		}
-		if(ldbs.IsNotFound()){
-			ret->clear();
-			return cmdstatus::cs_data;
-		}
-
-		log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
-		*ret = ldbs.ToString();
-		return cmdstatus::cs_error;
-		*/
-
 		lyramilk::data::string val;
 		lyramilk::data::string key = args[1].str();
 		lyramilk::data::string field = args[2].str();
@@ -167,57 +90,6 @@ namespace lyramilk{ namespace cave
 
 	cmdstatus leveldb_store::on_hmget(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
-		/*
-		lyramilk::debug::nsecdiff nd;
-		nd.mark();
-
-		lyramilk::data::string key = args[1].str();
-
-		lyramilk::data::stringdict result;
-
-		lyramilk::data::string result_cursor;
-		leveldb::Iterator* it = nullptr;
-		{
-			it = ldb->NewIterator(ropt);
-			if(it == nullptr){
-				log(lyramilk::log::error,__FUNCTION__) << D("创建迭代器失败") << std::endl;
-			}else{
-				lyramilk::data::string keep_prefix = redis_pack::make_key_prefix(key);
-				it->Seek(keep_prefix);
-				redis_pack spack;
-				for(;it->Valid();it->Next()){
-					if(!it->key().starts_with(keep_prefix)) break;
-					redis_pack spack;
-					if(redis_pack::unpack(&spack,it->key())){
-						if(spack.type != redis_pack::s_hash) continue;
-						result[spack.hash.field.ToString()] = lyramilk::data::str(it->value().ToString());
-					}
-				}
-
-				if (it) delete it;
-			}
-		}
-		long long nsec = nd.diff();
-		if(nsec > 200000000){
-			log(lyramilk::log::warning,__FUNCTION__) << D("命令 hgetall %.*s 耗时%.3f",key.size(),key.c_str(),double(nsec) / 1000000) << std::endl;
-		}
-
-		ret->type(lyramilk::data::var::t_array);
-
-		lyramilk::data::array& ar = *ret;
-
-		for(lyramilk::data::array::const_iterator it = args.begin() + 2;it!=args.end();++it){
-			lyramilk::data::stringdict::iterator cit = result.find(it->str());
-			if(cit == result.end()){
-				ar.push_back(lyramilk::data::var::nil);
-			}else{
-				ar.push_back(cit->first);
-			}
-		}
-		return cmdstatus::cs_data;
-		*/
-
-
 		ret->type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = *ret;
 
@@ -229,13 +101,6 @@ namespace lyramilk{ namespace cave
 			if(r == cmdstatus::cs_data){
 				ar.push_back(r);
 			}
-			/*
-			lyramilk::data::stringdict::iterator cit = result.find(it->str());
-			if(cit == result.end()){
-				ar.push_back(lyramilk::data::var::nil);
-			}else{
-				ar.push_back(cit->first);
-			}*/
 		}
 		return cmdstatus::cs_data;
 
@@ -466,7 +331,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::uint64 nextseq = 0;
 
 
-
+//COUT << masterid << ",replid=" << replid << ",replidsize=" << replid.size() << ",offset=" << offset<< std::endl;
 
 
 		// 扫描全数据
@@ -515,6 +380,7 @@ namespace lyramilk{ namespace cave
 			ar[1] = nextseq;
 			return cmdstatus::cs_data; 
 		}
+//COUT << masterid << ",replid=" << replid << ",offset=" << offset<< std::endl;
 		// 读取binlog
 		blog->read(seq,count,&ardata,&nextseq);
 		ar[0] = nextkey;

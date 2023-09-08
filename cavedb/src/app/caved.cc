@@ -238,7 +238,6 @@ int main(int argc,char* argv[])
 	pool.active(4);
 
 
-	lyramilk::cave::binlog_leveldb blog;
 
 
 	lyramilk::cave::leveldb_store cmdr;
@@ -252,11 +251,19 @@ int main(int argc,char* argv[])
 		return -1;
 	}
 
-	if(!blog.open_leveldb(binlog["path"].str(),(unsigned int)binlog["cache"].conv(500),true)){
+#if 1
+	lyramilk::cave::binlog_leveldb blog;
+	if(!blog.open_leveldb(binlog["path"].str(),(unsigned int)binlog["cache"].conv(500),true,(unsigned long long)binlog["capacity"].conv(20000000))){
 		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << binlog << std::endl;
 		return -1;
 	}
-
+#else
+	lyramilk::cave::binlog_appendfiles blog;
+	if(!blog.open_path(binlog["path"].str(),(unsigned long long)binlog["capacity"].conv(20000000))){
+		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << binlog << std::endl;
+		return -1;
+	}
+#endif
 	cmdr.set_binlog(&blog);
 
 

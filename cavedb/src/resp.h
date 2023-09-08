@@ -17,6 +17,9 @@ namespace lyramilk{ namespace cave
 	};
 
 	resp_result resp23_from_stream(std::istream& is,lyramilk::data::var* ret);
+	bool resp23_to_stream(const lyramilk::data::var& ret,lyramilk::data::ostream& os);
+	bool resp23_to_stream(const lyramilk::data::array& ret,lyramilk::data::ostream& os);
+	bool resp23_to_stream(const lyramilk::data::map& ret,lyramilk::data::ostream& os);
 
 	class resp23_as_session:public lyramilk::netio::aiosession_sync
 	{
@@ -43,7 +46,6 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::int64 array_item_count;
 		lyramilk::data::int64 bulk_bytes_count;
 
-		virtual bool output_redis_data(const lyramilk::data::var& ret,lyramilk::data::ostream& os);
 		virtual bool oninit(lyramilk::data::ostream& os);
 		virtual bool onrequest(const char* cache, int size, lyramilk::data::ostream& os);
 	public:

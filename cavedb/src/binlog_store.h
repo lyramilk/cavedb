@@ -24,6 +24,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::uint64 seq;
 		lyramilk::data::uint64 minseq;
 		lyramilk::data::uint64 maxseq;
+		lyramilk::data::uint64 capacity;
 		static void* thread_clear_binlog(binlog_leveldb* blog);
 	  public:
 		binlog_leveldb();
@@ -32,7 +33,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::uint64 find_min();
 		lyramilk::data::uint64 find_max();
 
-		bool open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing);
+		bool open_leveldb(const lyramilk::data::string& leveldbpath,unsigned int cache_size_MB,bool create_if_missing,long capacity);
 		virtual bool append(const lyramilk::data::array& args);
 		virtual void read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq);
 	};

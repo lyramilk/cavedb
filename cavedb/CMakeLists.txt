@@ -76,37 +76,19 @@ list(APPEND LIBS_DEPENDS -ldl)
 
 if(NOT minimal)
 	pkg_check_modules(LIBMILK libmilk REQUIRED)
-	pkg_check_modules(SPARSEHASH sparsehash)
-	#pkg_check_modules(LEVELDB leveldb>=1.19)
+	pkg_check_modules(LEVELDB leveldb>=1.19)
+	pkg_check_modules(ZSTD libzstd)
+	pkg_check_modules(LZ4 liblz4)
+
+
+	#pkg_check_modules(SPARSEHASH sparsehash)
 	#pkg_check_modules(LMDB lmdb)
 
-	check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
+	#check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
 	#check_include_file_cxx(rocksdb/db.h Z_HAVE_ROCKSDB)
-	check_include_file_cxx(/usr/include/google/sparsehash/sparsehashtable.h Z_HAVE_SPARSEHASH)
+	##check_include_file_cxx(/usr/include/google/sparsehash/sparsehashtable.h Z_HAVE_SPARSEHASH)
 	check_include_file_cxx("/etc/alternatives/java_sdk/include/jni.h" Z_HAVE_JDK)
 endif()
-
-
-if(minimal)
-	list(REMOVE_ITEM src_hs src/store/leveldb_minimal.h)
-	list(REMOVE_ITEM src_hs src/store/leveldb_minimal2.h)
-	list(REMOVE_ITEM src_hs src/store/leveldb_minimal_adapter.h)
-	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal.cpp)
-	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal2.cpp)
-	list(REMOVE_ITEM src_cpps src/store/leveldb_minimal_adapter.cpp)
-endif()
-
-
-if(Z_HAVE_ROCKSDB AND NOT minimal)
-	#list(APPEND BUILD_DEPENDS rocksdb-devel)
-	#list(APPEND RUN_DEPENDS rocksdb)
-	list(APPEND LIBS_DEPENDS -lrocksdb)
-	list(APPEND CONFIG_MACROS ROCKSDB_FOUND)
-else()
-	list(REMOVE_ITEM src_hs src/store/rocksdb_minimal.h)
-	list(REMOVE_ITEM src_cpps src/store/rocksdb_minimal.cpp)
-endif()
-
 
 if(LIBMILK_FOUND)
 	list(APPEND BUILD_DEPENDS libmilk-devel)
@@ -119,36 +101,28 @@ endif()
 
 if(NOT minimal)
 	if(LEVELDB_FOUND)
-		list(APPEND BUILD_DEPENDS leveldb-devel)
-		list(APPEND RUN_DEPENDS leveldb)
+		#list(APPEND BUILD_DEPENDS leveldb-devel)
+		#list(APPEND RUN_DEPENDS leveldb)
 		list(APPEND LIBS_DEPENDS ${LEVELDB_LDFLAGS})
 		list(APPEND INCS_DEPENDS ${LEVELDB_CFLAGS})
 		list(APPEND CONFIG_MACROS LEVELDB_FOUND)
 	endif()
+
+	if(ZSTD_FOUND)
+		list(APPEND LIBS_DEPENDS ${ZSTD_LDFLAGS})
+		list(APPEND INCS_DEPENDS ${ZSTD_CFLAGS})
+		list(APPEND CONFIG_MACROS ZSTD_FOUND)
+	endif()
+
+	if(LZ4_FOUND)
+		list(APPEND LIBS_DEPENDS ${LZ4_LDFLAGS})
+		list(APPEND INCS_DEPENDS ${LZ4_CFLAGS})
+		list(APPEND CONFIG_MACROS LZ4_FOUND)
+	endif()
 endif()
 
 
-if(SPARSEHASH_FOUND)
-	list(APPEND LIBS_DEPENDS ${SPARSEHASH_LDFLAGS})
-	list(APPEND INCS_DEPENDS ${SPARSEHASH_CFLAGS})
-	list(APPEND CONFIG_MACROS SPARSEHASH_FOUND)
-elseif(Z_HAVE_SPARSEHASH)
-	list(APPEND CONFIG_MACROS Z_HAVE_SPARSEHASH)
-	list(APPEND CONFIG_MACROS SPARSEHASH_FOUND)
-else()
-	list(REMOVE_ITEM src_hs src/store/dense_hash_map_minimal.h)
-	list(REMOVE_ITEM src_hs src/store/sparse_hash_map_minimal.h)
-	list(REMOVE_ITEM src_cpps src/store/dense_hash_map_minimal.cpp)
-	list(REMOVE_ITEM src_cpps src/store/sparse_hash_map_minimal.cpp)
-endif()
 
-
-if(Z_HAVE_SNAPPY)
-	list(APPEND BUILD_DEPENDS snappy-devel)
-	list(APPEND RUN_DEPENDS snappy)
-	list(APPEND LIBS_DEPENDS -lsnappy)
-	list(APPEND CONFIG_MACROS LEVELDB_FOUND)
-endif()
 
 
 if(Z_HAVE_JDK)
@@ -185,7 +159,6 @@ endforeach()
 
 #修改配置文件
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/config.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/pkg/cavedb.spec.in ${CMAKE_CURRENT_SOURCE_DIR}/pkg/cavedb.spec)
 
 
 #目标动态库
@@ -201,7 +174,7 @@ file(COPY ${src_hs_store} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/store)
 if(NOT minimal)
 	if(NOT LEVELDB_FOUND)
 		#对leveldb的依赖
-		execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
+		#execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
 		execute_process(COMMAND  make -j -C ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/ out-static/libleveldb.a out-static/libmemenv.a)
 		include_directories(${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/include/)
 		target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libleveldb.a)

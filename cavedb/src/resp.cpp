@@ -308,26 +308,8 @@ namespace lyramilk{ namespace cave
 		return resp_parse_error;
 	}
 
-	// resp23_as_session
 
-	resp23_as_session::resp23_as_session()
-	{
-		s = s_0;
-	}
-
-	resp23_as_session::~resp23_as_session()
-	{
-		
-	}
-
-	bool resp23_as_session::oninit(lyramilk::data::ostream& os)
-	{
-		return true;
-	}
-
-
-
-	bool resp23_as_session::output_redis_data(const lyramilk::data::var& ret,lyramilk::data::ostream& os)
+	bool resp23_to_stream(const lyramilk::data::var& ret,lyramilk::data::ostream& os)
 	{
 		if(ret.type() == lyramilk::data::var::t_str){
 			lyramilk::data::string str = ret.str();
@@ -349,15 +331,15 @@ namespace lyramilk{ namespace cave
 			const lyramilk::data::array& ar = ret;
 			os << "*" << ar.size() << "\r\n";
 			for(lyramilk::data::array::const_iterator it = ar.begin();it !=ar.end();++it){
-				if(!output_redis_data(*it,os)) return false;
+				if(!resp23_to_stream(*it,os)) return false;
 			}
 			return true;
 		}else if(ret.type() == lyramilk::data::var::t_map){
 			const lyramilk::data::map& ar = ret;
 			os << "*" << (ar.size() << 1) << "\r\n";
 			for(lyramilk::data::map::const_iterator it = ar.begin();it !=ar.end();++it){
-				if(!output_redis_data(it->first,os)) return false;
-				if(!output_redis_data(it->second,os)) return false;
+				if(!resp23_to_stream(it->first,os)) return false;
+				if(!resp23_to_stream(it->second,os)) return false;
 			}
 			return true;
 		}else if(ret.type() == lyramilk::data::var::t_invalid){
@@ -366,13 +348,49 @@ namespace lyramilk{ namespace cave
 		}else{
 			return false;
 		}
+	}
+
+	bool resp23_to_stream(const lyramilk::data::array& ar,lyramilk::data::ostream& os)
+	{
+		os << "*" << ar.size() << "\r\n";
+		for(lyramilk::data::array::const_iterator it = ar.begin();it !=ar.end();++it){
+			if(!resp23_to_stream(*it,os)) return false;
+		}
+		return true;
+	}
+
+	bool resp23_to_stream(const lyramilk::data::map& ar,lyramilk::data::ostream& os)
+	{
+		os << "*" << (ar.size() << 1) << "\r\n";
+		for(lyramilk::data::map::const_iterator it = ar.begin();it !=ar.end();++it){
+			if(!resp23_to_stream(it->first,os)) return false;
+			if(!resp23_to_stream(it->second,os)) return false;
+		}
+	}
+
+	// resp23_as_session
+
+	resp23_as_session::resp23_as_session()
+	{
+		s = s_0;
+	}
+
+	resp23_as_session::~resp23_as_session()
+	{
 		
 	}
+
+	bool resp23_as_session::oninit(lyramilk::data::ostream& os)
+	{
+		return true;
+	}
+
+
 
 	bool resp23_as_session::output_redis_result(lyramilk::cave::cmdstatus rs,const lyramilk::data::var& ret,lyramilk::data::ostream& os)
 	{
 		if(rs == lyramilk::cave::cs_data){
-			return output_redis_data(ret,os);
+			return resp23_to_stream(ret,os);
 		}else if(rs == lyramilk::cave::cs_data_not_found){
 			os << "$-1\r\n";
 			return true;
