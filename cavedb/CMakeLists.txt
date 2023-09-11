@@ -77,16 +77,7 @@ list(APPEND LIBS_DEPENDS -ldl)
 if(NOT minimal)
 	pkg_check_modules(LIBMILK libmilk REQUIRED)
 	pkg_check_modules(LEVELDB leveldb>=1.19)
-	pkg_check_modules(ZSTD libzstd)
-	pkg_check_modules(LZ4 liblz4)
-
-
-	#pkg_check_modules(SPARSEHASH sparsehash)
-	#pkg_check_modules(LMDB lmdb)
-
-	#check_include_file_cxx(snappy.h Z_HAVE_SNAPPY)
-	#check_include_file_cxx(rocksdb/db.h Z_HAVE_ROCKSDB)
-	##check_include_file_cxx(/usr/include/google/sparsehash/sparsehashtable.h Z_HAVE_SPARSEHASH)
+	pkg_check_modules(SNAPPY snappy)
 	check_include_file_cxx("/etc/alternatives/java_sdk/include/jni.h" Z_HAVE_JDK)
 endif()
 
@@ -122,7 +113,11 @@ if(NOT minimal)
 endif()
 
 
-
+if(SNAPPY_FOUND)
+		list(APPEND LIBS_DEPENDS ${SNAPPY_LDFLAGS})
+		list(APPEND INCS_DEPENDS ${SNAPPY_CFLAGS})
+		list(APPEND CONFIG_MACROS SNAPPY_FOUND)
+endif()
 
 
 if(Z_HAVE_JDK)
@@ -174,7 +169,7 @@ file(COPY ${src_hs_store} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/include/store)
 if(NOT minimal)
 	if(NOT LEVELDB_FOUND)
 		#对leveldb的依赖
-		#execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
+		execute_process(COMMAND  chmod u+x  ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/build_detect_platform)
 		execute_process(COMMAND  make -j -C ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/ out-static/libleveldb.a out-static/libmemenv.a)
 		include_directories(${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/include/)
 		target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/depends/leveldb/out-static/libleveldb.a)

@@ -192,16 +192,6 @@ int main(int argc,char* argv[])
 		}
 	}
 
-
-	lyramilk::data::map binlog = cfobj["binlog"];
-
-	if(binlog["type"].type() == lyramilk::data::var::t_str){
-		if(binlog["type"].str() != "leveldb"){
-			lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: binlog.type仅支持leveldb2" << std::endl;
-			return -1;
-		}
-	}
-
 	
 	if(cfobj["slaveof"].type() != lyramilk::data::var::t_array){
 		lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: slaveof 类型不对，应该是t_array" << std::endl;
@@ -257,21 +247,41 @@ int main(int argc,char* argv[])
 		return -1;
 	}
 
-#if 1
-	lyramilk::cave::binlog_leveldb blog;
-	if(!blog.open_leveldb(binlog["path"].str(),(unsigned int)binlog["cache"].conv(500),true,(unsigned long long)binlog["capacity"].conv(20000000))){
-		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << binlog << std::endl;
-		return -1;
-	}
-#else
-	lyramilk::cave::binlog_appendfiles blog;
-	if(!blog.open_path(binlog["path"].str(),(unsigned long long)binlog["capacity"].conv(20000000))){
-		lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << binlog << std::endl;
-		return -1;
-	}
-#endif
-	cmdr.set_binlog(&blog);
+	if(cfobj.find("binlog") != cfobj.end()){
+		if(cfobj["binlog"].type() != lyramilk::data::var::t_map){
+			lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: binlog.type必须是字典类型" << std::endl;
+			return -1;
+		}
 
+		lyramilk::data::map& binlog = cfobj["binlog"];
+		lyramilk::data::string binlogtype = "leveldb";
+		if(binlog["type"].type() == lyramilk::data::var::t_str){
+			binlogtype = binlog["type"].str();
+			if(binlog["type"].str() != "leveldb"){
+				lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: binlog.type仅支持leveldb" << std::endl;
+				return -1;
+			}
+		}
+
+
+		if(binlogtype == "leveldb"){
+			lyramilk::cave::binlog_leveldb* blog = new lyramilk::cave::binlog_leveldb;
+			if(!blog->open_leveldb(binlog["path"].str(),(unsigned int)binlog["cache"].conv(500),true,(unsigned long long)binlog["capacity"].conv(20000000))){
+				lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << binlog << std::endl;
+				return -1;
+			}
+			cmdr.set_binlog(blog);
+		}else if (binlogtype == "file"){
+#if 0
+			lyramilk::cave::binlog_appendfiles* blog = new lyramilk::cave::binlog_appendfiles;
+			if(!blog->open_path(binlog["path"].str(),(unsigned long long)binlog["capacity"].conv(20000000))){
+				lyramilk::klog(lyramilk::log::error,"cavedb") << "打开leveldb失败:" << binlog << std::endl;
+				return -1;
+			}
+			cmdr->set_binlog(&blog);
+#endif
+		}
+	}
 
 	//	初始化主从同步的主库。
 	for(lyramilk::data::array::iterator it = slaveof.begin();it!=slaveof.end();++it){
