@@ -1,4 +1,5 @@
 #include "cavedb_receiver.h"
+#include "leveldb_store.h"
 
 #include <libmilk/log.h>
 #include <libmilk/dict.h>
@@ -78,7 +79,7 @@ namespace lyramilk{ namespace cave
 		oss << "$9\r\ncave_sync\r\n";
 		oss << "$" << replid.size() << "\r\n" << replid << "\r\n";
 		oss << ":" << offset << "\r\n";
-		oss << ":" << 30000 << "\r\n";
+		oss << ":" << count << "\r\n";
 		lyramilk::data::string str = oss.str();
 		c.write(str.c_str(),str.size());
 
@@ -102,6 +103,7 @@ namespace lyramilk{ namespace cave
 	{
 		c.close();
 		if(c.open(host,port)){
+			c.setnodelay(true);
 			if(!masterauth.empty()){
 				lyramilk::data::stringstream oss;
 				oss << "*2\r\n";
@@ -152,7 +154,7 @@ namespace lyramilk{ namespace cave
 			psync_offset = nextseq;
 
 			lyramilk::data::array cmds;
-			if(!sync_once(psync_replid,psync_offset,120000,&cmds,&nextreplid,&nextseq)){
+			if(!sync_once(psync_replid,psync_offset,3000,&cmds,&nextreplid,&nextseq)){
 				//log(lyramilk::log::error,"psync") << D("[%s]同步出错，重新链接",masterid.c_str()) << std::endl;
 				c.close();
 				sleep(2);

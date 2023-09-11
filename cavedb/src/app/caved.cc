@@ -35,6 +35,12 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 		
 	}
 
+	virtual bool oninit(lyramilk::data::ostream& os)
+	{
+		setnodelay(true);
+	}
+
+
 	virtual bool notify_cmd(const lyramilk::data::array& cmd, lyramilk::data::ostream& os)
 	{
 		lyramilk::data::var ret;
@@ -353,7 +359,9 @@ int main(int argc,char* argv[])
 	}
 
 	while(true){
-		lyramilk::klog(lyramilk::log::debug,"cavedb") << "读取速度:" << cmdr.rspeed << ",写入速度:" << cmdr.wspeed << std::endl;
+		if(cmdr.rspeed || cmdr.wspeed){
+			lyramilk::klog(lyramilk::log::debug,"cavedb") << "读取速度:" << cmdr.rspeed << ",写入速度:" << cmdr.wspeed << std::endl;
+		}
 		sleep(1);
 	}
 
