@@ -38,6 +38,7 @@ class CaveDBServerSession:public lyramilk::cave::resp23_as_session
 	virtual bool oninit(lyramilk::data::ostream& os)
 	{
 		setnodelay(true);
+		return true;
 	}
 
 

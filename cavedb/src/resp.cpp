@@ -366,6 +366,7 @@ namespace lyramilk{ namespace cave
 			if(!resp23_to_stream(it->first,os)) return false;
 			if(!resp23_to_stream(it->second,os)) return false;
 		}
+		return true;
 	}
 
 	// resp23_as_session
