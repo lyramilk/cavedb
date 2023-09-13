@@ -675,8 +675,6 @@ namespace lyramilk{ namespace cave
 
 		return true;
 	}
-		lyramilk::data::string psync_replid;
-		lyramilk::data::uint64 psync_offset;
 
 
 	void leveldb_store::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
