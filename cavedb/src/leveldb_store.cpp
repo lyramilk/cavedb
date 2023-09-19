@@ -1,5 +1,6 @@
 #include "leveldb_store.h"
 #include "redis_pack.h"
+#include "util.h"
 
 #include <libmilk/log.h>
 #include <libmilk/testing.h>
@@ -425,7 +426,7 @@ namespace lyramilk{ namespace cave
 			leveldb::Status ldbs = ldb->Get(ropt,lkey,&cursor);
 
 			if(ldbs.ok()){
-				log(lyramilk::log::trace,__FUNCTION__) << D("自动整理进度:%s",cursor.c_str()) << std::endl;
+				log(lyramilk::log::trace,__FUNCTION__) << D("自动整理进度:\"%s\"",encode_for_print(cursor).c_str()) << std::endl;
 			}else if(ldbs.IsNotFound()){
 				log(lyramilk::log::debug,__FUNCTION__) << D("未找到自动整理进度") << std::endl;
 			}else{
@@ -514,9 +515,9 @@ namespace lyramilk{ namespace cave
 				if (lastcur != cursor){
 					leveldb::Status ldbs = ldb->Put(wopt,lkey,cursor);
 					if(ldbs.ok()){
-						log(lyramilk::log::trace,__FUNCTION__) << D("写入自动整理进度:%s",cursor.c_str()) << std::endl;
+						log(lyramilk::log::trace,__FUNCTION__) << D("写入自动整理进度:\"%s\"",encode_for_print(cursor).c_str()) << std::endl;
 					}else{
-						log(lyramilk::log::error,__FUNCTION__) << D("加载key出错:%s",ldbs.ToString().c_str()) << std::endl;
+						log(lyramilk::log::error,__FUNCTION__) << D("写入自动整理进度出错:%s",ldbs.ToString().c_str()) << std::endl;
 					}
 					lastcur = cursor;
 				}
