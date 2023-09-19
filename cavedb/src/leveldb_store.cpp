@@ -412,7 +412,15 @@ namespace lyramilk{ namespace cave
 	{
 		lyramilk::data::string cursor;
 		lyramilk::data::string lastcur;
-		const std::string lkey = ".sync.last_auto_compact";
+
+		std::string lkey;
+		{
+			redis_pack pk;
+			pk.type = redis_pack::s_native;
+			pk.key = ".sync.last_auto_compact";
+			lkey = redis_pack::pack(&pk);
+		}
+
 		{
 			leveldb::Status ldbs = ldb->Get(ropt,lkey,&cursor);
 
@@ -484,10 +492,12 @@ namespace lyramilk{ namespace cave
 								cursor.clear();
 								skip_day = d;
 								log(lyramilk::log::trace,__FUNCTION__) << D("自动整理完成，共整理%lld条",compact_total) << std::endl;
+								ldb->Delete(wopt,lkey);
 							}
 						}else{
 							skip_day = d;
 							cursor.clear();
+							ldb->Delete(wopt,lkey);
 						}
 
 						if (it) delete it;
@@ -495,10 +505,16 @@ namespace lyramilk{ namespace cave
 				}
 				usleep(10000);
 			}else{
+				if(compact_count != 0){
+					log(lyramilk::log::trace,__FUNCTION__) << D("自动整理中... 整理了%lld条",compact_count) << std::endl;
+					lastti = ti;
+					compact_count = 0;
+				}
+
 				if (lastcur != cursor){
 					leveldb::Status ldbs = ldb->Put(wopt,lkey,cursor);
 					if(ldbs.ok()){
-						log(lyramilk::log::trace,__FUNCTION__) << D("写入 key:%s",cursor.c_str()) << std::endl;
+						log(lyramilk::log::trace,__FUNCTION__) << D("写入自动整理进度:%s",cursor.c_str()) << std::endl;
 					}else{
 						log(lyramilk::log::error,__FUNCTION__) << D("加载key出错:%s",ldbs.ToString().c_str()) << std::endl;
 					}
