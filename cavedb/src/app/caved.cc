@@ -195,8 +195,11 @@ int main(int argc,char* argv[])
 
 	
 	if(cfobj["slaveof"].type() != lyramilk::data::var::t_array){
-		lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: slaveof 类型不对，应该是t_array" << std::endl;
-		return -1;
+		if(cfobj["slaveof"].type() != lyramilk::data::var::t_invalid){
+			lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: slaveof 类型不对，应该是t_array" << std::endl;
+			return -1;
+		}
+		cfobj["slaveof"].type(lyramilk::data::var::t_array);
 	}
 	lyramilk::data::array slaveof;
 	lyramilk::data::array& tslaveof = cfobj["slaveof"];
@@ -212,8 +215,11 @@ int main(int argc,char* argv[])
 	}
 
 	if(cfobj["server"].type() != lyramilk::data::var::t_array){
-		lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: server 类型不对，应该是t_array" << std::endl;
-		return -1;
+		if(cfobj["server"].type() != lyramilk::data::var::t_invalid){
+			lyramilk::klog(lyramilk::log::error,"cavedb") << "解析配置文件失败: server 类型不对，应该是t_array" << std::endl;
+			return -1;
+		}
+		cfobj["server"].type(lyramilk::data::var::t_array);
 	}
 	lyramilk::data::array server;
 	lyramilk::data::array& tserver = cfobj["server"];

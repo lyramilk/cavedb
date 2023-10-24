@@ -315,8 +315,6 @@ namespace lyramilk{ namespace cave
 	cmdstatus leveldb_store::on_cave_sync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
 	{
 		// cavedb_sync [key] [seq] [count]
-
-
 		lyramilk::data::string key = args[1].str();
 		lyramilk::data::uint64 seq = args[2].conv(0);
 		lyramilk::data::int64 count = args[3].conv(30000);
@@ -334,11 +332,14 @@ namespace lyramilk{ namespace cave
 
 //COUT << masterid << ",replid=" << replid << ",replidsize=" << replid.size() << ",offset=" << offset<< std::endl;
 
-
 		// 扫描全数据
 		if( (!key.empty()) || seq == 0){
 			if(seq == 0){
-				nextseq = blog->find_max();
+				if(blog == nullptr){
+					nextseq = 1;
+				}else{
+					nextseq = blog->find_max();
+				}
 			}else{
 				nextseq = seq;
 			}
@@ -383,6 +384,10 @@ namespace lyramilk{ namespace cave
 		}
 //COUT << masterid << ",replid=" << replid << ",offset=" << offset<< std::endl;
 		// 读取binlog
+		if(blog == nullptr){
+			*ret = "binlog is not configured";
+			return cmdstatus::cs_error;
+		}
 		blog->read(seq,count,&ardata,&nextseq);
 		ar[0] = nextkey;
 		ar[1] = nextseq;
