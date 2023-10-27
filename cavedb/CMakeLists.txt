@@ -8,8 +8,8 @@ set(soversion 3.0)
 set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
 set(CMAKE_USE_RELATIVE_PATHS ON)
 
-option(shared "build dynamic library" ON)
-option(static "build static library" OFF)
+option(shared "build dynamic library" OFF)
+option(static "build static library" ON)
 option(minimal "without third party" OFF)
 option(alone "build without other dynamic library" OFF)
 
