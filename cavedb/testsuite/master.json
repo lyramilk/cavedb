@@ -1,35 +1,28 @@
 {
-	"logfile":"/data/cave-7008/log/cavedb.?.log"
+	"logfile":"/data/cavedb/cavedb-dms-map-6399/log/cavedb.?.log"
 	"store":{
-		"path":"/data/cave-7008/db",
+		"path":"/data/cavedb/cavedb-dms-map-6399/db",
 		"cache":10000,
-		"requirepass":"test",
+		"requirepass":"test123",
 	},
 	"binlog":{
-		"path":"/data/cave-7008/binlog",
-		"cache":10000,
+		"path":"/data/cavedb/cavedb-dms-map-6399/binlog",
+		"cache":5000,
 	},
 	"slaveof":[
-		{
-			"type":"ssdb",
-			"host":"127.0.0.1",
-			"port":8888,
-			"masterid":"ssdb8888",
-			"masterauth":"test",
-		},
 	],
 	"server":[
 		{
 			"type":"network",
-			"port":7008,
+			"port":6399,
 			"readonly":false,
-			"masterid":"cavedb7008",
+			"masterid":"cavedb-dms-map-6399",
 		},
 		{
 			"type":"unixsocket",
-			"unix":"/data/cave-7008/cavedb-7008.sock",
+			"unix":"/data/cavedb/cavedb-dms-map-6399/cavedb.sock",
 			"readonly":false,
-			"masterid":"us7008",
+			"masterid":"us-cavedb-dms-map-6399",
 		},
 	],
 }

@@ -15,6 +15,10 @@
 
 #include <unistd.h>
 
+
+namespace leveldb{
+}
+
 /// namespace lyramilk::cave
 namespace lyramilk{ namespace cave
 {
@@ -535,8 +539,6 @@ namespace lyramilk{ namespace cave
 
 		return nullptr;
 	}
-
-
 
 	class leveldb_standard_comparator:public leveldb::Comparator
 	{

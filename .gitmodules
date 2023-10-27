@@ -1,0 +1,6 @@
+[submodule "cavedb/3rd_party/leveldb"]
+	path = cavedb/3rd_party/leveldb
+	url = https://github.com/google/leveldb
+[submodule "cavedb/3rd_party/libmilk"]
+	path = cavedb/3rd_party/libmilk
+	url = https://github.com/lyramilk/libmilk
