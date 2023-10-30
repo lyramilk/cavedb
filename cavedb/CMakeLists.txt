@@ -26,11 +26,18 @@ if(NOT DEFINED ${PROJECT_NAME}-alone)
 	set(${PROJECT_NAME}-alone ${alone})
 endif()
 
-set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_INSTALL_PREFIX $ENV{HOME}/.local)
-set(CMAKE_CXX_STANDARD 11)
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif()
+
+if(NOT prefix)
+	set(CMAKE_INSTALL_PREFIX $ENV{HOME}/.local)
+else()
+	set(CMAKE_INSTALL_PREFIX ${prefix})
+endif()
 
 message("optional:CMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE})
+message("optional:CMAKE_INSTALL_PREFIX=" ${CMAKE_INSTALL_PREFIX})
 message("optional:${PROJECT_NAME}-shared=" ${${PROJECT_NAME}-shared})
 message("optional:${PROJECT_NAME}-static=" ${${PROJECT_NAME}-static})
 message("optional:${PROJECT_NAME}-minimal=" ${${PROJECT_NAME}-minimal})
@@ -42,21 +49,23 @@ unset(headers)
 
 aux_source_directory(src codes)
 file(GLOB headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/cavedb/*.h)
-include_directories(include/cavedb)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/cavedb)
 
 # 包含公共代码*
 include(3rd_party/libmilk/libmilk/libmilk.cmake)
 
 #搜索子模块
-set(milk-shared OFF)
-set(milk-static ON)
+set(CMAKE_CXX_STANDARD 11)
 set(milk-minimal ON)
-add_subdirectory(3rd_party/libmilk/libmilk EXCLUDE_FROM_ALL)
+add_subdirectory(3rd_party/libmilk/libmilk)
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party/libmilk/libmilk/include)
 
 # leveldb中强制添加了 -fno-rtti 如果不加这个会导致编译失败找不到leveldb::Comparator
 add_compile_options(-fno-rtti)
 add_compile_options(-fPIC)
+
+
+
 
 add_subdirectory(3rd_party/leveldb EXCLUDE_FROM_ALL)
 include_directories(3rd_party/leveldb/include)
@@ -75,13 +84,13 @@ endif()
 #定义目标*
 if(${PROJECT_NAME}-shared)
 	libmilk_cmake_def_shared(${PROJECT_NAME} cavedb codes headers ${PROJECT_NAME}-alone)
-	target_link_libraries(${PROJECT_NAME} PRIVATE milk_static)
+	target_link_libraries(${PROJECT_NAME} PUBLIC milk)
 	target_link_libraries(${PROJECT_NAME} PRIVATE leveldb)
 endif()
 
 if(${PROJECT_NAME}-static)
 	libmilk_cmake_def_static(${PROJECT_NAME}_static cavedb codes headers ${PROJECT_NAME}-alone)
-	target_link_libraries(${PROJECT_NAME}_static PRIVATE milk_static)
+	target_link_libraries(${PROJECT_NAME}_static PUBLIC -Wl,--whole-archive milk_static -Wl,--no-whole-archive)
 	target_link_libraries(${PROJECT_NAME}_static PRIVATE leveldb)
 endif()
 

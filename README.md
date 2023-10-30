@@ -1,5 +1,14 @@
 # cavedb
 
+## 编译方法
+```
+git clone --recurse-submodules  https://github.com/lyramilk/cavedb.git
+mkdir build_cavedb
+cd build_cavedb
+cmake ../cavedb/cavedb
+make -j 
+```
+
 这是一个实现了ssdb和redis同步协议的同步工具，它可以从ssdb或redis同步数据。
 目前同步redis还有bug，从比较大的redis同步的时候会出现被主库中断连接的情况，所以实际使用中以ssdb为主。
 同步不支持redis的list和ssdb的queue容器。遇到操作这个容器的命令请忽略。
