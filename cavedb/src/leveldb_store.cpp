@@ -102,6 +102,8 @@ namespace lyramilk{ namespace cave
 			cmdstatus r = hget(key,it->str(),&val);
 			if(r == cmdstatus::cs_data){
 				ar.push_back(r);
+			}else{
+				ar.push_back(lyramilk::data::var::nil);
 			}
 		}
 		return cmdstatus::cs_data;
