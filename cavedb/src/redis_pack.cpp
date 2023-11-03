@@ -35,7 +35,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	inline bool redis_pack_put_str(std::string* r,cavedb::Slice2& s)
+	inline bool redis_pack_put_str(std::string* r,const cavedb::Slice2& s)
 	{
 		if(s.size() < 0x80){
 			unsigned char c = (unsigned char)s.size();
@@ -79,7 +79,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	bool redis_pack::unpack(redis_pack* s,leveldb::Slice key)
+	bool redis_pack::parse(leveldb::Slice key,redis_pack* s)
 	{
 		if(key.size() < 2) return false;
 
@@ -156,17 +156,17 @@ COUT << "解EOF包失败" << s->type << std::endl;
 		return false;
 	}
 
-	std::string redis_pack::pack(redis_pack* s)
+	std::string redis_pack::stringify(const redis_pack& s)
 	{
 		std::string r;
-		unsigned int t = s->type;
+		unsigned int t = s.type;
 		r.push_back(magic);
-		redis_pack_put_str(&r,s->key);
+		redis_pack_put_str(&r,s.key);
 
 		r.push_back(magic);
-		if(s->type == s_any) return r;
+		if(s.type == s_any) return r;
 		r.push_back(t%0xff);
-		switch(s->type){
+		switch(s.type){
 			case s_any:{
 				return r;
 			}break;
@@ -178,29 +178,29 @@ COUT << "解EOF包失败" << s->type << std::endl;
 			}break;
 			case s_hash:{
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s->hash.field)) throw string_too_large();
+				if(!redis_pack_put_str(&r,s.hash.field)) throw string_too_large();
 				return r;
 			}break;
 			case s_list:{
 				r.push_back(magic);
-				if(!redis_pack_put_int(&r,s->list.seq)) throw string_too_large();
+				if(!redis_pack_put_int(&r,s.list.seq)) throw string_too_large();
 				return r;
 			}break;
 			case s_set:{
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s->set.member)) throw string_too_large();
+				if(!redis_pack_put_str(&r,s.set.member)) throw string_too_large();
 				return r;
 			}break;
 			case s_zset:{
 				r.push_back(magic);
-				redis_pack_put_double(&r,s->zset.score);
+				redis_pack_put_double(&r,s.zset.score);
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s->zset.member)) throw string_too_large();
+				if(!redis_pack_put_str(&r,s.zset.member)) throw string_too_large();
 				return r;
 			}break;
 			case s_zset_m2s:{
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s->zset.member)) throw string_too_large();
+				if(!redis_pack_put_str(&r,s.zset.member)) throw string_too_large();
 				return r;
 			}break;
 			case s_eof:{
@@ -246,12 +246,12 @@ COUT << "解EOF包失败" << s->type << std::endl;
 	int redis_pack::Compare(const leveldb::Slice& a, const leveldb::Slice& b)
 	{
 		redis_pack pa;
-		if(!redis_pack::unpack(&pa,a)){
+		if(!redis_pack::parse(a,&pa)){
 			return a.compare(b);
 		}
 
 		redis_pack pb;
-		if(!redis_pack::unpack(&pb,b)){
+		if(!redis_pack::parse(b,&pb)){
 			return a.compare(b);
 		}
 

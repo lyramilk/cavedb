@@ -5,6 +5,7 @@
 #include <libmilk/log.h>
 #include <libmilk/testing.h>
 #include <libmilk/dict.h>
+#include <libmilk/exception.h>
 
 #include <leveldb/db.h>
 #include <leveldb/filter_policy.h>
@@ -21,7 +22,6 @@ namespace lyramilk{ namespace cave
 {
 
 	leveldb::ReadOptions ropt;
-	leveldb::WriteOptions wopt;
 	lyramilk::log::logss static log(lyramilk::klog,"lyramilk.cave.leveldb_store");
 
 	speed_counter::speed_counter()
@@ -60,6 +60,39 @@ namespace lyramilk{ namespace cave
 	}
 
 
+	leveldb::Status inline ldb_put(leveldb::DB* db,binlog* blog,const redis_pack& rpack,const lyramilk::data::string& value)
+	{
+		if(rpack.type == redis_pack::s_hash){
+			blog->hset(rpack.key.ToString(),rpack.hash.field.ToString(),value);
+		}else if(rpack.type == redis_pack::s_set){
+			blog->sadd(rpack.key.ToString(),rpack.set.member.ToString());
+		}else{
+			throw lyramilk::exception(D("redis_pack未处理的类型%d",rpack.type));
+		}
+
+
+		static leveldb::WriteOptions wopt;
+
+		std::string lkey = redis_pack::stringify(rpack);
+		std::string lvalue = lyramilk::data::str(value);
+
+		return db->Put(wopt,lkey,lvalue);
+	}
+
+	leveldb::Status inline ldb_del(leveldb::DB* db,binlog* blog,const redis_pack& rpack)
+	{
+		if(rpack.type == redis_pack::s_hash){
+			blog->hdel(rpack.key.ToString(),rpack.hash.field.ToString());
+		}else if(rpack.type == redis_pack::s_set){
+			blog->srem(rpack.key.ToString(),rpack.set.member.ToString());
+		}else{
+			throw lyramilk::exception(D("redis_pack未处理的类型%d",rpack.type));
+		}
+
+		static leveldb::WriteOptions wopt;
+		std::string lkey = redis_pack::stringify(rpack);
+		return db->Delete(wopt,lkey);
+	}
 
 
 
@@ -126,7 +159,7 @@ namespace lyramilk{ namespace cave
 		pk.key = key;
 		pk.hash.field.assign(field.data(),field.size());
 
-		std::string lkey = redis_pack::pack(&pk);
+		std::string lkey = redis_pack::stringify(pk);
 
 		std::string result;
 		leveldb::Status ldbs = ldb->Get(ropt,lkey,&result);
@@ -155,8 +188,6 @@ namespace lyramilk{ namespace cave
 		lyramilk::debug::nsecdiff nd;
 		nd.mark();
 
-		leveldb::WriteBatch batch;
-
 		redis_pack pk;
 		pk.type = redis_pack::s_hash;
 		lyramilk::data::string key = args[1].str();
@@ -167,17 +198,18 @@ namespace lyramilk{ namespace cave
 			--c;
 		}
 
+
+		leveldb::Status ldbs;
+
 		for(lyramilk::data::uint64 i=2;i<c;i+=2){
 			++r;
 			lyramilk::data::string field = args[i].str();
 			pk.key = key;
 			pk.hash.field.assign(field.data(),field.size());
 
-			std::string lkey = redis_pack::pack(&pk);
-			batch.Put(lkey,lyramilk::data::str(args[i + 1].str()));
+			ldbs = ldb_put(ldb,blog,pk,args[i + 1].str());
+			if(!ldbs.ok()) break;
 		}
-
-		leveldb::Status ldbs = ldb->Write(wopt,&batch);
 
 		long long nsec = nd.diff();
 		if(nsec > 200000000){
@@ -210,8 +242,6 @@ namespace lyramilk{ namespace cave
 		lyramilk::debug::nsecdiff nd;
 		nd.mark();
 
-		leveldb::WriteBatch batch;
-
 		redis_pack pk;
 		pk.type = redis_pack::s_hash;
 		lyramilk::data::string key = args[1].str();
@@ -219,17 +249,17 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::uint64 c = args.size();
 		lyramilk::data::uint64 r = 0;
 
+		leveldb::Status ldbs;
+
 		for(lyramilk::data::uint64 i=2;i<c;++i){
 			++r;
 			lyramilk::data::string field = args[i].str();
 			pk.key = key;
 			pk.hash.field.assign(field.data(),field.size());
 
-			std::string lkey = redis_pack::pack(&pk);
-			batch.Delete(lkey);
+			ldbs = ldb_del(ldb,blog,pk);
+			if(!ldbs.ok()) break;
 		}
-
-		leveldb::Status ldbs = ldb->Write(wopt,&batch);
 
 		long long nsec = nd.diff();
 		if(nsec > 200000000){
@@ -266,10 +296,10 @@ namespace lyramilk{ namespace cave
 		pk.type = redis_pack::s_set;
 		pk.key = key;
 
-		leveldb::WriteBatch batch;
-
 		lyramilk::data::uint64 c = args.size();
 		lyramilk::data::uint64 r = 0;
+
+		leveldb::Status ldbs;
 
 		for(lyramilk::data::uint64 i=2;i<c;++i){
 			++r;
@@ -277,11 +307,10 @@ namespace lyramilk{ namespace cave
 			pk.key = key;
 			pk.set.member.assign(value.data(),value.size());
 
-			std::string lkey = redis_pack::pack(&pk);
-			batch.Put(lkey,"");
-		}
+			ldbs = ldb_put(ldb,blog,pk,"");
+			if(!ldbs.ok()) break;
 
-		leveldb::Status ldbs = ldb->Write(wopt,&batch);
+		}
 
 		long long nsec = nd.diff();
 		if(nsec > 200000000){
@@ -321,10 +350,10 @@ namespace lyramilk{ namespace cave
 		pk.type = redis_pack::s_set;
 		pk.key = key;
 
-		leveldb::WriteBatch batch;
-
 		lyramilk::data::uint64 c = args.size();
 		lyramilk::data::uint64 r = 0;
+
+		leveldb::Status ldbs;
 
 		for(lyramilk::data::uint64 i=2;i<c;++i){
 			++r;
@@ -332,11 +361,9 @@ namespace lyramilk{ namespace cave
 			pk.key = key;
 			pk.set.member.assign(value.data(),value.size());
 
-			std::string lkey = redis_pack::pack(&pk);
-			batch.Delete(lkey);
+			ldbs = ldb_del(ldb,blog,pk);
+			if(!ldbs.ok()) break;
 		}
-
-		leveldb::Status ldbs = ldb->Write(wopt,&batch);
 
 		long long nsec = nd.diff();
 		if(nsec > 200000000){
@@ -391,7 +418,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string key = args[1].str();
 
 		long ditems = 0;
-		leveldb::WriteBatch batch;
+		leveldb::Status ldbs;
 
 		std::string start;
 		std::string end;
@@ -414,7 +441,16 @@ namespace lyramilk{ namespace cave
 							end = it->key().ToString();
 							break;
 						}
-						batch.Delete(it->key());
+
+						redis_pack spack;
+						if(!redis_pack::parse(it->key(),&spack)){
+							log(lyramilk::log::error,__FUNCTION__) << D("%s错误：遇到无法解析的内容\n",__FUNCTION__) << std::endl;
+							return cmdstatus::cs_error;
+						}
+
+						ldbs = ldb_del(ldb,blog,spack);
+						if(!ldbs.ok()) break;
+
 						++ditems;
 					}
 				}
@@ -423,7 +459,6 @@ namespace lyramilk{ namespace cave
 			}
 		}
 
-		leveldb::Status ldbs = ldb->Write(wopt,&batch);
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
 			return cmdstatus::cs_error;
@@ -478,7 +513,7 @@ namespace lyramilk{ namespace cave
 				for(lyramilk::data::int64 i =0;it->Valid() && i < count;it->Next(),++i){
 
 					redis_pack spack;
-					if(redis_pack::unpack(&spack,it->key())){
+					if(redis_pack::parse(it->key(),&spack)){
 						if(spack.type == redis_pack::s_hash){
 							lyramilk::data::var v;
 							ardata.push_back(v);
@@ -546,13 +581,14 @@ namespace lyramilk{ namespace cave
 	{
 		lyramilk::data::string cursor;
 		lyramilk::data::string lastcur;
+		leveldb::WriteOptions wopt;
 
 		std::string lkey;
 		{
 			redis_pack pk;
 			pk.type = redis_pack::s_native;
 			pk.key = ".sync.last_auto_compact";
-			lkey = redis_pack::pack(&pk);
+			lkey = redis_pack::stringify(pk);
 		}
 
 		{
@@ -766,11 +802,12 @@ namespace lyramilk{ namespace cave
 		redis_pack pk;
 		pk.type = redis_pack::s_native;
 		pk.key = repkey;
-		std::string lkey = redis_pack::pack(&pk);
+		std::string lkey = redis_pack::stringify(pk);
 
 		lyramilk::data::string stlsync_info((const char*)&offset,sizeof(lyramilk::data::uint64));
 		stlsync_info.append(replid);
 
+		static leveldb::WriteOptions wopt;
 		leveldb::Status ldbs = ldb->Put(wopt,lkey,stlsync_info);
 		if(!ldbs.ok()){
 			log(lyramilk::log::error,__FUNCTION__) << D("保存同步位置失败 %s",ldbs.ToString().c_str()) << std::endl;
@@ -789,7 +826,7 @@ namespace lyramilk{ namespace cave
 		redis_pack pk;
 		pk.type = redis_pack::s_native;
 		pk.key = repkey;
-		std::string lkey = redis_pack::pack(&pk);
+		std::string lkey = redis_pack::stringify(pk);
 
 		std::string stlsync_info;
 		leveldb::Status ldbs = ldb->Get(ropt,lkey,&stlsync_info);
@@ -825,13 +862,14 @@ namespace lyramilk{ namespace cave
 	}
 
 
+		/*
 	void leveldb_store::after_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,const command_sepc& cmdspec,cmdstatus retcs)
 	{
 		if(!(cmdspec.flag&command_sepc::readonly)){
 			if(blog) blog->append(args);
 		}
 	}
-
+*/
 
 
 
@@ -856,7 +894,7 @@ namespace lyramilk{ namespace cave
 				for(;it->Valid();it->Next()){
 					if(!it->key().starts_with(keep_prefix)) break;
 					redis_pack spack;
-					if(redis_pack::unpack(&spack,it->key())){
+					if(redis_pack::parse(it->key(),&spack)){
 						if(spack.type != redis_pack::s_hash) continue;
 						result[spack.hash.field.ToString()] = lyramilk::data::str(it->value().ToString());
 					}
@@ -885,7 +923,7 @@ namespace lyramilk{ namespace cave
 		pk.key = key;
 		pk.hash.field.assign(field.data(),field.size());
 
-		std::string lkey = redis_pack::pack(&pk);
+		std::string lkey = redis_pack::stringify(pk);
 
 		std::string result;
 		leveldb::Status ldbs = ldb->Get(ropt,lkey,&result);
@@ -930,7 +968,7 @@ namespace lyramilk{ namespace cave
 				for(;it->Valid();it->Next()){
 					if(!it->key().starts_with(keep_prefix)) break;
 					redis_pack spack;
-					if(redis_pack::unpack(&spack,it->key())){
+					if(redis_pack::parse(it->key(),&spack)){
 						if(spack.type != redis_pack::s_set) continue;
 						result.push_back(spack.set.member.ToString());
 					}

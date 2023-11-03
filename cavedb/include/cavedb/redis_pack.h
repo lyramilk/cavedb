@@ -53,8 +53,9 @@ namespace lyramilk{ namespace cave
 		~redis_pack()
 		{}
 
-		static bool unpack(redis_pack* s,leveldb::Slice key);
-		static std::string pack(redis_pack* s);
+		static bool parse(leveldb::Slice key,redis_pack* s);
+		static std::string stringify(const redis_pack& s);
+
 		static std::string make_key_prefix(leveldb::Slice key);
 		static std::string make_key_eof(leveldb::Slice key);
 		static std::string make_hashmap_prefix(leveldb::Slice key,leveldb::Slice field);
