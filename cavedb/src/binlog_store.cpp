@@ -142,7 +142,7 @@ namespace lyramilk{ namespace cave
 
 			minseq = find_min();
 			maxseq = find_max();
-			seq = maxseq + 1;
+			seq = maxseq;
 			log(lyramilk::log::debug,__FUNCTION__) << "cavedb.seq=" << minseq << "~" << maxseq << std::endl;
 
 			this->capacity = capacity;
@@ -225,6 +225,10 @@ namespace lyramilk{ namespace cave
 	bool binlog_leveldb::append(const lyramilk::data::array& args)
 	{
 		if(!ldb) return false;
+
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);
+
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -237,8 +241,6 @@ namespace lyramilk{ namespace cave
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
 		if(ldbs.ok()){
-			maxseq = seq;
-			__sync_fetch_and_add(&seq,1);
 			return true;
 		}
 		return false;
@@ -249,6 +251,9 @@ namespace lyramilk{ namespace cave
 	bool binlog_leveldb::hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::string& value)
 	{
 		if(!ldb) return false;
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);
+
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -268,8 +273,6 @@ namespace lyramilk{ namespace cave
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
 		if(ldbs.ok()){
-			maxseq = seq;
-			__sync_fetch_and_add(&seq,1);
 			return true;
 		}
 		return false;
@@ -278,6 +281,9 @@ namespace lyramilk{ namespace cave
 	bool binlog_leveldb::hdel(const lyramilk::data::string& key,const lyramilk::data::string& field)
 	{
 		if(!ldb) return false;
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);
+
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -288,7 +294,7 @@ namespace lyramilk{ namespace cave
 		v.type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = v;
 		ar.reserve(3);
-		ar.emplace_back("hset");
+		ar.emplace_back("hdel");
 		ar.emplace_back(key);
 		ar.emplace_back(field);
 		v.serialize(ss);
@@ -296,8 +302,6 @@ namespace lyramilk{ namespace cave
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
 		if(ldbs.ok()){
-			maxseq = seq;
-			__sync_fetch_and_add(&seq,1);
 			return true;
 		}
 		return false;
@@ -306,6 +310,9 @@ namespace lyramilk{ namespace cave
 	bool binlog_leveldb::sadd(const lyramilk::data::string& key,const lyramilk::data::string& member)
 	{
 		if(!ldb) return false;
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);
+
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -324,8 +331,6 @@ namespace lyramilk{ namespace cave
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
 		if(ldbs.ok()){
-			maxseq = seq;
-			__sync_fetch_and_add(&seq,1);
 			return true;
 		}
 		return false;
@@ -334,6 +339,9 @@ namespace lyramilk{ namespace cave
 	bool binlog_leveldb::srem(const lyramilk::data::string& key,const lyramilk::data::string& member)
 	{
 		if(!ldb) return false;
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);
+
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -352,8 +360,6 @@ namespace lyramilk{ namespace cave
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
 		if(ldbs.ok()){
-			maxseq = seq;
-			__sync_fetch_and_add(&seq,1);
 			return true;
 		}
 		return false;
@@ -363,6 +369,9 @@ namespace lyramilk{ namespace cave
 	bool binlog_leveldb::zadd(const lyramilk::data::string& key,double score,const lyramilk::data::string& value)
 	{
 		if(!ldb) return false;
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);
+
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -382,8 +391,6 @@ namespace lyramilk{ namespace cave
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
 		if(ldbs.ok()){
-			maxseq = seq;
-			__sync_fetch_and_add(&seq,1);
 			return true;
 		}
 		return false;
@@ -392,6 +399,9 @@ namespace lyramilk{ namespace cave
 	bool binlog_leveldb::zrem(const lyramilk::data::string& key,const lyramilk::data::string& value)
 	{
 		if(!ldb) return false;
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);
+
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -410,8 +420,6 @@ namespace lyramilk{ namespace cave
 
 		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
 		if(ldbs.ok()){
-			maxseq = seq;
-			__sync_fetch_and_add(&seq,1);
 			return true;
 		}
 		return false;

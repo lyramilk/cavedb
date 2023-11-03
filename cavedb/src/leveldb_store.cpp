@@ -62,12 +62,14 @@ namespace lyramilk{ namespace cave
 
 	leveldb::Status inline ldb_put(leveldb::DB* db,binlog* blog,const redis_pack& rpack,const lyramilk::data::string& value)
 	{
-		if(rpack.type == redis_pack::s_hash){
-			blog->hset(rpack.key.ToString(),rpack.hash.field.ToString(),value);
-		}else if(rpack.type == redis_pack::s_set){
-			blog->sadd(rpack.key.ToString(),rpack.set.member.ToString());
-		}else{
-			throw lyramilk::exception(D("redis_pack未处理的类型%d",rpack.type));
+		if(blog){
+			if(rpack.type == redis_pack::s_hash){
+				blog->hset(rpack.key.ToString(),rpack.hash.field.ToString(),value);
+			}else if(rpack.type == redis_pack::s_set){
+				blog->sadd(rpack.key.ToString(),rpack.set.member.ToString());
+			}else{
+				throw lyramilk::exception(D("redis_pack未处理的类型%d",rpack.type));
+			}
 		}
 
 
@@ -81,12 +83,14 @@ namespace lyramilk{ namespace cave
 
 	leveldb::Status inline ldb_del(leveldb::DB* db,binlog* blog,const redis_pack& rpack)
 	{
-		if(rpack.type == redis_pack::s_hash){
-			blog->hdel(rpack.key.ToString(),rpack.hash.field.ToString());
-		}else if(rpack.type == redis_pack::s_set){
-			blog->srem(rpack.key.ToString(),rpack.set.member.ToString());
-		}else{
-			throw lyramilk::exception(D("redis_pack未处理的类型%d",rpack.type));
+		if(blog){
+			if(rpack.type == redis_pack::s_hash){
+				blog->hdel(rpack.key.ToString(),rpack.hash.field.ToString());
+			}else if(rpack.type == redis_pack::s_set){
+				blog->srem(rpack.key.ToString(),rpack.set.member.ToString());
+			}else{
+				throw lyramilk::exception(D("redis_pack未处理的类型%d",rpack.type));
+			}
 		}
 
 		static leveldb::WriteOptions wopt;
@@ -496,7 +500,7 @@ namespace lyramilk{ namespace cave
 				if(blog == nullptr){
 					nextseq = 1;
 				}else{
-					nextseq = blog->find_max();
+					nextseq = blog->find_max() + 1;
 				}
 			}else{
 				nextseq = seq;
@@ -524,6 +528,15 @@ namespace lyramilk{ namespace cave
 							ar.push_back(lyramilk::data::str(spack.key.ToString()));
 							ar.push_back(lyramilk::data::str(spack.hash.field.ToString()));
 							ar.push_back(lyramilk::data::str(it->value().ToString()));
+						}else if(spack.type == redis_pack::s_set){
+							lyramilk::data::var v;
+							ardata.push_back(v);
+							ardata.back().type(lyramilk::data::var::t_array);
+
+							lyramilk::data::array& ar = ardata.back();
+							ar.push_back("sadd");
+							ar.push_back(lyramilk::data::str(spack.key.ToString()));
+							ar.push_back(lyramilk::data::str(spack.set.member.ToString()));
 						}
 					}
 				}

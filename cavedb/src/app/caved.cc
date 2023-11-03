@@ -329,6 +329,10 @@ int main(int argc,char* argv[])
 				p->chd.requirepass = m["requirepass"].str();
 				p->chd.isreadonly = m["readonly"].conv(false);
 
+				if(slaveof.size() > 0){
+					p->chd.isreadonly = true;
+				}
+
 				if(server_host == "0.0.0.0" || server_host.empty()){
 					if(!p->open(server_port)){
 						lyramilk::klog(lyramilk::log::error,"cavedb") << "socket打开失败：" << m["host"].str() << ":" << m["port"] << std::endl;
@@ -347,6 +351,10 @@ int main(int argc,char* argv[])
 				p->masterid = m["masterid"].str();
 				p->chd.requirepass = m["requirepass"].str();
 				p->chd.isreadonly = m["readonly"].conv(false);
+
+				if(slaveof.size() > 0){
+					p->chd.isreadonly = true;
+				}
 
 				if(!p->open_unixsocket(m["unix"].str())){
 					lyramilk::klog(lyramilk::log::error,"cavedb") << "unixsocket打开失败：" << m["unix"].str() << std::endl;
