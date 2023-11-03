@@ -96,6 +96,7 @@ endif()
 
 #定义主程序
 add_executable(caved src/app/caved.cc)
+install(TARGETS caved DESTINATION bin)
 
 if(${PROJECT_NAME}-static)
 	target_link_libraries(caved ${PROJECT_NAME}_static)
