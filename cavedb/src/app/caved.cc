@@ -326,8 +326,11 @@ int main(int argc,char* argv[])
 				lyramilk::data::string server_host = m["host"].str();
 				lyramilk::data::int32 server_port = m["port"].conv(-1);
 				p->masterid = m["masterid"].str();
-				p->chd.requirepass = m["requirepass"].str();
 				p->chd.isreadonly = m["readonly"].conv(false);
+				lyramilk::data::string requirepass = m["requirepass"].str();
+				if(!requirepass.empty()){
+					p->chd.set_requirepass(requirepass);
+				}
 
 				if(slaveof.size() > 0){
 					p->chd.isreadonly = true;
@@ -348,9 +351,13 @@ int main(int argc,char* argv[])
 			}else if(type == "unixsocket"){
 				CaveDBServer* p = new CaveDBServer;
 				p->cmdr = &cmdr;
+
 				p->masterid = m["masterid"].str();
-				p->chd.requirepass = m["requirepass"].str();
 				p->chd.isreadonly = m["readonly"].conv(false);
+				lyramilk::data::string requirepass = m["requirepass"].str();
+				if(!requirepass.empty()){
+					p->chd.set_requirepass(requirepass);
+				}
 
 				if(slaveof.size() > 0){
 					p->chd.isreadonly = true;
