@@ -4,71 +4,41 @@ cmake_policy(SET CMP0048 NEW)
 project(cavedb VERSION 3.0.0)
 set(soversion 3.0)
 
+# 包含公共代码*
+if(NOT SUBMODULE)
+	set(SUBMODULE ${PROJECT_SOURCE_DIR}/3rd_party)
+endif()
+include(${SUBMODULE}/libmilk/libmilk/libmilk.cmake)
+
 # 设置环境变量*
-set(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS ON)
-set(CMAKE_USE_RELATIVE_PATHS ON)
+libmilk_cmake_init_env()
 
-option(shared "build dynamic library" ON)
-option(static "build static library" OFF)
-option(minimal "without third party" ON)
-option(alone "build without other dynamic library" OFF)
-
-if(NOT DEFINED ${PROJECT_NAME}-shared)
-	set(${PROJECT_NAME}-shared ${shared})
-endif()
-if(NOT DEFINED ${PROJECT_NAME}-static)
-	set(${PROJECT_NAME}-static ${static})
-endif()
-if(NOT DEFINED ${PROJECT_NAME}-minimal)
-	set(${PROJECT_NAME}-minimal ${minimal})
-endif()
-if(NOT DEFINED ${PROJECT_NAME}-alone)
-	set(${PROJECT_NAME}-alone ${alone})
-endif()
-
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release)
-endif()
-
-if(NOT prefix)
-	set(CMAKE_INSTALL_PREFIX $ENV{HOME}/.local)
-else()
-	set(CMAKE_INSTALL_PREFIX ${prefix})
-endif()
-
-message("optional:CMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE})
-message("optional:CMAKE_INSTALL_PREFIX=" ${CMAKE_INSTALL_PREFIX})
-message("optional:${PROJECT_NAME}-shared=" ${${PROJECT_NAME}-shared})
-message("optional:${PROJECT_NAME}-static=" ${${PROJECT_NAME}-static})
-message("optional:${PROJECT_NAME}-minimal=" ${${PROJECT_NAME}-minimal})
-message("optional:${PROJECT_NAME}-alone=" ${${PROJECT_NAME}-alone})
-
-# 搜索代码*
+# 搜索代码
 unset(codes)
 unset(headers)
 
 aux_source_directory(src codes)
 file(GLOB headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} include/cavedb/*.h)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include/cavedb)
-
-# 包含公共代码*
-include(3rd_party/libmilk/libmilk/libmilk.cmake)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR} include/cavedb)
 
 #搜索子模块
 set(CMAKE_CXX_STANDARD 11)
-set(milk-minimal ON)
-add_subdirectory(3rd_party/libmilk/libmilk)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/3rd_party/libmilk/libmilk/include)
+
+if(NOT TARGET milk)
+	if(shared)
+		add_subdirectory(${SUBMODULE}/libmilk/libmilk ${SUBMODULE_BIN}/libmilk)
+	else()
+		add_subdirectory(${SUBMODULE}/libmilk/libmilk ${SUBMODULE_BIN}/libmilk EXCLUDE_FROM_ALL)
+	endif()
+endif()
 
 # leveldb中强制添加了 -fno-rtti 如果不加这个会导致编译失败找不到leveldb::Comparator
 add_compile_options(-fno-rtti)
-add_compile_options(-fPIC)
 
-
-
-
-add_subdirectory(3rd_party/leveldb EXCLUDE_FROM_ALL)
-include_directories(3rd_party/leveldb/include)
+if(NOT TARGET leveldb)
+	add_subdirectory(${SUBMODULE}/leveldb ${SUBMODULE_BIN}/leveldb EXCLUDE_FROM_ALL)
+	include_directories(${SUBMODULE}/leveldb/include)
+endif()
 
 
 #搜索依赖
@@ -82,24 +52,16 @@ endif()
 
 
 #定义目标*
+libmilk_cmake_def(${PROJECT_NAME} ${PROJECT_NAME}-shared cavedb codes headers ${PROJECT_NAME}-alone)
 if(${PROJECT_NAME}-shared)
-	libmilk_cmake_def_shared(${PROJECT_NAME} cavedb codes headers ${PROJECT_NAME}-alone)
-	target_link_libraries(${PROJECT_NAME} PUBLIC milk)
+	#target_link_libraries(${PROJECT_NAME} PUBLIC milk)
 	target_link_libraries(${PROJECT_NAME} PRIVATE leveldb)
-endif()
-
-if(${PROJECT_NAME}-static)
-	libmilk_cmake_def_static(${PROJECT_NAME}_static cavedb codes headers ${PROJECT_NAME}-alone)
-	target_link_libraries(${PROJECT_NAME}_static PUBLIC -Wl,--whole-archive milk_static -Wl,--no-whole-archive)
-	target_link_libraries(${PROJECT_NAME}_static PRIVATE leveldb)
+else()
+	#target_link_libraries(${PROJECT_NAME} PUBLIC -Wl,--whole-archive milk_static -Wl,--no-whole-archive)
+	target_link_libraries(${PROJECT_NAME} PRIVATE leveldb)
 endif()
 
 #定义主程序
 add_executable(caved src/app/caved.cc)
 install(TARGETS caved DESTINATION bin)
-
-if(${PROJECT_NAME}-static)
-	target_link_libraries(caved ${PROJECT_NAME}_static)
-elseif(${PROJECT_NAME}-shared)
-	target_link_libraries(caved ${PROJECT_NAME})
-endif()
+target_link_libraries(caved ${PROJECT_NAME} milk ${LIBS_DEPENDS})

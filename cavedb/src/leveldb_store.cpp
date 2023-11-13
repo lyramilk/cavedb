@@ -1,6 +1,6 @@
-#include "leveldb_store.h"
-#include "redis_pack.h"
-#include "util.h"
+#include "cavedb/leveldb_store.h"
+#include "cavedb/redis_pack.h"
+#include "cavedb/util.h"
 
 #include <libmilk/log.h>
 #include <libmilk/testing.h>
