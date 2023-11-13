@@ -670,6 +670,11 @@ namespace lyramilk{ namespace cave
 									compact_count = 0;
 								}
 							}else{
+								if(compact_count != 0){
+									log(lyramilk::log::trace,__FUNCTION__) << D("自动整理中... 整理了%lld条",compact_count) << std::endl;
+									lastti = ti;
+									compact_count = 0;
+								}
 								leveldb::Slice range_start = cursor;
 								ldb->CompactRange(&range_start,nullptr);
 								cursor.clear();
