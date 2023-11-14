@@ -25,7 +25,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	class leveldb_store:protected cmd_accepter
+	class leveldb_store:public cmd_accepter
 	{
 		leveldb::DB* ldb;
 		cmdstatus on_hgetall(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
