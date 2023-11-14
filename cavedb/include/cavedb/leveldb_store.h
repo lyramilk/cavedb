@@ -3,6 +3,7 @@
 
 #include <libmilk/var.h>
 #include "cmd_accepter.h"
+#include "cavedb_key.h"
 
 namespace leveldb{class DB;};
 
@@ -24,7 +25,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	class leveldb_store:public cmd_accepter
+	class leveldb_store:protected cmd_accepter
 	{
 		leveldb::DB* ldb;
 		cmdstatus on_hgetall(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
@@ -33,13 +34,18 @@ namespace lyramilk{ namespace cave
 		cmdstatus on_hexist(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 		cmdstatus on_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 		cmdstatus on_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_hscan(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 
 		cmdstatus on_sadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 		cmdstatus on_srem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 		cmdstatus on_smembers(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_sscan(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 
 		cmdstatus on_del(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 		cmdstatus on_cave_sync(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		
+		cmdstatus on_scan(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_type(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 
 /*
 		cmdstatus on_sadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
@@ -68,8 +74,14 @@ namespace lyramilk{ namespace cave
 
 		cmdstatus hgetall(const lyramilk::data::string& key,lyramilk::data::stringdict* ret) const;
 		cmdstatus hget(const lyramilk::data::string& key,const lyramilk::data::string& field,lyramilk::data::string* ret) const;
+		cmdstatus hscan(const lyramilk::data::string& key,const lyramilk::data::string& cursor,lyramilk::data::uint64 count,lyramilk::data::string* nextcursor,lyramilk::data::strings* result) const;
 
 		cmdstatus smembers(const lyramilk::data::string& key,lyramilk::data::strings* ret) const;
+		cmdstatus sscan(const lyramilk::data::string& key,const lyramilk::data::string& cursor,lyramilk::data::uint64 count,lyramilk::data::string* nextcursor,lyramilk::data::strings* result) const;
+
+		
+		cmdstatus scan(const lyramilk::data::string& cursor,lyramilk::data::uint64 count,lyramilk::data::string* nextcursor,lyramilk::data::strings* result) const;
+		cmdstatus type(const lyramilk::data::string& key,cavedb_key_type* result) const;
 
 	};
 

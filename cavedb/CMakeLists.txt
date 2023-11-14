@@ -23,6 +23,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR} include/cavedb)
 
 #搜索子模块
 set(CMAKE_CXX_STANDARD 11)
+set(milk-minimal ON)
 
 if(NOT TARGET milk)
 	if(shared)
@@ -54,14 +55,15 @@ endif()
 #定义目标*
 libmilk_cmake_def(${PROJECT_NAME} ${PROJECT_NAME}-shared cavedb codes headers ${PROJECT_NAME}-alone)
 if(${PROJECT_NAME}-shared)
-	#target_link_libraries(${PROJECT_NAME} PUBLIC milk)
+	target_link_libraries(${PROJECT_NAME} PUBLIC milk)
 	target_link_libraries(${PROJECT_NAME} PRIVATE leveldb)
 else()
-	#target_link_libraries(${PROJECT_NAME} PUBLIC -Wl,--whole-archive milk_static -Wl,--no-whole-archive)
+	target_link_libraries(${PROJECT_NAME} PUBLIC milk)
 	target_link_libraries(${PROJECT_NAME} PRIVATE leveldb)
 endif()
 
 #定义主程序
 add_executable(caved src/app/caved.cc)
 install(TARGETS caved DESTINATION bin)
-target_link_libraries(caved ${PROJECT_NAME} milk ${LIBS_DEPENDS})
+#target_link_libraries(caved PUBLIC -Wl,--whole-archive milk ${PROJECT_NAME} -Wl,--no-whole-archive ${LIBS_DEPENDS})
+target_link_libraries(caved PUBLIC milk ${PROJECT_NAME} ${LIBS_DEPENDS})

@@ -1,16 +1,16 @@
-#include "redis_pack.h"
+#include "cavedb_key.h"
 
 
 
 namespace lyramilk{ namespace cave
 {
-	inline bool redis_pack_put_double(std::string* r,double i)
+	inline bool cavedb_key_put_double(std::string* r,double i)
 	{
 		r->append((char*)&i,sizeof(double));
 		return true;
 	}
 
-	inline double redis_pack_get_double(const char* p,const char**n)
+	inline double cavedb_key_get_double(const char* p,const char**n)
 	{
 		double i = *(double*)p;
 		if(n)*n = p + sizeof(double);
@@ -19,13 +19,13 @@ namespace lyramilk{ namespace cave
 
 
 
-	inline bool redis_pack_put_int(std::string* r,lyramilk::data::uint64 i)
+	inline bool cavedb_key_put_int(std::string* r,lyramilk::data::uint64 i)
 	{
 		r->append((char*)&i,sizeof(lyramilk::data::uint64));
 		return true;
 	}
 
-	inline lyramilk::data::uint64 redis_pack_get_int(const char* p,const char**n)
+	inline lyramilk::data::uint64 cavedb_key_get_int(const char* p,const char**n)
 	{
 		lyramilk::data::uint64 i = *(lyramilk::data::uint64*)p;
 		if(n)*n = p + sizeof(lyramilk::data::uint64);
@@ -35,7 +35,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	inline bool redis_pack_put_str(std::string* r,const cavedb::Slice2& s)
+	inline bool cavedb_key_put_str(std::string* r,const cavedb::Slice2& s)
 	{
 		if(s.size() < 0x80){
 			unsigned char c = (unsigned char)s.size();
@@ -52,7 +52,7 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	inline cavedb::Slice2 redis_pack_get_str(const char* p,const char**n)
+	inline cavedb::Slice2 cavedb_key_get_str(const char* p,const char**n)
 	{
 		char c = *p;
 		if((c&0x80) == 0){
@@ -79,7 +79,7 @@ namespace lyramilk{ namespace cave
 
 
 
-	bool redis_pack::parse(leveldb::Slice key,redis_pack* s)
+	bool cavedb_key::parse(leveldb::Slice key,cavedb_key* s)
 	{
 		if(key.size() < 2) return false;
 
@@ -88,7 +88,7 @@ namespace lyramilk{ namespace cave
 		const char* e = p + key.size();
 		if(p[0] != magic) return false;
 
-		s->key = redis_pack_get_str(p+1,&n);
+		s->key = cavedb_key_get_str(p+1,&n);
 		p = n;
 
 		if(p[0] != magic) return false;
@@ -102,7 +102,7 @@ namespace lyramilk{ namespace cave
 		int type = (int)(unsigned char)p[0];
 		++p;
 
-		s->type = (stype)type;
+		s->type = (cavedb_key_type)type;
 		switch(s->type){
 			case s_any:{
 				return true;
@@ -116,36 +116,36 @@ namespace lyramilk{ namespace cave
 			case s_hash:{
 				if(p[0] != magic) return false;
 				++p;
-				s->hash.field = redis_pack_get_str(p,&n);
+				s->hash.field = cavedb_key_get_str(p,&n);
 				return true;
 			}break;
 			case s_list:{
 				if(p[0] != magic) return false;
 				++p;
-				s->list.seq = redis_pack_get_int(p,&n);
+				s->list.seq = cavedb_key_get_int(p,&n);
 				return true;
 			}break;
 			case s_set:{
 				if(p[0] != magic) return false;
 				++p;
-				s->set.member = redis_pack_get_str(p,&n);
+				s->set.member = cavedb_key_get_str(p,&n);
 				return true;
 			}break;
 			case s_zset:{
 				if(p[0] != magic) return false;
 				++p;
 				n = p;
-				s->zset.score = redis_pack_get_double(p,&n);
+				s->zset.score = cavedb_key_get_double(p,&n);
 				p = n;
 				if(p[0] != magic) return false;
 				++p;
-				s->zset.member = redis_pack_get_str(p,&n);
+				s->zset.member = cavedb_key_get_str(p,&n);
 				return true;
 			}break;
 			case s_zset_m2s:{
 				if(p[0] != magic) return false;
 				++p;
-				s->zset.member = redis_pack_get_str(p,&n);
+				s->zset.member = cavedb_key_get_str(p,&n);
 				return true;
 			}break;
 			case s_eof:{
@@ -156,12 +156,12 @@ COUT << "解EOF包失败" << s->type << std::endl;
 		return false;
 	}
 
-	std::string redis_pack::stringify(const redis_pack& s)
+	std::string cavedb_key::stringify(const cavedb_key& s)
 	{
 		std::string r;
 		unsigned int t = s.type;
 		r.push_back(magic);
-		redis_pack_put_str(&r,s.key);
+		cavedb_key_put_str(&r,s.key);
 
 		r.push_back(magic);
 		if(s.type == s_any) return r;
@@ -178,29 +178,29 @@ COUT << "解EOF包失败" << s->type << std::endl;
 			}break;
 			case s_hash:{
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s.hash.field)) throw string_too_large();
+				if(!cavedb_key_put_str(&r,s.hash.field)) throw string_too_large();
 				return r;
 			}break;
 			case s_list:{
 				r.push_back(magic);
-				if(!redis_pack_put_int(&r,s.list.seq)) throw string_too_large();
+				if(!cavedb_key_put_int(&r,s.list.seq)) throw string_too_large();
 				return r;
 			}break;
 			case s_set:{
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s.set.member)) throw string_too_large();
+				if(!cavedb_key_put_str(&r,s.set.member)) throw string_too_large();
 				return r;
 			}break;
 			case s_zset:{
 				r.push_back(magic);
-				redis_pack_put_double(&r,s.zset.score);
+				cavedb_key_put_double(&r,s.zset.score);
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s.zset.member)) throw string_too_large();
+				if(!cavedb_key_put_str(&r,s.zset.member)) throw string_too_large();
 				return r;
 			}break;
 			case s_zset_m2s:{
 				r.push_back(magic);
-				if(!redis_pack_put_str(&r,s.zset.member)) throw string_too_large();
+				if(!cavedb_key_put_str(&r,s.zset.member)) throw string_too_large();
 				return r;
 			}break;
 			case s_eof:{
@@ -211,47 +211,47 @@ COUT << "解EOF包失败" << s->type << std::endl;
 		throw type_error();
 	}
 
-	std::string redis_pack::make_key_prefix(leveldb::Slice key)
+	std::string cavedb_key::make_key_prefix(leveldb::Slice key)
 	{
 		cavedb::Slice cskey(key.data(),key.size());
 		std::string r;
 		r.push_back(magic);
-		redis_pack_put_str(&r,cskey);
+		cavedb_key_put_str(&r,cskey);
 		r.push_back(magic);
 		return r;
 	}
 
-	std::string redis_pack::make_key_eof(leveldb::Slice key)
+	std::string cavedb_key::make_key_eof(leveldb::Slice key)
 	{
 		cavedb::Slice cskey(key.data(),key.size());
 		std::string r;
 		r.push_back(magic);
-		redis_pack_put_str(&r,cskey);
+		cavedb_key_put_str(&r,cskey);
 		r.push_back(magic);
 		r.push_back(s_eof%0x100);
 		return r;
 	}
 
-	std::string redis_pack::make_hashmap_prefix(leveldb::Slice key,leveldb::Slice field)
+	std::string cavedb_key::make_hashmap_prefix(leveldb::Slice key,leveldb::Slice field)
 	{
 		cavedb::Slice cskey(key.data(),key.size());
 		std::string r;
 		r.push_back(magic);
-		redis_pack_put_str(&r,cskey);
+		cavedb_key_put_str(&r,cskey);
 		r.push_back(magic);
 		r.push_back(s_hash%0x100);
 		return r;
 	}
 
-	int redis_pack::Compare(const leveldb::Slice& a, const leveldb::Slice& b)
+	int cavedb_key::Compare(const leveldb::Slice& a, const leveldb::Slice& b)
 	{
-		redis_pack pa;
-		if(!redis_pack::parse(a,&pa)){
+		cavedb_key pa;
+		if(!cavedb_key::parse(a,&pa)){
 			return a.compare(b);
 		}
 
-		redis_pack pb;
-		if(!redis_pack::parse(b,&pb)){
+		cavedb_key pb;
+		if(!cavedb_key::parse(b,&pb)){
 			return a.compare(b);
 		}
 
@@ -259,7 +259,7 @@ COUT << "解EOF包失败" << s->type << std::endl;
 			return pa.key.compare(pb.key);
 		}
 
-		if(pa.type == redis_pack::s_any || pb.type == redis_pack::s_any){
+		if(pa.type == cavedb_key_type::s_any || pb.type == cavedb_key_type::s_any){
 			return 0;
 		}
 
@@ -268,13 +268,13 @@ COUT << "解EOF包失败" << s->type << std::endl;
 			return 1;
 		}
 
-		if(pa.type == redis_pack::s_string){
+		if(pa.type == cavedb_key_type::s_string){
 			return 0;
-		}else if(pa.type == redis_pack::s_native){
+		}else if(pa.type == cavedb_key_type::s_native){
 			return 0;
-		}else if(pa.type == redis_pack::s_hash){
+		}else if(pa.type == cavedb_key_type::s_hash){
 			return pa.hash.field.compare(pb.hash.field);
-		}else if(pa.type == redis_pack::s_list){
+		}else if(pa.type == cavedb_key_type::s_list){
 			if(pa.list.seq == pb.list.seq){
 				return 0;
 			}else if(pa.list.seq < pb.list.seq){
@@ -282,27 +282,27 @@ COUT << "解EOF包失败" << s->type << std::endl;
 			}else{
 				return 1;
 			}
-		}else if(pa.type == redis_pack::s_set){
+		}else if(pa.type == cavedb_key_type::s_set){
 			return pa.set.member.compare(pb.set.member);
-		}else if(pa.type == redis_pack::s_zset){
+		}else if(pa.type == cavedb_key_type::s_zset){
 			if(pa.zset.score < pb.zset.score){
 				return -1;
 			}else if(pa.zset.score > pb.zset.score){
 				return 1;
 			}
 			return pa.zset.member.compare(pb.zset.member);
-		}else if(pa.type == redis_pack::s_zset_m2s){
+		}else if(pa.type == cavedb_key_type::s_zset_m2s){
 			return pa.zset.member.compare(pb.zset.member);
 		}
 TODO();
 		return a.compare(b);
 	}
 
-	void redis_pack::FindShortestSeparator(std::string* start,const leveldb::Slice& limit)
+	void cavedb_key::FindShortestSeparator(std::string* start,const leveldb::Slice& limit)
 	{
 	}
 
-	void redis_pack::FindShortSuccessor(std::string* key)
+	void cavedb_key::FindShortSuccessor(std::string* key)
 	{
 	}
 }}

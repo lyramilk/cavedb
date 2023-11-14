@@ -1,5 +1,5 @@
-#ifndef _cavedb_redis_pack_h_
-#define _cavedb_redis_pack_h_
+#ifndef _cavedb_key_h_
+#define _cavedb_key_h_
 #include "slice.h"
 #include <libmilk/def.h>
 
@@ -13,11 +13,16 @@ namespace lyramilk{ namespace cave
 	struct string_too_large
 	{};
 
-	struct redis_pack
+
+	struct cavedb_key
 	{
 		const static char magic = 0xbb;
 		const static char magiceof = 0xbc;
-		enum stype{
+
+		cavedb::Slice key;
+		
+		enum _type{
+			s_none		= 0x00,
 			s_any		= 0x02,	//  msm
 			s_string	= 0x10,	//	msmt
 			s_hash		= 0x20,	//	msmtms
@@ -27,9 +32,9 @@ namespace lyramilk{ namespace cave
 			s_zset_m2s	= 0x51,	//	msmtms
 			s_native	= 0x70,	//	msmt
 			s_eof		= 0xff,	//	msmt
-		}type;
-
-		cavedb::Slice key;
+		};
+		
+		_type type;
 
 		union{
 			struct{
@@ -47,14 +52,14 @@ namespace lyramilk{ namespace cave
 			}list;
 		};
 
-		redis_pack()
+		cavedb_key()
 		{}
 
-		~redis_pack()
+		~cavedb_key()
 		{}
 
-		static bool parse(leveldb::Slice key,redis_pack* s);
-		static std::string stringify(const redis_pack& s);
+		static bool parse(leveldb::Slice key,cavedb_key* s);
+		static std::string stringify(const cavedb_key& s);
 
 		static std::string make_key_prefix(leveldb::Slice key);
 		static std::string make_key_eof(leveldb::Slice key);
@@ -64,8 +69,10 @@ namespace lyramilk{ namespace cave
 		static void FindShortestSeparator(std::string* start,const leveldb::Slice& limit);
 		static void FindShortSuccessor(std::string* key);
 	};
+	
+	typedef cavedb_key::_type cavedb_key_type;
 
-	struct redis_pack2:public redis_pack
+	struct cavedb_key_value:public cavedb_key
 	{
 		std::string data;
 	};

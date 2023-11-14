@@ -7,24 +7,6 @@
 
 #include <libmilk/json.h>
 
-/*
-#include "ssdb/const.h"
-#include <libmilk/dict.h>
-#include <libmilk/log.h>
-#include <libmilk/exception.h>
-#include <stdlib.h>
-#include <string.h>
-#include <arpa/inet.h>
-#include <endian.h>
-#include <unistd.h>
-
-
-const uint64_t QFRONT_SEQ = 2;
-const uint64_t QBACK_SEQ  = 3;
-const uint64_t QITEM_MIN_SEQ = 10000;
-const uint64_t QITEM_MAX_SEQ = 9223372036854775807ULL;
-const uint64_t QITEM_SEQ_INIT = QITEM_MAX_SEQ/2;
-*/
 
 namespace lyramilk{ namespace cave
 {
