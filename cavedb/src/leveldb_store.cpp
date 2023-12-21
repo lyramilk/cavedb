@@ -1097,7 +1097,7 @@ namespace lyramilk{ namespace cave
 
 		regist("cave_sync",command_method_2_function<leveldb_store,&leveldb_store::on_cave_sync>,-4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,0,0,0);
 		regist("scan",command_method_2_function<leveldb_store,&leveldb_store::on_scan>,2,command_sepc::skip_monitor|command_sepc::noscript|command_sepc::readonly,0,0,0);
-
+		regist("type",command_method_2_function<leveldb_store,&leveldb_store::on_type>,2,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,1,1,1);
 
 		regist("binlog_hset",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hset>,5,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("binlog_hdel",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hdel>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
