@@ -87,7 +87,7 @@ void useage(lyramilk::data::string selfname)
 {
 	std::cout << "useage:" << selfname << " [optional]" << std::endl;
 	std::cout << "\t-d --daemon                                  \t" << "以服务方式启动" << std::endl;
-	std::cout << "\t-c --config-file   < config file >           \t" << "ssdb主库的host" << std::endl;
+	std::cout << "\t-c --config-file   < config file >           \t" << "cavedb主库的host" << std::endl;
 	std::cout << "\t-? --help                                    \t显示这个帮助" << std::endl;
 }
 
@@ -290,6 +290,8 @@ int main(int argc,char* argv[])
 		}
 	}
 
+	// 从库必须只读
+	bool is_slave = false;
 	//	初始化主从同步的主库。
 	for(lyramilk::data::array::iterator it = slaveof.begin();it!=slaveof.end();++it){
 		if(it->type() == lyramilk::data::var::t_map){
@@ -307,13 +309,14 @@ int main(int argc,char* argv[])
 				lyramilk::data::string replid = "";
 				lyramilk::data::uint64 offset = 0;
 				cmdr.get_sync_info(masterid,&replid,&offset);
-
+				is_slave = true;
 
 				p->init(host,port,masterauth,masterid,replid,offset,&cmdr);
 				p->active(1);
 			}
 		}
 	}
+	cmdr.set_master(!is_slave);
 
 	//	初始化对外服务。
 	for(lyramilk::data::array::iterator it = server.begin();it!=server.end();++it){
@@ -333,7 +336,7 @@ int main(int argc,char* argv[])
 					p->chd.set_requirepass(requirepass);
 				}
 
-				if(slaveof.size() > 0){
+				if(is_slave){
 					p->chd.isreadonly = true;
 				}
 
@@ -360,7 +363,7 @@ int main(int argc,char* argv[])
 					p->chd.set_requirepass(requirepass);
 				}
 
-				if(slaveof.size() > 0){
+				if(is_slave){
 					p->chd.isreadonly = true;
 				}
 

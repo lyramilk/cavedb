@@ -57,11 +57,12 @@ namespace lyramilk{ namespace cave
 		}
 
 		lyramilk::data::stringstream oss;
-		oss << "*4\r\n";
+		oss << "*5\r\n";
 		oss << "$9\r\ncave_sync\r\n";
 		oss << "$" << replid.size() << "\r\n" << replid << "\r\n";
 		oss << ":" << offset << "\r\n";
 		oss << ":" << count << "\r\n";
+		oss << "+withseq\r\n";
 		lyramilk::data::string str = oss.str();
 		c.write(str.c_str(),str.size());
 
@@ -146,10 +147,15 @@ namespace lyramilk{ namespace cave
 			for(lyramilk::data::array::const_iterator it = cmds.begin();it!=cmds.end();++it){
 				if(it->type() != lyramilk::data::var::t_array) break;
 				const lyramilk::data::array& ar = *it;
+				if(ar.size() == 0) continue;
+				if(ar.back().type() != lyramilk::data::var::t_int) continue;
+				lyramilk::data::uint64 seq = ar.back();
+				
 				lyramilk::data::var ret;
-				if(lyramilk::cave::cmdstatus::cs_error == cmdr->call(masterid,psync_replid,psync_offset,ar,&ret,&chd,&sen)){
+				if(lyramilk::cave::cmdstatus::cs_error == cmdr->call(masterid,psync_replid,seq,ar,&ret,&chd,&sen)){
 					lyramilk::data::string s = lyramilk::data::json::stringify(ar);
-					log(lyramilk::log::error,"psync") << D("[%s]同步执行命令出错%.*s，重新链接",masterid.c_str(),s.size(),s.c_str()) << std::endl;
+					lyramilk::data::string msg = ret.str();
+					log(lyramilk::log::error,"psync") << D("[%s]同步执行命令出错%.*s，ret=%.*s，重新链接",masterid.c_str(),s.size(),s.c_str(),msg.size(),msg.c_str()) << std::endl;
 					c.close();
 					sleep(2);
 				}

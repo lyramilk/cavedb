@@ -30,11 +30,17 @@ namespace lyramilk{ namespace cave
 		minseq = 0;
 		maxseq = 0;
 		capacity = 20000000;
+		is_master = false;;
 	}
 
 	binlog_leveldb::~binlog_leveldb()
 	{
 		
+	}
+
+	void binlog_leveldb::set_master(bool is_master)
+	{
+		this->is_master = is_master;
 	}
 
 	void* binlog_leveldb::thread_clear_binlog(binlog_leveldb* blog)
@@ -221,39 +227,66 @@ namespace lyramilk{ namespace cave
 		return 0;
 	}
 
-/*
-	bool binlog_leveldb::append(const lyramilk::data::array& args)
-	{
-		if(!ldb) return false;
-
-		maxseq = seq;
-		__sync_fetch_and_add(&seq,1);
-
-		lyramilk::data::uint64 tmp = htobe64(seq);
-		lyramilk::data::string skey;
-		skey.append("i+");
-		skey.append((const char*)&tmp,8);
-
-		lyramilk::data::ostringstream ss;
-		lyramilk::data::var v(args);
-		v.serialize(ss);
-		lyramilk::data::string str = ss.str();
-
-		leveldb::Status ldbs = ldb->Put(wopt,skey,str);
-		if(ldbs.ok()){
-			return true;
-		}
-		return false;
-	}
-*/
-
-
 	bool binlog_leveldb::hset(const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::string& value)
 	{
 		if(!ldb) return false;
-		maxseq = seq;
-		__sync_fetch_and_add(&seq,1);
+		if(!is_master) return false;
+		maxseq = __sync_fetch_and_add(&seq,1);
+		
+		return hset_with_seq(seq,key,field,value);
+	}
 
+	bool binlog_leveldb::hdel(const lyramilk::data::string& key,const lyramilk::data::string& field)
+	{
+		if(!ldb) return false;
+		if(!is_master) return false;
+		maxseq = __sync_fetch_and_add(&seq,1);
+		
+		return hdel_with_seq(seq,key,field);
+	}
+
+	bool binlog_leveldb::sadd(const lyramilk::data::string& key,const lyramilk::data::string& member)
+	{
+		if(!ldb) return false;
+		if(!is_master) return false;
+		maxseq = __sync_fetch_and_add(&seq,1);
+		
+		return sadd_with_seq(seq,key,member);
+	}
+
+	bool binlog_leveldb::srem(const lyramilk::data::string& key,const lyramilk::data::string& member)
+	{
+		if(!ldb) return false;
+		if(!is_master) return false;
+		maxseq = __sync_fetch_and_add(&seq,1);
+		
+		return srem_with_seq(seq,key,member);
+	}
+
+	bool binlog_leveldb::zadd(const lyramilk::data::string& key,double score,const lyramilk::data::string& value)
+	{
+		if(!ldb) return false;
+		if(!is_master) return false;
+		maxseq = __sync_fetch_and_add(&seq,1);
+		
+		return zadd_with_seq(seq,key,score,value);
+	}
+
+	bool binlog_leveldb::zrem(const lyramilk::data::string& key,const lyramilk::data::string& value)
+	{
+		if(!ldb) return false;
+		if(!is_master) return false;
+		/*
+		maxseq = seq;
+		__sync_fetch_and_add(&seq,1);*/
+		maxseq = __sync_fetch_and_add(&seq,1);
+		
+		return zrem_with_seq(seq,key,value);
+	}
+
+
+	bool binlog_leveldb::hset_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,const lyramilk::data::string& field,const lyramilk::data::string& value)
+	{
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -264,7 +297,7 @@ namespace lyramilk{ namespace cave
 		v.type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = v;
 		ar.reserve(4);
-		ar.emplace_back("hset");
+		ar.emplace_back("binlog_hset");
 		ar.emplace_back(key);
 		ar.emplace_back(field);
 		ar.emplace_back(value);
@@ -278,12 +311,8 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	bool binlog_leveldb::hdel(const lyramilk::data::string& key,const lyramilk::data::string& field)
+	bool binlog_leveldb::hdel_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,const lyramilk::data::string& field)
 	{
-		if(!ldb) return false;
-		maxseq = seq;
-		__sync_fetch_and_add(&seq,1);
-
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -294,7 +323,7 @@ namespace lyramilk{ namespace cave
 		v.type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = v;
 		ar.reserve(3);
-		ar.emplace_back("hdel");
+		ar.emplace_back("binlog_hdel");
 		ar.emplace_back(key);
 		ar.emplace_back(field);
 		v.serialize(ss);
@@ -307,12 +336,8 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	bool binlog_leveldb::sadd(const lyramilk::data::string& key,const lyramilk::data::string& member)
+	bool binlog_leveldb::sadd_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,const lyramilk::data::string& member)
 	{
-		if(!ldb) return false;
-		maxseq = seq;
-		__sync_fetch_and_add(&seq,1);
-
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -323,7 +348,7 @@ namespace lyramilk{ namespace cave
 		v.type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = v;
 		ar.reserve(3);
-		ar.emplace_back("sadd");
+		ar.emplace_back("binlog_sadd");
 		ar.emplace_back(key);
 		ar.emplace_back(member);
 		v.serialize(ss);
@@ -336,12 +361,8 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	bool binlog_leveldb::srem(const lyramilk::data::string& key,const lyramilk::data::string& member)
+	bool binlog_leveldb::srem_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,const lyramilk::data::string& member)
 	{
-		if(!ldb) return false;
-		maxseq = seq;
-		__sync_fetch_and_add(&seq,1);
-
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -352,7 +373,7 @@ namespace lyramilk{ namespace cave
 		v.type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = v;
 		ar.reserve(3);
-		ar.emplace_back("srem");
+		ar.emplace_back("binlog_srem");
 		ar.emplace_back(key);
 		ar.emplace_back(member);
 		v.serialize(ss);
@@ -365,13 +386,8 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-/*
-	bool binlog_leveldb::zadd(const lyramilk::data::string& key,double score,const lyramilk::data::string& value)
+	bool binlog_leveldb::zadd_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,double score,const lyramilk::data::string& value)
 	{
-		if(!ldb) return false;
-		maxseq = seq;
-		__sync_fetch_and_add(&seq,1);
-
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -382,7 +398,7 @@ namespace lyramilk{ namespace cave
 		v.type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = v;
 		ar.reserve(4);
-		ar.emplace_back("zadd");
+		ar.emplace_back("binlog_zadd");
 		ar.emplace_back(key);
 		ar.emplace_back(score);
 		ar.emplace_back(value);
@@ -396,12 +412,8 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	bool binlog_leveldb::zrem(const lyramilk::data::string& key,const lyramilk::data::string& value)
+	bool binlog_leveldb::zrem_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,const lyramilk::data::string& value)
 	{
-		if(!ldb) return false;
-		maxseq = seq;
-		__sync_fetch_and_add(&seq,1);
-
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
 		skey.append("i+");
@@ -412,7 +424,7 @@ namespace lyramilk{ namespace cave
 		v.type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = v;
 		ar.reserve(3);
-		ar.emplace_back("zrem");
+		ar.emplace_back("binlog_zrem");
 		ar.emplace_back(key);
 		ar.emplace_back(value);
 		v.serialize(ss);
@@ -425,17 +437,7 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	bool binlog_leveldb::lset(const lyramilk::data::string& key,lyramilk::data::int64 idx,const lyramilk::data::string& value)
-	{
-		return false;
-	}
-
-	bool binlog_leveldb::ldel(const lyramilk::data::string& key,lyramilk::data::int64 idx)
-	{
-		return false;
-	}
-*/
-	void binlog_leveldb::read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq)
+	void binlog_leveldb::read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq,bool withseq)
 	{
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
@@ -460,11 +462,32 @@ namespace lyramilk{ namespace cave
 					s.remove_prefix(2);
 
 					if(s.size() == 8){
-						*nextseq = be64toh(*(lyramilk::data::uint64*)s.data()) + 1;
+						lyramilk::data::uint64 dataseq = be64toh(*(lyramilk::data::uint64*)s.data());
+						*nextseq = dataseq + 1;
 						lyramilk::data::var v2;
 						lyramilk::data::istringstream iss(it->value().ToString());
 						v2.deserialize(iss);
 						if(v2.type() == lyramilk::data::var::t_array){
+							if(withseq){
+								lyramilk::data::array& v2ar = v2;
+								v2ar.push_back(dataseq);
+							}else{
+								lyramilk::data::array& v2ar = v2;
+								lyramilk::data::string cmdstr = v2ar[0].str();
+								if(cmdstr == "binlog_hset"){
+									v2ar[0] = "hset";
+								}else if(cmdstr == "binlog_hdel"){
+									v2ar[0] = "hdel";
+								}else if(cmdstr == "binlog_sadd"){
+									v2ar[0] = "sadd";
+								}else if(cmdstr == "binlog_srem"){
+									v2ar[0] = "srem";
+								}else if(cmdstr == "binlog_zadd"){
+									v2ar[0] = "zadd";
+								}else if(cmdstr == "binlog_zrem"){
+									v2ar[0] = "zrem";
+								}
+							}
 							data->push_back(v2);
 						}
 					}

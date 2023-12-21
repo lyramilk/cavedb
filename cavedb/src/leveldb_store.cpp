@@ -7,6 +7,7 @@
 #include <libmilk/dict.h>
 #include <libmilk/exception.h>
 #include <libmilk/hash.h>
+#include <libmilk/stringutil.h>
 
 #include <leveldb/db.h>
 #include <leveldb/filter_policy.h>
@@ -101,6 +102,50 @@ namespace lyramilk{ namespace cave
 
 
 
+	leveldb::Status inline ldb_put_with_seq(leveldb::DB* db,binlog* blog,lyramilk::data::uint64 seq,const cavedb_key& rpack,const lyramilk::data::string& value)
+	{
+		if(blog){
+			if(rpack.type == cavedb_key_type::s_hash){
+				blog->hset_with_seq(seq,rpack.key.ToString(),rpack.hash.field.ToString(),value);
+			}else if(rpack.type == cavedb_key_type::s_set){
+				blog->sadd_with_seq(seq,rpack.key.ToString(),rpack.set.member.ToString());
+			}else if(rpack.type == cavedb_key_type::s_zset){
+				blog->zadd_with_seq(seq,rpack.key.ToString(),rpack.zset.score,rpack.zset.member.ToString());
+			}else if(rpack.type == cavedb_key_type::s_zset_m2s){
+			}else{
+				throw lyramilk::exception(D("cavedb_key未处理的类型%d",rpack.type));
+			}
+		}
+
+
+		static leveldb::WriteOptions wopt;
+
+		std::string lkey = cavedb_key::stringify(rpack);
+		std::string lvalue = lyramilk::data::str(value);
+
+		return db->Put(wopt,lkey,lvalue);
+	}
+
+	leveldb::Status inline ldb_del_with_seq(leveldb::DB* db,binlog* blog,lyramilk::data::uint64 seq,const cavedb_key& rpack)
+	{
+		if(blog){
+			if(rpack.type == cavedb_key_type::s_hash){
+				blog->hdel_with_seq(seq,rpack.key.ToString(),rpack.hash.field.ToString());
+			}else if(rpack.type == cavedb_key_type::s_set){
+				blog->srem_with_seq(seq,rpack.key.ToString(),rpack.set.member.ToString());
+			}else if(rpack.type == cavedb_key_type::s_zset){
+				blog->zrem_with_seq(seq,rpack.key.ToString(),rpack.zset.member.ToString());
+			}else if(rpack.type == cavedb_key_type::s_zset_m2s){
+			}else{
+				throw lyramilk::exception(D("cavedb_key未处理的类型%d",rpack.type));
+			}
+		}
+
+		static leveldb::WriteOptions wopt;
+		std::string lkey = cavedb_key::stringify(rpack);
+		return db->Delete(wopt,lkey);
+	}
+
 	//leveldb::DB* ldb;
 
 	cmdstatus leveldb_store::on_hgetall(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
@@ -192,10 +237,11 @@ namespace lyramilk{ namespace cave
 	{
 		lyramilk::debug::nsecdiff nd;
 		nd.mark();
+		lyramilk::data::string key = args[1].str();
 
 		cavedb_key pk;
 		pk.type = cavedb_key::s_hash;
-		lyramilk::data::string key = args[1].str();
+		pk.key = key;
 
 		lyramilk::data::uint64 c = args.size();
 		lyramilk::data::uint64 r = 0;
@@ -203,13 +249,11 @@ namespace lyramilk{ namespace cave
 			--c;
 		}
 
-
 		leveldb::Status ldbs;
 
 		for(lyramilk::data::uint64 i=2;i<c;i+=2){
 			++r;
 			lyramilk::data::string field = args[i].str();
-			pk.key = key;
 			pk.hash.field.assign(field.data(),field.size());
 
 			ldbs = ldb_put(ldb,blog,pk,args[i + 1].str());
@@ -247,9 +291,11 @@ namespace lyramilk{ namespace cave
 		lyramilk::debug::nsecdiff nd;
 		nd.mark();
 
+		lyramilk::data::string key = args[1].str();
+
 		cavedb_key pk;
 		pk.type = cavedb_key::s_hash;
-		lyramilk::data::string key = args[1].str();
+		pk.key = key;
 
 		lyramilk::data::uint64 c = args.size();
 		lyramilk::data::uint64 r = 0;
@@ -259,7 +305,6 @@ namespace lyramilk{ namespace cave
 		for(lyramilk::data::uint64 i=2;i<c;++i){
 			++r;
 			lyramilk::data::string field = args[i].str();
-			pk.key = key;
 			pk.hash.field.assign(field.data(),field.size());
 
 			ldbs = ldb_del(ldb,blog,pk);
@@ -355,7 +400,6 @@ namespace lyramilk{ namespace cave
 		for(lyramilk::data::uint64 i=2;i<c;++i){
 			++r;
 			lyramilk::data::string value = args[i].str();
-			pk.key = key;
 			pk.set.member.assign(value.data(),value.size());
 
 			ldbs = ldb_put(ldb,blog,pk,"");
@@ -409,7 +453,6 @@ namespace lyramilk{ namespace cave
 		for(lyramilk::data::uint64 i=2;i<c;++i){
 			++r;
 			lyramilk::data::string value = args[i].str();
-			pk.key = key;
 			pk.set.member.assign(value.data(),value.size());
 
 			ldbs = ldb_del(ldb,blog,pk);
@@ -578,6 +621,15 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::string key = args[1].str();
 		lyramilk::data::uint64 seq = args[2].conv(0);
 		lyramilk::data::int64 count = args[3].conv(30000);
+		bool withseq = false;
+		if(args.size() > 4){
+			for(int i=4;i<args.size();++i){
+				lyramilk::data::string str = lyramilk::data::lower_case(args[i].str());
+				if(str == "withseq") {
+					withseq = true;
+				}
+			}
+		}
 
 		ret->type(lyramilk::data::var::t_array);
 		lyramilk::data::array& ar = *ret;
@@ -600,7 +652,15 @@ namespace lyramilk{ namespace cave
 			}else{
 				nextseq = seq;
 			}
+/*
+		cmdstatus on_binlog_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_binlog_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_binlog_sadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_binlog_srem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_binlog_zadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_binlog_zrem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 
+*/
 			//如果key不为空，或key为空且seq为0，且扫描本地数据。
 			leveldb::Iterator* it = ldb->NewIterator(ropt);
 			if(it == nullptr){
@@ -619,19 +679,32 @@ namespace lyramilk{ namespace cave
 							ardata.back().type(lyramilk::data::var::t_array);
 
 							lyramilk::data::array& ar = ardata.back();
-							ar.push_back("hset");
+							ar.push_back(withseq?"binlog_hset":"hset");
 							ar.push_back(lyramilk::data::str(spack.key.ToString()));
 							ar.push_back(lyramilk::data::str(spack.hash.field.ToString()));
 							ar.push_back(lyramilk::data::str(it->value().ToString()));
+							if(withseq) ar.push_back(0);
 						}else if(spack.type == cavedb_key::s_set){
 							lyramilk::data::var v;
 							ardata.push_back(v);
 							ardata.back().type(lyramilk::data::var::t_array);
 
 							lyramilk::data::array& ar = ardata.back();
-							ar.push_back("sadd");
+							ar.push_back(withseq?"binlog_sadd":"sadd");
 							ar.push_back(lyramilk::data::str(spack.key.ToString()));
 							ar.push_back(lyramilk::data::str(spack.set.member.ToString()));
+							if(withseq) ar.push_back(0);
+						}else if(spack.type == cavedb_key::s_zset){
+							lyramilk::data::var v;
+							ardata.push_back(v);
+							ardata.back().type(lyramilk::data::var::t_array);
+
+							lyramilk::data::array& ar = ardata.back();
+							ar.push_back(withseq?"binlog_zadd":"zadd");
+							ar.push_back(lyramilk::data::str(spack.key.ToString()));
+							ar.push_back(spack.zset.score);
+							ar.push_back(lyramilk::data::str(spack.zset.member.ToString()));
+							if(withseq) ar.push_back(0);
 						}
 					}
 				}
@@ -654,7 +727,7 @@ namespace lyramilk{ namespace cave
 			*ret = "ERR binlog is not configured";
 			return cmdstatus::cs_error;
 		}
-		blog->read(seq,count,&ardata,&nextseq);
+		blog->read(seq,count,&ardata,&nextseq,withseq);
 		ar[0] = nextkey;
 		ar[1] = nextseq;
 		return cmdstatus::cs_data;
@@ -738,7 +811,270 @@ namespace lyramilk{ namespace cave
 		}
 		return r;
 	}
-	
+
+	cmdstatus leveldb_store::on_binlog_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::debug::nsecdiff nd;
+		nd.mark();
+
+		lyramilk::data::string key = args[1].str();
+		lyramilk::data::string field = args[2].str();
+		lyramilk::data::string value = args[3].str();
+		lyramilk::data::uint64 seq = args[4].conv(0);
+
+		cavedb_key pk;
+		pk.type = cavedb_key::s_hash;
+		pk.key = key;
+		pk.hash.field.assign(field.data(),field.size());
+
+		leveldb::Status ldbs = ldb_put_with_seq(ldb,blog,seq,pk,value);
+
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,__FUNCTION__) << D("命令 hset %.*s %.*s %.*s 耗时%.3f",key.size(),key.c_str(),field.size(),field.c_str(),value.size(),value.c_str(),double(nsec) / 1000000) << std::endl;
+		}
+
+
+		if(ldbs.ok()){
+			*ret = 1;
+			return cmdstatus::cs_ok;
+		}
+
+		log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+		*ret = ldbs.ToString();
+		return cmdstatus::cs_error;
+	}
+
+	cmdstatus leveldb_store::on_binlog_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::debug::nsecdiff nd;
+		nd.mark();
+
+		lyramilk::data::string key = args[1].str();
+		lyramilk::data::string field = args[2].str();
+		lyramilk::data::uint64 seq = args[3].conv(0);
+
+		cavedb_key pk;
+		pk.type = cavedb_key::s_hash;
+		pk.key = key;
+		pk.hash.field.assign(field.data(),field.size());
+
+		leveldb::Status ldbs = ldb_del_with_seq(ldb,blog,seq,pk);
+
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,__FUNCTION__) << D("命令 hdel %.*s %.*s 耗时%.3f",key.size(),key.c_str(),field.size(),field.c_str(),double(nsec) / 1000000) << std::endl;
+		}
+
+
+		if(ldbs.ok()){
+			*ret = 1;
+			return cmdstatus::cs_ok;
+		}
+
+		log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+		*ret = ldbs.ToString();
+		return cmdstatus::cs_error;
+	}
+
+	cmdstatus leveldb_store::on_binlog_sadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::debug::nsecdiff nd;
+		nd.mark();
+
+		lyramilk::data::string key = args[1].str();
+		lyramilk::data::string value = args[2].str();
+		lyramilk::data::uint64 seq = args[3].conv(0);
+
+		cavedb_key pk;
+		pk.type = cavedb_key::s_set;
+		pk.key = key;
+		pk.set.member.assign(value.data(),value.size());
+
+		leveldb::Status ldbs = ldb_put_with_seq(ldb,blog,seq,pk,"");
+
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,__FUNCTION__) << D("命令 sadd %.*s %.*s 耗时%.3f",key.size(),key.c_str(),value.size(),value.c_str(),double(nsec) / 1000000) << std::endl;
+		}
+
+		if(ldbs.ok()){
+			*ret = 1;
+			return cmdstatus::cs_data;
+		}
+
+		if(ldbs.IsNotFound()){
+			*ret = 0;
+			return cmdstatus::cs_data;
+		}
+
+		log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+		*ret = ldbs.ToString();
+		return cmdstatus::cs_error;
+	}
+
+	cmdstatus leveldb_store::on_binlog_srem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::debug::nsecdiff nd;
+		nd.mark();
+
+		lyramilk::data::string key = args[1].str();
+		lyramilk::data::string value = args[2].str();
+		lyramilk::data::uint64 seq = args[3].conv(0);
+
+		cavedb_key pk;
+		pk.type = cavedb_key::s_set;
+		pk.key = key;
+		pk.set.member.assign(value.data(),value.size());
+
+		leveldb::Status ldbs = ldb_del_with_seq(ldb,blog,seq,pk);
+
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,__FUNCTION__) << D("命令 srem %.*s %.*s 耗时%.3f",key.size(),key.c_str(),value.size(),value.c_str(),double(nsec) / 1000000) << std::endl;
+		}
+
+		if(ldbs.ok()){
+			*ret = 1;
+			return cmdstatus::cs_data;
+		}
+
+		if(ldbs.IsNotFound()){
+			*ret = 0;
+			return cmdstatus::cs_data;
+		}
+
+		log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+		*ret = ldbs.ToString();
+		return cmdstatus::cs_error;
+	}
+
+	cmdstatus leveldb_store::on_binlog_zadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::debug::nsecdiff nd;
+		nd.mark();
+
+		lyramilk::data::string key = args[1].str();
+		double score = args[2].conv(0.0f);
+		lyramilk::data::string value = args[3].str();
+		lyramilk::data::uint64 seq = args[4].conv(0);
+
+		leveldb::Status ldbs;
+		{
+			// s_zset_m2s
+			cavedb_key pk;
+			pk.type = cavedb_key::s_zset_m2s;
+			pk.key = key;
+			pk.zset.member.assign(value.data(),value.size());
+			pk.zset.score = score;
+
+			ldbs = ldb_put_with_seq(ldb,blog,seq,pk,"");
+			if(!ldbs.ok()){
+				log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+				*ret = ldbs.ToString();
+				return cmdstatus::cs_error;
+			}
+		}
+
+		{
+			// s_zset
+			cavedb_key pk;
+			pk.type = cavedb_key::s_zset;
+			pk.key = key;
+			pk.zset.member.assign(value.data(),value.size());
+
+			ldbs = ldb_put_with_seq(ldb,blog,seq,pk,"");
+		}
+
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,__FUNCTION__) << D("命令 sadd %.*s %f %.*s 耗时%.3f",key.size(),key.c_str(),score,value.size(),value.c_str(),double(nsec) / 1000000) << std::endl;
+		}
+
+		if(ldbs.ok()){
+			*ret = 1;
+			return cmdstatus::cs_data;
+		}
+
+		if(ldbs.IsNotFound()){
+			*ret = 0;
+			return cmdstatus::cs_data;
+		}
+
+		log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+		*ret = ldbs.ToString();
+		return cmdstatus::cs_error;
+	}
+
+	cmdstatus leveldb_store::on_binlog_zrem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::debug::nsecdiff nd;
+		nd.mark();
+
+		lyramilk::data::string key = args[1].str();
+		lyramilk::data::string value = args[2].str();
+		lyramilk::data::uint64 seq = args[3].conv(0);
+
+
+		leveldb::Status ldbs;
+		{
+			cavedb_key pk;
+			pk.type = cavedb_key::s_zset_m2s;
+			pk.key = key;
+			pk.zset.member.assign(value.data(),value.size());
+
+			// 从s_zset_m2s读score
+			std::string lkey = cavedb_key::stringify(pk);
+			std::string data;
+			ldbs = ldb->Get(ropt,lkey,&data);
+			
+			if(!ldbs.ok()){
+				log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+				*ret = ldbs.ToString();
+				return cmdstatus::cs_error;
+			}
+			
+			if(data.size() == sizeof(double)){
+				double score = 0.0f;
+				data.copy((char*)&score,sizeof(double));
+				pk.zset.score = score;
+			}
+
+			// 删除 s_zset_m2s
+			ldbs = ldb_del_with_seq(ldb,blog,seq,pk);
+			if(!ldbs.ok()){
+				log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+				*ret = ldbs.ToString();
+				return cmdstatus::cs_error;
+			}
+			
+			// 删除 s_zset
+			pk.type = cavedb_key::s_zset;
+			ldbs = ldb_del_with_seq(ldb,blog,seq,pk);
+		}
+
+
+		long long nsec = nd.diff();
+		if(nsec > 200000000){
+			log(lyramilk::log::warning,__FUNCTION__) << D("命令 srem %.*s %.*s 耗时%.3f",key.size(),key.c_str(),value.size(),value.c_str(),double(nsec) / 1000000) << std::endl;
+		}
+
+		if(ldbs.ok()){
+			*ret = 1;
+			return cmdstatus::cs_data;
+		}
+
+		if(ldbs.IsNotFound()){
+			*ret = 0;
+			return cmdstatus::cs_data;
+		}
+
+		log(lyramilk::log::error,__FUNCTION__) << D("%s错误：%s\n",__FUNCTION__,ldbs.ToString().c_str()) << std::endl;
+		*ret = ldbs.ToString();
+		return cmdstatus::cs_error;
+	}
+
+
 	leveldb_store::leveldb_store()
 	{
 		ldb = nullptr;
@@ -759,9 +1095,16 @@ namespace lyramilk{ namespace cave
 		regist("smembers",&command_method_2_function<leveldb_store,&leveldb_store::on_smembers>,2,command_sepc::readonly|command_sepc::noscript,1,1,1);
 		regist("sscan",&command_method_2_function<leveldb_store,&leveldb_store::on_sscan>,3,command_sepc::readonly|command_sepc::noscript,1,1,1);
 
-		regist("cave_sync",command_method_2_function<leveldb_store,&leveldb_store::on_cave_sync>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,0,0,0);
+		regist("cave_sync",command_method_2_function<leveldb_store,&leveldb_store::on_cave_sync>,-4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,0,0,0);
 		regist("scan",command_method_2_function<leveldb_store,&leveldb_store::on_scan>,2,command_sepc::skip_monitor|command_sepc::noscript|command_sepc::readonly,0,0,0);
-		regist("type",command_method_2_function<leveldb_store,&leveldb_store::on_type>,2,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,1,1,1);
+
+
+		regist("binlog_hset",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hset>,5,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_hdel",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hdel>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_sadd",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_sadd>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_srem",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_srem>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_zadd",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_zadd>,5,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_zrem",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_zrem>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
 	}
 
 	leveldb_store::~leveldb_store()

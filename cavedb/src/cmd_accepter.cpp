@@ -109,6 +109,7 @@ namespace lyramilk{ namespace cave
 		regist("sync_idle",command_method_2_function<cmd_accepter,&cmd_accepter::on_sync_idle>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::hidden,0,0,0);
 		regist("sync_continue",command_method_2_function<cmd_accepter,&cmd_accepter::on_sync_continue>,1,command_sepc::readonly|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::hidden,0,0,0);
 		regist("sync_overflow",command_method_2_function<cmd_accepter,&cmd_accepter::on_sync_overflow>,1,command_sepc::write|command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::hidden,0,0,0);
+		is_master = false;
 	}
 	cmd_accepter::~cmd_accepter()
 	{
@@ -128,9 +129,8 @@ namespace lyramilk{ namespace cave
 
 	cmdstatus cmd_accepter::call(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen)
 	{
-
 		lyramilk::data::string cmd = args[0].str();
-
+		
 		cmd_map_type::iterator it = dispatch.find(cmd);
 		if(it!=dispatch.end()){
 
@@ -206,9 +206,20 @@ namespace lyramilk{ namespace cave
 	}
 
 
+	void cmd_accepter::set_master(bool is_master)
+	{
+		if(this->blog){
+			this->blog->set_master(is_master);
+		}
+		this->is_master = is_master;
+	}
+
 	void cmd_accepter::set_binlog(binlog* blog)
 	{
 		this->blog = blog;
+		if(this->blog){
+			this->blog->set_master(is_master);
+		}
 	}
 
 	void cmd_accepter::set_full_sync_completed(bool iscompleted)

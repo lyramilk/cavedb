@@ -33,6 +33,7 @@ namespace lyramilk{ namespace cave
 		cmdstatus on_sync_overflow(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 	  protected:
 		bool is_in_full_sync;
+		bool is_master;
 		binlog* blog;
 	  public:
 		cmd_accepter();
@@ -46,6 +47,7 @@ namespace lyramilk{ namespace cave
 
 		void set_full_sync_completed(bool iscompleted);
 
+		virtual void set_master(bool is_master);
 		virtual void set_binlog(binlog* blog);
 		virtual bool save_sync_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset) const = 0;
 		virtual bool get_sync_info(const lyramilk::data::string& masterid,lyramilk::data::string* replid,lyramilk::data::uint64* offset) const = 0;
