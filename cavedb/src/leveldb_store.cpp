@@ -1099,12 +1099,12 @@ namespace lyramilk{ namespace cave
 		regist("scan",command_method_2_function<leveldb_store,&leveldb_store::on_scan>,2,command_sepc::skip_monitor|command_sepc::noscript|command_sepc::readonly,0,0,0);
 		regist("type",command_method_2_function<leveldb_store,&leveldb_store::on_type>,2,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,1,1,1);
 
-		regist("binlog_hset",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hset>,5,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
-		regist("binlog_hdel",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hdel>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
-		regist("binlog_sadd",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_sadd>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
-		regist("binlog_srem",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_srem>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
-		regist("binlog_zadd",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_zadd>,5,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
-		regist("binlog_zrem",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_zrem>,4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_hset",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hset>,5,command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_hdel",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hdel>,4,command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_sadd",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_sadd>,4,command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_srem",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_srem>,4,command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_zadd",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_zadd>,5,command_sepc::fast|command_sepc::noscript,1,1,1);
+		regist("binlog_zrem",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_zrem>,4,command_sepc::fast|command_sepc::noscript,1,1,1);
 	}
 
 	leveldb_store::~leveldb_store()
@@ -1385,7 +1385,6 @@ namespace lyramilk{ namespace cave
 		stlsync_info.copy((char*)offset,sizeof(lyramilk::data::uint64));
 		return true;
 	}
-
 
 	bool leveldb_store::check_command(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen,const command_sepc& cmdspec)
 	{
