@@ -437,7 +437,7 @@ namespace lyramilk{ namespace cave
 		return false;
 	}
 
-	void binlog_leveldb::read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq,bool withseq)
+	bool binlog_leveldb::read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq,bool withseq)
 	{
 		lyramilk::data::uint64 tmp = htobe64(seq);
 		lyramilk::data::string skey;
@@ -499,6 +499,6 @@ namespace lyramilk{ namespace cave
 	}
 
 
-
+	return true;
 
 }}

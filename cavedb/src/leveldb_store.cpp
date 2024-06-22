@@ -652,15 +652,7 @@ namespace lyramilk{ namespace cave
 			}else{
 				nextseq = seq;
 			}
-/*
-		cmdstatus on_binlog_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
-		cmdstatus on_binlog_hdel(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
-		cmdstatus on_binlog_sadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
-		cmdstatus on_binlog_srem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
-		cmdstatus on_binlog_zadd(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
-		cmdstatus on_binlog_zrem(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 
-*/
 			//如果key不为空，或key为空且seq为0，且扫描本地数据。
 			leveldb::Iterator* it = ldb->NewIterator(ropt);
 			if(it == nullptr){
@@ -668,9 +660,19 @@ namespace lyramilk{ namespace cave
 				*ret = "ERR create iterator fail";
 				return cmdstatus::cs_error;
 			}else{
+
+				if(seq == 0){
+					//从0开始启动
+					lyramilk::data::var v;
+					ardata.push_back(v);
+					ardata.back().type(lyramilk::data::var::t_array);
+
+					lyramilk::data::array& ar = ardata.back();
+					ar.push_back("sync_start");
+				}
+
 				it->Seek(key);
 				for(lyramilk::data::int64 i =0;it->Valid() && i < count;it->Next(),++i){
-
 					cavedb_key spack;
 					if(cavedb_key::parse(it->key(),&spack)){
 						if(spack.type == cavedb_key::s_hash){
@@ -713,6 +715,13 @@ namespace lyramilk{ namespace cave
 					nextkey = lyramilk::data::str(it->key().ToString());
 				}else{
 					nextkey.clear();
+					// 遍历本地数据完成
+					lyramilk::data::var v;
+					ardata.push_back(v);
+					ardata.back().type(lyramilk::data::var::t_array);
+
+					lyramilk::data::array& ar = ardata.back();
+					ar.push_back("sync_continue");
 				}
 
 				if (it) delete it;
