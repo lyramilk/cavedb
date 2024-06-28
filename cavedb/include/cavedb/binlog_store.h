@@ -35,7 +35,7 @@ namespace lyramilk{ namespace cave
 		virtual bool zadd_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,double score,const lyramilk::data::string& value) = 0;
 		virtual bool zrem_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,const lyramilk::data::string& value) = 0;
 
-		virtual void read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq,bool withseq) = 0;
+		virtual bool read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq,bool withseq) = 0;
 	};
 
 
@@ -79,7 +79,7 @@ namespace lyramilk{ namespace cave
 		virtual bool zadd_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,double score,const lyramilk::data::string& value);
 		virtual bool zrem_with_seq(lyramilk::data::uint64 seq,const lyramilk::data::string& key,const lyramilk::data::string& value);
 
-		virtual void read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq,bool withseq);
+		virtual bool read(lyramilk::data::uint64 seq,lyramilk::data::uint64 count,lyramilk::data::array* data,lyramilk::data::uint64* nextseq,bool withseq);
 	};
 
 
