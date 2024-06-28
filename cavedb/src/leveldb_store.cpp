@@ -28,7 +28,7 @@ namespace lyramilk{ namespace cave
 
 	speed_counter::speed_counter()
 	{
-		speed_count = 0;
+		counter = 0;
 		speed_tm = 0;
 		speed = 0;
 
@@ -39,24 +39,24 @@ namespace lyramilk{ namespace cave
 
 	lyramilk::data::uint64 speed_counter::operator ++()
 	{
-		__sync_fetch_and_add(&speed_count,1);
+		__sync_fetch_and_add(&counter,1);
 
 		time_t tm_now = time(nullptr);
 		if(tm_now != speed_tm){
 			speed_tm = tm_now;
-			speed = speed_count;
-			speed_count = 0;
+			speed = counter;
+			counter = 0;
 		}
 		return speed;
 	}
 
-	speed_counter::operator lyramilk::data::uint64()
+	speed_counter::operator lyramilk::data::uint64() const
 	{
 		time_t tm_now = time(nullptr);
 		if(tm_now != speed_tm){
 			speed_tm = tm_now;
-			speed = speed_count;
-			speed_count = 0;
+			speed = counter;
+			counter = 0;
 		}
 		return speed;
 	}
@@ -623,7 +623,7 @@ namespace lyramilk{ namespace cave
 		lyramilk::data::int64 count = args[3].conv(30000);
 		bool withseq = false;
 		if(args.size() > 4){
-			for(int i=4;i<args.size();++i){
+			for(long unsigned int i=4;i<args.size();++i){
 				lyramilk::data::string str = lyramilk::data::lower_case(args[i].str());
 				if(str == "withseq") {
 					withseq = true;
@@ -810,6 +810,78 @@ namespace lyramilk{ namespace cave
 			}
 		}
 		return r;
+	}
+
+
+	cmdstatus leveldb_store::on_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
+	{
+		lyramilk::data::string group;
+		if(args.size() > 1){
+			group = lyramilk::data::lower_case(args[1].str());
+		}
+		std::stringstream oss;
+		if(group.empty() || group == "server"){
+			oss << "# Server\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "client"){
+			oss << "# Clients\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "memory"){
+			oss << "# Memory\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "persistence"){
+			oss << "# Persistence\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "stats"){
+			oss << "# Stats\n";
+			oss << "instantaneous_ops_per_sec:" << (wspeed + rspeed) << "\n";
+			oss << "instantaneous_read_ops_per_sec:" << (unsigned long long)rspeed << "\n";
+			oss << "instantaneous_write_ops_per_sec:" << (unsigned long long)wspeed << "\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "replication"){
+			oss << "# Replication\n";
+			oss << "binlog_min:" << blog->find_min() << "\n";
+			oss << "binlog_max:" << blog->find_max() << "\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "cpu"){
+			oss << "# CPU\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "modules"){
+			oss << "# Modules\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "errorstats"){
+			oss << "# Errorstats\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "Cluster"){
+			oss << "# cluster\n";
+			oss << "\n";
+		}
+
+		if(group.empty() || group == "keyspace"){
+			oss << "# Keyspace\n";
+			oss << "\n";
+		}
+
+		*ret = oss.str();
+		return cmdstatus::cs_data;
 	}
 
 	cmdstatus leveldb_store::on_binlog_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const
@@ -1098,6 +1170,7 @@ namespace lyramilk{ namespace cave
 		regist("cave_sync",command_method_2_function<leveldb_store,&leveldb_store::on_cave_sync>,-4,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,0,0,0);
 		regist("scan",command_method_2_function<leveldb_store,&leveldb_store::on_scan>,2,command_sepc::skip_monitor|command_sepc::noscript|command_sepc::readonly,0,0,0);
 		regist("type",command_method_2_function<leveldb_store,&leveldb_store::on_type>,2,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,1,1,1);
+		regist("info",command_method_2_function<leveldb_store,&leveldb_store::on_info>,-1,command_sepc::skip_monitor|command_sepc::fast|command_sepc::noscript|command_sepc::readonly,0,0,0);
 
 		regist("binlog_hset",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hset>,5,command_sepc::fast|command_sepc::noscript,1,1,1);
 		regist("binlog_hdel",command_method_2_function<leveldb_store,&leveldb_store::on_binlog_hdel>,4,command_sepc::fast|command_sepc::noscript,1,1,1);
@@ -1758,5 +1831,7 @@ namespace lyramilk{ namespace cave
 		
 		return cmdstatus::cs_data;
 	}
+
+
 
 }}

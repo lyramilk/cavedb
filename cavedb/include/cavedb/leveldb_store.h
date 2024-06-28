@@ -13,14 +13,14 @@ namespace lyramilk{ namespace cave
 
 	class speed_counter
 	{
-		volatile lyramilk::data::uint64 speed_count;
-		lyramilk::data::uint64 speed;
-		time_t speed_tm;
+		mutable volatile lyramilk::data::uint64 counter;
+		mutable lyramilk::data::uint64 speed;
+		mutable time_t speed_tm;
 	  public:
 		speed_counter();
 		~speed_counter();
 		lyramilk::data::uint64 operator ++();
-		operator lyramilk::data::uint64();
+		operator lyramilk::data::uint64() const;
 	};
 
 
@@ -46,6 +46,7 @@ namespace lyramilk{ namespace cave
 		
 		cmdstatus on_scan(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 		cmdstatus on_type(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
+		cmdstatus on_info(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
 
 		// binlog系列
 		cmdstatus on_binlog_hset(const lyramilk::data::string& masterid,const lyramilk::data::string& replid,lyramilk::data::uint64 offset,const lyramilk::data::array& args,lyramilk::data::var* ret,cmdchanneldata* chd,cmdsessiondata* sen) const;
