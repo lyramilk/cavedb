@@ -496,9 +496,8 @@ namespace lyramilk{ namespace cave
 				if (it) delete it;
 			}
 		}
+		
+		return true;
 	}
-
-
-	return true;
 
 }}
